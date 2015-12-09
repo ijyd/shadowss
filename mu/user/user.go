@@ -19,5 +19,6 @@ type Client interface {
 type User interface {
 	GetPort() int
 	GetPasswd() string
+	GetMethod() string
 	UpdatetTraffic() error
 }
