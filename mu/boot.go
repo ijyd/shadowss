@@ -8,9 +8,9 @@ import (
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	//"io"
-	"log"
 	//"net"
-	"os"
+	//"os"
+	log "github.com/Sirupsen/logrus"
 	//"os/signal"
 	// "runtime"
 	//"strconv"
@@ -25,8 +25,9 @@ var config *ss.Config
 func boot() {
 	var err error
 
-	log.SetOutput(os.Stdout)
+	// log.SetOutput(os.Stdout)
 
+	InitClient()
 	client := user.GetClient()
 	users, err := client.GetUsers()
 	if err != nil {
@@ -34,8 +35,13 @@ func boot() {
 	}
 
 	for _, user := range users {
+		log.Info(user)
 		port := strconv.Itoa(user.GetPort())
 		password := user.GetPasswd()
+		log.WithFields(log.Fields{
+			"Port":     port,
+			"Password": password,
+		}).Info("Start new user")
 		go run(port, password)
 	}
 
