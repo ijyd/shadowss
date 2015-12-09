@@ -1,6 +1,6 @@
 package user
 
-func NewMysqlClient() *MysqlClient {
+func NewMysqlClient() Client {
 	var client *MysqlClient
 	return client
 }
@@ -14,19 +14,27 @@ type MysqlUser struct {
 	method string
 }
 
-func (u *MysqlUser) GetPort() int {
+func (u MysqlUser) GetPort() int {
 	return u.port
 }
 
-func (u *MysqlUser) GetPasswd() string {
+func (u MysqlUser) GetPasswd() string {
 	return u.passwd
 }
 
-func (u *MysqlUser) GetMethod() string {
+func (u MysqlUser) GetMethod() string {
 	return u.method
 }
 
-func (c *MysqlClient) GetClient() ([]User, error) {
-	var users []MysqlUser
-	return users, error()
+func (u MysqlUser) UpdatetTraffic() error {
+	return nil
+}
+
+func (c *MysqlClient) GetUsers() ([]User, error) {
+	var datas []MysqlUser
+	users := make([]User, len(datas))
+	for _, i := range datas {
+		users = append(users, i)
+	}
+	return users, nil
 }

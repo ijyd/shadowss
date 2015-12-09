@@ -4,6 +4,10 @@ var (
 	client = NewMysqlClient()
 )
 
+func GetClient() Client {
+	return client
+}
+
 func SetClient(c Client) {
 	client = c
 }
