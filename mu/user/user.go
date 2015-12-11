@@ -1,8 +1,13 @@
 package user
 
 var (
-	client = NewMysqlClient("","","","","","")
+	client = NewClient()
 )
+
+func NewClient() Client{
+	var client Client
+	return client
+}
 
 func GetClient() Client {
 	return client

@@ -4,15 +4,13 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewMysqlClient(dbType, user, password, host, dbname,table string) Client {
+func NewMysqlClient() *MysqlClient {
 	var client *MysqlClient
-	client.boot(dbType, user, password, host, dbname)
-	client.SetTable(table)
 	return client
 }
 
 type MysqlClient struct {
-	db    gorm.DB
+	db    *gorm.DB
 	table string
 }
 
