@@ -5,6 +5,12 @@ import (
 )
 
 func InitClient() {
-	client := user.NewMysqlClient()
+	dbType := ""
+	dbuser := ""
+	password := ""
+	host := "127.0.0.1:3306"
+	dbname := ""
+	table := "user"
+	client := user.NewMysqlClient(dbType, dbuser, password, host, dbname,table)
 	user.SetClient(client)
 }
