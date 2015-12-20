@@ -2,21 +2,25 @@ package main
 
 import (
 	"github.com/orvice/shadowsocks-go/mu/user"
-	log "github.com/Sirupsen/logrus"
+	"github.com/orvice/shadowsocks-go/mu/mysql"
 )
 
-func InitClient() {
+var Client user.Client
+
+func InitMySqlClient()  error {
+	client := new(mysql.Client)
 	dbType := "mysql"
 	dbuser := "sspanel"
 	password := "sspanel"
-	host := "127.0.0.1:3306"
+	host := "localhost:3306"
 	dbname := "sspanel"
 	table := "user"
-	client := user.NewMysqlClient()
+
 	err := client.Boot(dbType, dbuser, password, host, dbname)
 	if err != nil {
-		log.Panic(err)
+		return  err
 	}
 	client.SetTable(table)
-	user.SetClient(client)
+	Client = client
+	return nil
 }
