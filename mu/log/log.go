@@ -7,4 +7,3 @@ import (
 var (
 	Log = logrus.New()
 )
-

@@ -29,14 +29,14 @@ func boot() {
 	// log.SetOutput(os.Stdout)
 
 	err = InitMySqlClient()
-	if err != nil{
+	if err != nil {
 		log.Log.Panic(err)
 	}
 	users, err := Client.GetUsers()
 	if err != nil {
 		log.Log.Panic(err)
 	}
-
+	log.Log.Info(len(users))
 	for _, user := range users {
 		log.Log.Info(user)
 		port := strconv.Itoa(user.GetPort())

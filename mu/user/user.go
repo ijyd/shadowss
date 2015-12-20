@@ -4,7 +4,7 @@ var (
 	client = NewClient()
 )
 
-func NewClient() Client{
+func NewClient() Client {
 	var client Client
 	return client
 }

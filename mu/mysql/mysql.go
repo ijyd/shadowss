@@ -2,6 +2,7 @@ package mysql
 
 import (
 	"github.com/jinzhu/gorm"
+	"github.com/orvice/shadowsocks-go/mu/log"
 	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
@@ -46,18 +47,25 @@ func (u *User) UpdatetTraffic() error {
 }
 
 func (c *Client) GetUsers() ([]user.User, error) {
+	log.Log.Info("get mysql users")
 	var datas []*User
 	rows, err := c.db.Model(User{}).Where("enable = ?", "1").Select("passwd, port, method").Rows()
 	if err != nil {
+		log.Log.Error(err)
 		var users []user.User
 		return users, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var data *User
-		rows.Scan(data.passwd, data.port, data.method)
-		datas = append(datas, data)
+		var data User
+		err := rows.Scan(&data.passwd, &data.port, &data.method)
+		if err != nil {
+			log.Log.Error(err)
+			continue
+		}
+		datas = append(datas, &data)
 	}
+	log.Log.Info(len(datas))
 	users := make([]user.User, len(datas))
 	for k, v := range datas {
 		users[k] = v
