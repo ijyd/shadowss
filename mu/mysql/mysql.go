@@ -1,8 +1,8 @@
 package mysql
 
 import (
-	"github.com/orvice/shadowsocks-go/mu/user"
 	"github.com/jinzhu/gorm"
+	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
 func NewClient() *Client {
@@ -19,6 +19,10 @@ type User struct {
 	port   int
 	passwd string
 	method string
+}
+
+func (c *Client) SetDb(db *gorm.DB) {
+	c.db = db
 }
 
 func (c User) TableName() string {
@@ -43,7 +47,7 @@ func (u *User) UpdatetTraffic() error {
 
 func (c *Client) GetUsers() ([]user.User, error) {
 	var datas []*User
-	rows, err := c.db.Model(User{}).Where("enable = ?", "1").Select("passwd, prot, method").Rows()
+	rows, err := c.db.Model(User{}).Where("enable = ?", "1").Select("passwd, port, method").Rows()
 	if err != nil {
 		var users []user.User
 		return users, err

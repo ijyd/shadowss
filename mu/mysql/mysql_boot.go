@@ -17,10 +17,11 @@ func genConnStr(user, password, host, dbname string) string {
 
 func (c *Client) Boot(dbType, user, password, host, dbname string) error {
 	var err error
-	*c.db, err = gorm.Open(dbType, genConnStr(user, password, host, dbname))
+	db, err := gorm.Open(dbType, genConnStr(user, password, host, dbname))
 	if err != nil {
 		return err
 	}
+	c.SetDb(&db)
 	c.db.DB()
 	return c.db.DB().Ping()
 }
