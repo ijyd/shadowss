@@ -1,5 +1,9 @@
 package user
 
+import (
+	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+)
+
 var (
 	client = NewClient()
 )
@@ -25,5 +29,6 @@ type User interface {
 	GetPort() int
 	GetPasswd() string
 	GetMethod() string
+	GetCipher() (*ss.Cipher,error)
 	UpdatetTraffic() error
 }

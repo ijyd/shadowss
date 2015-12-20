@@ -303,3 +303,34 @@ func unifyPortPassword(config *ss.Config) (err error) {
 	}
 	return
 }
+
+
+func runWithCustomMethod(port, password string,Cipher *ss.Cipher) {
+	ln, err := net.Listen("tcp", ":"+port)
+	if err != nil {
+		log.Printf("error listening port %v: %v\n", port, err)
+		os.Exit(1)
+	}
+	passwdManager.add(port, password, ln)
+	var cipher *ss.Cipher
+	log.Printf("server listening port %v ...\n", port)
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			// listener maybe closed to update password
+			debug.Printf("accept error: %v\n", err)
+			return
+		}
+		// Creating cipher upon first connection.
+		if cipher == nil {
+			log.Println("creating cipher for port:", port)
+			cipher, err = ss.NewCipher(config.Method, password)
+			if err != nil {
+				log.Printf("Error generating cipher for port: %s %v\n", port, err)
+				conn.Close()
+				continue
+			}
+		}
+		go handleConnection(ss.NewConn(conn, Cipher))
+	}
+}

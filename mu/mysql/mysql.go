@@ -4,6 +4,7 @@ import (
 	"github.com/jinzhu/gorm"
 	"github.com/orvice/shadowsocks-go/mu/log"
 	"github.com/orvice/shadowsocks-go/mu/user"
+	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
 func NewClient() *Client {
@@ -40,6 +41,10 @@ func (u *User) GetPasswd() string {
 
 func (u *User) GetMethod() string {
 	return u.method
+}
+
+func (u *User) GetCipher() (*ss.Cipher,error){
+	return ss.NewCipher(u.method,u.passwd)
 }
 
 func (u *User) UpdatetTraffic() error {

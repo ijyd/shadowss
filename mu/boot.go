@@ -5,7 +5,7 @@ import (
 	//"errors"
 	// "flag"
 	// "fmt"
-	// "github.com/orvice/shadowsocks-go/mu/user"
+	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	//"io"
 	//"net"
@@ -16,8 +16,8 @@ import (
 	//"strconv"
 	//"sync"
 	//"syscall"
+	"fmt"
 	"strconv"
-	"time"
 )
 
 var configFile string
@@ -37,14 +37,21 @@ func boot() {
 		log.Log.Panic(err)
 	}
 	log.Log.Info(len(users))
+	bootUsers(users)
+	waitSignal()
+}
+
+func bootUsers(users []user.User) {
 	for _, user := range users {
 		log.Log.Info(user)
 		port := strconv.Itoa(user.GetPort())
 		password := user.GetPasswd()
 		log.Log.Info(port)
-		go run(port, password)
-		time.Sleep(30)
+		cipher, err := user.GetCipher()
+		if err != nil {
+			log.Log.Error(fmt.Sprintf("error on boot port %d,skip.", user.GetPort()), err)
+			continue
+		}
+		go runWithCustomMethod(port, password, cipher)
 	}
-
-	// waitSignal()
 }
