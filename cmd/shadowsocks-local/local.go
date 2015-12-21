@@ -170,8 +170,12 @@ func parseServerConfig(config *ss.Config) {
 	}
 
 	if len(config.ServerPassword) == 0 {
+		method := config.Method
+		if config.Auth {
+			method += "-ota"
+		}
 		// only one encryption table
-		cipher, err := ss.NewCipher(config.Method, config.Password)
+		cipher, err := ss.NewCipher(method, config.Password)
 		if err != nil {
 			log.Fatal("Failed generating ciphers:", err)
 		}
@@ -208,14 +212,17 @@ func parseServerConfig(config *ss.Config) {
 			if !hasPort(server) {
 				log.Fatalf("no port for server %s\n", server)
 			}
-			cipher, ok := cipherCache[passwd]
+			// Using "|" as delimiter is safe here, since no encryption
+			// method contains it in the name.
+			cacheKey := encmethod + "|" + passwd
+			cipher, ok := cipherCache[cacheKey]
 			if !ok {
 				var err error
 				cipher, err = ss.NewCipher(encmethod, passwd)
 				if err != nil {
 					log.Fatal("Failed generating ciphers:", err)
 				}
-				cipherCache[passwd] = cipher
+				cipherCache[cacheKey] = cipher
 			}
 			servers.srvCipher[i] = &ServerCipher{server, cipher}
 			i++
