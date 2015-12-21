@@ -43,8 +43,8 @@ func (u *User) GetMethod() string {
 	return u.method
 }
 
-func (u *User) GetCipher() (*ss.Cipher,error){
-	return ss.NewCipher(u.method,u.passwd)
+func (u *User) GetCipher() (*ss.Cipher, error) {
+	return ss.NewCipher(u.method, u.passwd)
 }
 
 func (u *User) UpdatetTraffic() error {

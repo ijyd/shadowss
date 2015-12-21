@@ -1,20 +1,20 @@
 package main
 
 import (
-	"gopkg.in/redis.v3"
+	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 	"github.com/orvice/shadowsocks-go/mu/log"
+	"gopkg.in/redis.v3"
 )
 
 func InitRedis() error {
 	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "", // no password set
-		DB:       0,  // use default DB
+		Addr:     muconfig.Conf.Redis.Host,
+		Password: muconfig.Conf.Redis.Pass, // no password set
+		DB:       muconfig.Conf.Redis.Db,   // use default DB
 	})
 
 	pong, err := client.Ping().Result()
-	if err != nil{
-		log.Log.Error("init redis failed: ",err)
+	if err != nil {
 		return err
 	}
 	log.Log.Info(pong)

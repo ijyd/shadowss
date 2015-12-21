@@ -304,8 +304,7 @@ func unifyPortPassword(config *ss.Config) (err error) {
 	return
 }
 
-
-func runWithCustomMethod(port, password string,Cipher *ss.Cipher) {
+func runWithCustomMethod(port, password string, Cipher *ss.Cipher) {
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Printf("error listening port %v: %v\n", port, err)

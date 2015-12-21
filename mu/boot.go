@@ -17,6 +17,7 @@ import (
 	//"sync"
 	//"syscall"
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -30,17 +31,21 @@ func boot() {
 
 	err = InitMySqlClient()
 	if err != nil {
-		log.Log.Panic(err)
+		log.Log.Error(err)
+		os.Exit(0)
 	}
-	users, err := Client.GetUsers()
+	client := user.GetClient()
+	users, err := client.GetUsers()
 	if err != nil {
-		log.Log.Panic(err)
+		log.Log.Error(err)
+		os.Exit(0)
 	}
 	log.Log.Info(len(users))
 	bootUsers(users)
 	waitSignal()
 }
 
+// 第一次启动
 func bootUsers(users []user.User) {
 	for _, user := range users {
 		log.Log.Info(user)
@@ -54,4 +59,9 @@ func bootUsers(users []user.User) {
 		}
 		go runWithCustomMethod(port, password, cipher)
 	}
+}
+
+// check users
+func checkUsers(users []user.User) {
+
 }

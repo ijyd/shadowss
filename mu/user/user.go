@@ -29,6 +29,6 @@ type User interface {
 	GetPort() int
 	GetPasswd() string
 	GetMethod() string
-	GetCipher() (*ss.Cipher,error)
+	GetCipher() (*ss.Cipher, error)
 	UpdatetTraffic() error
 }
