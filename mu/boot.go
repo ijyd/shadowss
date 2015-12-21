@@ -16,7 +16,6 @@ import (
 	//"strconv"
 	//"sync"
 	//"syscall"
-	"fmt"
 	"os"
 	"strconv"
 )
@@ -49,15 +48,7 @@ func boot() {
 func bootUsers(users []user.User) {
 	for _, user := range users {
 		log.Log.Info(user)
-		port := strconv.Itoa(user.GetPort())
-		password := user.GetPasswd()
-		log.Log.Info(port)
-		cipher, err := user.GetCipher()
-		if err != nil {
-			log.Log.Error(fmt.Sprintf("error on boot port %d,skip.", user.GetPort()), err)
-			continue
-		}
-		go runWithCustomMethod(port, password, cipher)
+		go runWithCustomMethod(user)
 	}
 }
 

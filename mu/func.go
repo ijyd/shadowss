@@ -15,6 +15,7 @@ import (
 	"strconv"
 	"sync"
 	"syscall"
+	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
 var debug ss.DebugLog
@@ -304,14 +305,20 @@ func unifyPortPassword(config *ss.Config) (err error) {
 	return
 }
 
-func runWithCustomMethod(port, password string, Cipher *ss.Cipher) {
+func runWithCustomMethod(user user.User) {
+	// port, password string, Cipher *ss.Cipher
+	port := strconv.Itoa(user.GetPort())
+	password := user.GetPasswd()
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Printf("error listening port %v: %v\n", port, err)
 		os.Exit(1)
 	}
 	passwdManager.add(port, password, ln)
-	var cipher *ss.Cipher
+	cipher,err := user.GetCipher()
+	if err != nil{
+		return
+	}
 	log.Printf("server listening port %v ...\n", port)
 	for {
 		conn, err := ln.Accept()
@@ -323,13 +330,13 @@ func runWithCustomMethod(port, password string, Cipher *ss.Cipher) {
 		// Creating cipher upon first connection.
 		if cipher == nil {
 			log.Println("creating cipher for port:", port)
-			cipher, err = ss.NewCipher(config.Method, password)
+			cipher, err = ss.NewCipher(user.GetMethod(), password)
 			if err != nil {
 				log.Printf("Error generating cipher for port: %s %v\n", port, err)
 				conn.Close()
 				continue
 			}
 		}
-		go handleConnection(ss.NewConn(conn, Cipher))
+		go handleConnection(ss.NewConn(conn, cipher.Copy()))
 	}
 }
