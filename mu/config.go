@@ -12,14 +12,20 @@ func InitConfig() error {
 	}
 	mysql := new(muconfig.MySql)
 	redis := new(muconfig.Redis)
+	base := new(muconfig.Base)
 	if err := conf.Unmarshal(mysql); err != nil {
 		return err
 	}
 	if err := conf.Unmarshal(redis); err != nil {
 		return err
 	}
+
+	if err := conf.Unmarshal(base); err != nil {
+		return err
+	}
 	Log.Info(mysql, redis)
 	muconfig.Conf.SetMysql(mysql)
 	muconfig.Conf.SetRedis(redis)
+	muconfig.Conf.SetBase(base)
 	return nil
 }

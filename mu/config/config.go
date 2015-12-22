@@ -1,12 +1,15 @@
 package config
 
-import ()
+import (
+	"time"
+)
 
 var Conf = new(Config)
 
 type Config struct {
 	Mysql *MySql
 	Redis *Redis
+	Base  *Base
 }
 
 func GetConf() *Config {
@@ -19,6 +22,16 @@ func (c *Config) SetMysql(m *MySql) {
 
 func (c *Config) SetRedis(r *Redis) {
 	c.Redis = r
+}
+
+func (c *Config) SetBase(b *Base) {
+	c.Base = b
+}
+
+type Base struct {
+	N         float32       `goconf:"base:N"`
+	CheckTime time.Duration `goconf:"base:checktime"`
+	SyncTime  time.Duration `goconf:"base:synctime"`
 }
 
 type MySql struct {

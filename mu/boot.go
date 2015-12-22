@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"time"
+	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 )
 
 var configFile string
@@ -32,7 +33,7 @@ func boot() {
 	// clear storage
 	storage.ClearAll()
 	bootUsers(users)
-	time.Sleep(30 * time.Second)
+	time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 
 	go func() {
 		for {
@@ -44,7 +45,7 @@ func boot() {
 			}
 			checkUsers(users)
 			Log.Info("check finish...")
-			time.Sleep(30 * time.Second)
+			time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 			Log.Info("wake up...")
 		}
 	}()
