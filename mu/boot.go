@@ -31,7 +31,7 @@ func boot() {
 	}
 	Log.Info(len(users))
 	// clear storage
-	storage.ClearAll()
+	// storage.ClearAll()
 	bootUsers(users)
 	time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 
@@ -71,14 +71,14 @@ func checkUsers(users []user.User) {
 
 		isExists, err := storage.Exists(user)
 		if err != nil {
-			Log.Error(err)
+			Log.Error("check exists error: ",err)
 			continue
 		}
 		if !isExists && user.IsEnable() {
 			Log.Info("new user to run", user)
 			err := storage.StoreUser(user.GetUserInfo())
 			if err != nil {
-				Log.Error(err)
+				Log.Error("store  error: ",err)
 			}
 			go runWithCustomMethod(user)
 			continue
@@ -92,9 +92,14 @@ func checkUsers(users []user.User) {
 			}
 			continue
 		}
+
+		if !user.IsEnable() {
+			continue
+		}
+
 		sUser, err := storage.GetUserInfo(user)
 		if err != nil {
-			Log.Error(err)
+			Log.Error("get user error: ",err)
 			continue
 		}
 		if sUser.Passwd != user.GetPasswd() || sUser.Method != user.GetMethod() {

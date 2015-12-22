@@ -7,6 +7,10 @@ import (
 	"gopkg.in/redis.v3"
 )
 
+const (
+	DefaultExpireTime = 0
+)
+
 var Redis = new(RedisClient)
 
 type RedisClient struct {
@@ -32,7 +36,7 @@ func (r *RedisClient) StoreUser(user user.UserInfo) error {
 	if err != nil {
 		return err
 	}
-	err = r.client.Set(genUserInfoKey(user), data, 0).Err()
+	err = r.client.Set(genUserInfoKey(user), data, DefaultExpireTime).Err()
 	return err
 }
 
@@ -56,7 +60,7 @@ func (r *RedisClient) IncrSize(u user.User, size int) error {
 		return err
 	}
 	if !isExits {
-		return r.client.Set(key, size, 0).Err()
+		return r.client.Set(key, size, DefaultExpireTime).Err()
 	}
 	return r.client.IncrBy(key, int64(size)).Err()
 }
