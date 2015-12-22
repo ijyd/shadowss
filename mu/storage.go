@@ -14,4 +14,6 @@ type Storage interface {
 	GetUserInfo(user.User) (user.UserInfo, error)
 	StoreUser(user.UserInfo) error
 	Exists(user.User) (bool, error)
+	Del(user.User) error
+	ClearAll() error
 }

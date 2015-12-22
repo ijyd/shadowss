@@ -18,9 +18,13 @@ type Client struct {
 }
 
 type User struct {
-	port   int
-	passwd string
-	method string
+	port           int
+	passwd         string
+	method         string
+	enable         int
+	transferEnable int
+	u              int
+	d              int
 }
 
 func (c *Client) SetDb(db *gorm.DB) {
@@ -43,6 +47,16 @@ func (u *User) GetMethod() string {
 	return u.method
 }
 
+func (u *User) IsEnable() bool {
+	if u.enable == 0 {
+		return false
+	}
+	if u.u+u.d > u.transferEnable {
+		return false
+	}
+	return true
+}
+
 func (u *User) GetCipher() (*ss.Cipher, error) {
 	return ss.NewCipher(u.method, u.passwd)
 }
@@ -62,7 +76,7 @@ func (u *User) GetUserInfo() user.UserInfo {
 func (c *Client) GetUsers() ([]user.User, error) {
 	log.Log.Info("get mysql users")
 	var datas []*User
-	rows, err := c.db.Model(User{}).Where("enable = ?", "1").Select("passwd, port, method").Rows()
+	rows, err := c.db.Model(User{}).Select("passwd, port, method,enable,transfer_enable,u,d").Rows()
 	if err != nil {
 		log.Log.Error(err)
 		var users []user.User
@@ -71,7 +85,7 @@ func (c *Client) GetUsers() ([]user.User, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var data User
-		err := rows.Scan(&data.passwd, &data.port, &data.method)
+		err := rows.Scan(&data.passwd, &data.port, &data.method, &data.enable, &data.transferEnable, &data.u, &data.d)
 		if err != nil {
 			log.Log.Error(err)
 			continue

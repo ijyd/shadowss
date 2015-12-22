@@ -29,6 +29,8 @@ func boot() {
 		os.Exit(0)
 	}
 	Log.Info(len(users))
+	// clear storage
+	storage.ClearAll()
 	bootUsers(users)
 	time.Sleep(30 * time.Second)
 
@@ -73,7 +75,20 @@ func checkUsers(users []user.User) {
 		}
 		if !isExists {
 			Log.Info("new user to run", user)
+			err := storage.StoreUser(user.GetUserInfo())
+			if err != nil {
+				Log.Error(err)
+			}
 			go runWithCustomMethod(user)
+			continue
+		}
+		if !user.IsEnable() {
+			Log.Info("user would be disable,port:  ", user.GetPort())
+			passwdManager.del(strconv.Itoa(user.GetPort()))
+			err := storage.Del(user)
+			if err != nil {
+				Log.Error(err)
+			}
 			continue
 		}
 		sUser, err := storage.GetUserInfo(user)

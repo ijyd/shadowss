@@ -40,6 +40,14 @@ func (r *RedisClient) Exists(u user.User) (bool, error) {
 	return r.client.Exists(genUserInfoKey(u.GetUserInfo())).Result()
 }
 
+func (r *RedisClient) Del(u user.User) error {
+	return r.client.Del(genUserInfoKey(u.GetUserInfo())).Err()
+}
+
+func (r *RedisClient) ClearAll() error {
+	return r.client.FlushAll().Err()
+}
+
 func InitRedis() error {
 	client := redis.NewClient(&redis.Options{
 		Addr:     muconfig.Conf.Redis.Host,

@@ -305,7 +305,7 @@ func runWithCustomMethod(user user.User) {
 	password := user.GetPasswd()
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		Log.Printf("error listening port %v: %v\n", port, err)
+		Log.Error(fmt.Sprintf("error listening port %v: %v\n", port, err))
 		os.Exit(1)
 	}
 	passwdManager.add(port, password, ln)
@@ -313,20 +313,20 @@ func runWithCustomMethod(user user.User) {
 	if err != nil {
 		return
 	}
-	Log.Printf("server listening port %v ...\n", port)
+	Log.Info(fmt.Sprintf("server listening port %v ...\n", port))
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
 			// listener maybe closed to update password
-			Log.Debug("accept error: %v\n", err)
+			Log.Debug(fmt.Sprintf("accept error: %v\n", err))
 			return
 		}
 		// Creating cipher upon first connection.
 		if cipher == nil {
-			Log.Println("creating cipher for port:", port)
+			Log.Debug("creating cipher for port:", port)
 			cipher, err = ss.NewCipher(user.GetMethod(), password)
 			if err != nil {
-				Log.Printf("Error generating cipher for port: %s %v\n", port, err)
+				Log.Error(fmt.Sprintf("Error generating cipher for port: %s %v\n", port, err))
 				conn.Close()
 				continue
 			}
