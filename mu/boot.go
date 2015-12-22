@@ -42,4 +42,3 @@ func bootUsers(users []user.User) {
 func checkUsers(users []user.User) {
 
 }
-

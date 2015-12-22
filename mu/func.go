@@ -11,13 +11,13 @@ import (
 	"os"
 	"os/signal"
 	// "runtime"
+	"github.com/orvice/shadowsocks-go/mu/user"
 	"strconv"
 	"sync"
 	"syscall"
-	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
-var debug ss.DebugLog
+var ssdebug ss.DebugLog
 
 func getRequest(conn *ss.Conn) (host string, extra []byte, err error) {
 	const (
@@ -106,7 +106,7 @@ func handleConnection(conn *ss.Conn) {
 	Log.Debug(fmt.Sprintf("new client %s->%s\n", conn.RemoteAddr().String(), conn.LocalAddr()))
 	closed := false
 	defer func() {
-		if debug {
+		if ssdebug {
 			Log.Debug(fmt.Sprintf("closed pipe %s<->%s\n", conn.RemoteAddr(), host))
 		}
 		connCnt--
@@ -262,7 +262,7 @@ func run(port, password string) {
 		conn, err := ln.Accept()
 		if err != nil {
 			// listener maybe closed to update password
-			debug.Printf("accept error: %v\n", err)
+			Log.Debug("accept error: %v\n", err)
 			return
 		}
 		// Creating cipher upon first connection.
@@ -309,8 +309,8 @@ func runWithCustomMethod(user user.User) {
 		os.Exit(1)
 	}
 	passwdManager.add(port, password, ln)
-	cipher,err := user.GetCipher()
-	if err != nil{
+	cipher, err := user.GetCipher()
+	if err != nil {
 		return
 	}
 	Log.Printf("server listening port %v ...\n", port)
@@ -318,7 +318,7 @@ func runWithCustomMethod(user user.User) {
 		conn, err := ln.Accept()
 		if err != nil {
 			// listener maybe closed to update password
-			debug.Printf("accept error: %v\n", err)
+			Log.Debug("accept error: %v\n", err)
 			return
 		}
 		// Creating cipher upon first connection.
