@@ -83,7 +83,7 @@ func checkUsers(users []user.User) {
 			go runWithCustomMethod(user)
 			continue
 		}
-		if !user.IsEnable() {
+		if !user.IsEnable() && isExists {
 			Log.Info("user would be disable,port:  ", user.GetPort())
 			passwdManager.del(strconv.Itoa(user.GetPort()))
 			err := storage.Del(user)

@@ -2,16 +2,13 @@ package main
 
 import (
 	"encoding/binary"
-	"errors"
-	// "flag"
 	"fmt"
+	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"io"
 	"net"
 	"os"
 	"os/signal"
-	// "runtime"
-	"github.com/orvice/shadowsocks-go/mu/user"
 	"strconv"
 	"sync"
 	"syscall"
@@ -90,7 +87,7 @@ const logCntDelta = 100
 var connCnt int
 var nextLogConnCnt int = logCntDelta
 
-func handleConnection(conn *ss.Conn) {
+func handleConnection(user user.User, conn *ss.Conn) {
 	var host string
 	connCnt++ // this maybe not accurate, but should be enough
 	if connCnt-nextLogConnCnt >= 0 {
@@ -140,8 +137,14 @@ func handleConnection(conn *ss.Conn) {
 	// write extra bytes read from
 	if extra != nil {
 		// debug.Println("getRequest read extra data, writing to remote, len", len(extra))
-		if _, err = remote.Write(extra); err != nil {
+		size, err := remote.Write(extra)
+		if err != nil {
 			Log.Error("write request extra error:", err)
+			return
+		}
+		err = storage.IncrSize(user, size)
+		if err != nil {
+			Log.Error(err)
 			return
 		}
 	}
@@ -186,117 +189,19 @@ func (pm *PasswdManager) del(port string) {
 	pm.Unlock()
 }
 
-// Update port password would first close a port and restart listening on that
-// port. A different approach would be directly change the password used by
-// that port, but that requires **sharing** password between the port listener
-// and password manager.
-func (pm *PasswdManager) updatePortPasswd(port, password string) {
-	pl, ok := pm.get(port)
-	if !ok {
-		Log.Info("new port %s added\n", port)
-	} else {
-		if pl.password == password {
-			return
-		}
-		Log.Info("closing port %s to update password\n", port)
-		pl.listener.Close()
-	}
-	// run will add the new port listener to passwdManager.
-	// So there maybe concurrent access to passwdManager and we need lock to protect it.
-	go run(port, password)
-}
-
 var passwdManager = PasswdManager{portListener: map[string]*PortListener{}}
-
-func updatePasswd() {
-	Log.Info("updating password")
-	newconfig, err := ss.ParseConfig(configFile)
-	if err != nil {
-		Log.Error("error parsing config file %s to update password: %v\n", configFile, err)
-		return
-	}
-	oldconfig := config
-	config = newconfig
-
-	if err = unifyPortPassword(config); err != nil {
-		return
-	}
-	for port, passwd := range config.PortPassword {
-		passwdManager.updatePortPasswd(port, passwd)
-		if oldconfig.PortPassword != nil {
-			delete(oldconfig.PortPassword, port)
-		}
-	}
-	// port password still left in the old config should be closed
-	for port, _ := range oldconfig.PortPassword {
-		Log.Printf("closing port %s as it's deleted\n", port)
-		passwdManager.del(port)
-	}
-	Log.Println("password updated")
-}
 
 func waitSignal() {
 	var sigChan = make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGHUP)
 	for sig := range sigChan {
 		if sig == syscall.SIGHUP {
-			updatePasswd()
 		} else {
 			// is this going to happen?
 			Log.Printf("caught signal %v, exit", sig)
 			os.Exit(0)
 		}
 	}
-}
-
-func run(port, password string) {
-	ln, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		Log.Printf("error listening port %v: %v\n", port, err)
-		os.Exit(1)
-	}
-	passwdManager.add(port, password, ln)
-	var cipher *ss.Cipher
-	Log.Printf("server listening port %v ...\n", port)
-	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			// listener maybe closed to update password
-			Log.Debug("accept error: %v\n", err)
-			return
-		}
-		// Creating cipher upon first connection.
-		if cipher == nil {
-			Log.Println("creating cipher for port:", port)
-			cipher, err = ss.NewCipher(config.Method, password)
-			if err != nil {
-				Log.Printf("Error generating cipher for port: %s %v\n", port, err)
-				conn.Close()
-				continue
-			}
-		}
-		go handleConnection(ss.NewConn(conn, cipher.Copy()))
-	}
-}
-
-func enoughOptions(config *ss.Config) bool {
-	return config.ServerPort != 0 && config.Password != ""
-}
-
-func unifyPortPassword(config *ss.Config) (err error) {
-	if len(config.PortPassword) == 0 { // this handles both nil PortPassword and empty one
-		if !enoughOptions(config) {
-			fmt.Fprintln(os.Stderr, "must specify both port and password")
-			return errors.New("not enough options")
-		}
-		port := strconv.Itoa(config.ServerPort)
-		config.PortPassword = map[string]string{port: config.Password}
-	} else {
-		if config.Password != "" || config.ServerPort != 0 {
-			fmt.Fprintln(os.Stderr, "given port_password, ignore server_port and password option")
-		}
-	}
-	return
 }
 
 func runWithCustomMethod(user user.User) {
@@ -331,6 +236,6 @@ func runWithCustomMethod(user user.User) {
 				continue
 			}
 		}
-		go handleConnection(ss.NewConn(conn, cipher.Copy()))
+		go handleConnection(user, ss.NewConn(conn, cipher.Copy()))
 	}
 }

@@ -16,4 +16,5 @@ type Storage interface {
 	Exists(user.User) (bool, error)
 	Del(user.User) error
 	ClearAll() error
+	IncrSize(u user.User, size int) error
 }
