@@ -2,7 +2,6 @@ package main
 
 import (
 	muconfig "github.com/orvice/shadowsocks-go/mu/config"
-	"github.com/orvice/shadowsocks-go/mu/log"
 	"gopkg.in/redis.v3"
 )
 
@@ -17,6 +16,6 @@ func InitRedis() error {
 	if err != nil {
 		return err
 	}
-	log.Log.Info(pong)
+	Log.Info(pong)
 	return nil
 }

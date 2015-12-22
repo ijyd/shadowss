@@ -1,17 +1,32 @@
 package main
 
 import (
-	log "github.com/Sirupsen/logrus"
+	"github.com/Sirupsen/logrus"
+	"flag"
 	"os"
+	"io"
 )
 
-func init() {
-	// Log as JSON instead of the default ASCII formatter.
-	log.SetFormatter(&log.JSONFormatter{})
+var (
+	Log = logrus.New()
+	logPath = flag.String("log_path", "./ss.log", "log file path")
+	debug   = flag.Bool("debug", true , "debug")
+)
 
-	// Output to stderr instead of stdout, could also be a file.
-	log.SetOutput(os.Stderr)
+func init(){
+	logrus.SetLevel(logrus.DebugLevel)
 
-	// Only log the warning severity or above.
-	log.SetLevel(log.WarnLevel)
+	Log.Formatter = new(logrus.JSONFormatter)
+	if *logPath != "" {
+		f, err := os.OpenFile(*logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+		if err != nil {
+			panic(err)
+		}
+		writer := io.MultiWriter(os.Stdout, f)
+		Log.Out = writer
+	}
+	if *debug {
+		Log.Level = logrus.DebugLevel
+	}
+
 }

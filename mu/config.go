@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/Terry-Mao/goconf"
 	muconfig "github.com/orvice/shadowsocks-go/mu/config"
-	"github.com/orvice/shadowsocks-go/mu/log"
 )
 
 func InitConfig() error {
@@ -19,7 +18,7 @@ func InitConfig() error {
 	if err := conf.Unmarshal(redis); err != nil {
 		return err
 	}
-	log.Log.Info(mysql, redis)
+	Log.Info(mysql, redis)
 	muconfig.Conf.SetMysql(mysql)
 	muconfig.Conf.SetRedis(redis)
 	return nil

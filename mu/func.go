@@ -7,7 +7,6 @@ import (
 	"fmt"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"io"
-	"log"
 	"net"
 	"os"
 	"os/signal"
@@ -93,25 +92,22 @@ var nextLogConnCnt int = logCntDelta
 
 func handleConnection(conn *ss.Conn) {
 	var host string
-
 	connCnt++ // this maybe not accurate, but should be enough
 	if connCnt-nextLogConnCnt >= 0 {
 		// XXX There's no xadd in the atomic package, so it's difficult to log
 		// the message only once with low cost. Also note nextLogConnCnt maybe
 		// added twice for current peak connection number level.
-		log.Printf("Number of client connections reaches %d\n", nextLogConnCnt)
+		Log.Debug("Number of client connections reaches %d\n", nextLogConnCnt)
 		nextLogConnCnt += logCntDelta
 	}
 
 	// function arguments are always evaluated, so surround debug statement
 	// with if statement
-	if debug {
-		debug.Printf("new client %s->%s\n", conn.RemoteAddr().String(), conn.LocalAddr())
-	}
+	Log.Debug(fmt.Sprintf("new client %s->%s\n", conn.RemoteAddr().String(), conn.LocalAddr()))
 	closed := false
 	defer func() {
 		if debug {
-			debug.Printf("closed pipe %s<->%s\n", conn.RemoteAddr(), host)
+			Log.Debug(fmt.Sprintf("closed pipe %s<->%s\n", conn.RemoteAddr(), host))
 		}
 		connCnt--
 		if !closed {
@@ -121,18 +117,18 @@ func handleConnection(conn *ss.Conn) {
 
 	host, extra, err := getRequest(conn)
 	if err != nil {
-		log.Println("error getting request", conn.RemoteAddr(), conn.LocalAddr(), err)
+		Log.Error("error getting request", conn.RemoteAddr(), conn.LocalAddr(), err)
 		return
 	}
-	debug.Println("connecting", host)
+	Log.Info("connecting", host)
 	remote, err := net.Dial("tcp", host)
 	if err != nil {
 		if ne, ok := err.(*net.OpError); ok && (ne.Err == syscall.EMFILE || ne.Err == syscall.ENFILE) {
 			// log too many open file error
 			// EMFILE is process reaches open file limits, ENFILE is system limit
-			log.Println("dial error:", err)
+			Log.Error("dial error:", err)
 		} else {
-			log.Println("error connecting to:", host, err)
+			Log.Info("error connecting to:", host, err)
 		}
 		return
 	}
@@ -145,13 +141,11 @@ func handleConnection(conn *ss.Conn) {
 	if extra != nil {
 		// debug.Println("getRequest read extra data, writing to remote, len", len(extra))
 		if _, err = remote.Write(extra); err != nil {
-			debug.Println("write request extra error:", err)
+			Log.Error("write request extra error:", err)
 			return
 		}
 	}
-	if debug {
-		debug.Printf("piping %s<->%s", conn.RemoteAddr(), host)
-	}
+	Log.Debug(fmt.Sprintf("piping %s<->%s", conn.RemoteAddr(), host))
 	go ss.PipeThenClose(conn, remote)
 	ss.PipeThenClose(remote, conn)
 	closed = true
@@ -199,12 +193,12 @@ func (pm *PasswdManager) del(port string) {
 func (pm *PasswdManager) updatePortPasswd(port, password string) {
 	pl, ok := pm.get(port)
 	if !ok {
-		log.Printf("new port %s added\n", port)
+		Log.Info("new port %s added\n", port)
 	} else {
 		if pl.password == password {
 			return
 		}
-		log.Printf("closing port %s to update password\n", port)
+		Log.Info("closing port %s to update password\n", port)
 		pl.listener.Close()
 	}
 	// run will add the new port listener to passwdManager.
@@ -215,10 +209,10 @@ func (pm *PasswdManager) updatePortPasswd(port, password string) {
 var passwdManager = PasswdManager{portListener: map[string]*PortListener{}}
 
 func updatePasswd() {
-	log.Println("updating password")
+	Log.Info("updating password")
 	newconfig, err := ss.ParseConfig(configFile)
 	if err != nil {
-		log.Printf("error parsing config file %s to update password: %v\n", configFile, err)
+		Log.Error("error parsing config file %s to update password: %v\n", configFile, err)
 		return
 	}
 	oldconfig := config
@@ -235,10 +229,10 @@ func updatePasswd() {
 	}
 	// port password still left in the old config should be closed
 	for port, _ := range oldconfig.PortPassword {
-		log.Printf("closing port %s as it's deleted\n", port)
+		Log.Printf("closing port %s as it's deleted\n", port)
 		passwdManager.del(port)
 	}
-	log.Println("password updated")
+	Log.Println("password updated")
 }
 
 func waitSignal() {
@@ -249,7 +243,7 @@ func waitSignal() {
 			updatePasswd()
 		} else {
 			// is this going to happen?
-			log.Printf("caught signal %v, exit", sig)
+			Log.Printf("caught signal %v, exit", sig)
 			os.Exit(0)
 		}
 	}
@@ -258,12 +252,12 @@ func waitSignal() {
 func run(port, password string) {
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Printf("error listening port %v: %v\n", port, err)
+		Log.Printf("error listening port %v: %v\n", port, err)
 		os.Exit(1)
 	}
 	passwdManager.add(port, password, ln)
 	var cipher *ss.Cipher
-	log.Printf("server listening port %v ...\n", port)
+	Log.Printf("server listening port %v ...\n", port)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -273,10 +267,10 @@ func run(port, password string) {
 		}
 		// Creating cipher upon first connection.
 		if cipher == nil {
-			log.Println("creating cipher for port:", port)
+			Log.Println("creating cipher for port:", port)
 			cipher, err = ss.NewCipher(config.Method, password)
 			if err != nil {
-				log.Printf("Error generating cipher for port: %s %v\n", port, err)
+				Log.Printf("Error generating cipher for port: %s %v\n", port, err)
 				conn.Close()
 				continue
 			}
@@ -311,7 +305,7 @@ func runWithCustomMethod(user user.User) {
 	password := user.GetPasswd()
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
-		log.Printf("error listening port %v: %v\n", port, err)
+		Log.Printf("error listening port %v: %v\n", port, err)
 		os.Exit(1)
 	}
 	passwdManager.add(port, password, ln)
@@ -319,7 +313,7 @@ func runWithCustomMethod(user user.User) {
 	if err != nil{
 		return
 	}
-	log.Printf("server listening port %v ...\n", port)
+	Log.Printf("server listening port %v ...\n", port)
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
@@ -329,10 +323,10 @@ func runWithCustomMethod(user user.User) {
 		}
 		// Creating cipher upon first connection.
 		if cipher == nil {
-			log.Println("creating cipher for port:", port)
+			Log.Println("creating cipher for port:", port)
 			cipher, err = ss.NewCipher(user.GetMethod(), password)
 			if err != nil {
-				log.Printf("Error generating cipher for port: %s %v\n", port, err)
+				Log.Printf("Error generating cipher for port: %s %v\n", port, err)
 				conn.Close()
 				continue
 			}
