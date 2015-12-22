@@ -7,8 +7,7 @@ install:
   - go get golang.org/x/crypto/salsa20
   - go get github.com/codahale/chacha20
   - go get github.com/shadowsocks/shadowsocks-go/shadowsocks
-  - go install ./cmd/shadowsocks-local
-  - go install ./cmd/shadowsocks-server
+  - go install ./mu
 script:
   - PATH=$PATH:$HOME/gopath/bin bash -x ./script/test.sh
 sudo: false
