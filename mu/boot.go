@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
+	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"os"
 	"strconv"
 	"time"
-	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 )
 
 var configFile string
@@ -74,7 +74,7 @@ func checkUsers(users []user.User) {
 			Log.Error(err)
 			continue
 		}
-		if !isExists {
+		if !isExists && user.IsEnable() {
 			Log.Info("new user to run", user)
 			err := storage.StoreUser(user.GetUserInfo())
 			if err != nil {
