@@ -1,6 +1,6 @@
 # shadowsocks-go
 
-Current version: 1.1.4 [![Build Status](https://travis-ci.org/shadowsocks/shadowsocks-go.png?branch=master)](https://travis-ci.org/shadowsocks/shadowsocks-go)
+Current version: 1.1.4 [![Build Status](https://travis-ci.org/orvice/shadowsocks-go.png?branch=mu)](https://travis-ci.org/orvice/shadowsocks-go)
 
 shadowsocks-go is a lightweight tunnel proxy which can help you get through firewalls. It is a port of [shadowsocks](https://github.com/clowwindy/shadowsocks).
 
