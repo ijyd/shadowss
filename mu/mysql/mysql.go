@@ -51,6 +51,14 @@ func (u *User) UpdatetTraffic() error {
 	return nil
 }
 
+func (u *User) GetUserInfo() user.UserInfo {
+	return user.UserInfo{
+		Passwd: u.passwd,
+		Port:   u.port,
+		Method: u.method,
+	}
+}
+
 func (c *Client) GetUsers() ([]user.User, error) {
 	log.Log.Info("get mysql users")
 	var datas []*User

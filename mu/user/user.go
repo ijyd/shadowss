@@ -31,4 +31,11 @@ type User interface {
 	GetMethod() string
 	GetCipher() (*ss.Cipher, error)
 	UpdatetTraffic() error
+	GetUserInfo() UserInfo
+}
+
+type UserInfo struct {
+	Passwd string
+	Port   int
+	Method string
 }
