@@ -347,14 +347,14 @@ func SetReadTimeout(c net.Conn) {
 
 func showConn(raw_req_header, raw_res_header []byte, host string, user user.User, size int, is_http bool) {
 	if size == 0 {
-		Log.Error(fmt.Sprintf("Error: user %s request %s cancel", user.GetPort(), host))
+		Log.Error(fmt.Sprintf("Error: user-port %d request %s cancel", user.GetPort(), host))
 		return
 	}
 	if is_http {
 		req, _ := http.ReadRequest(bufio.NewReader(bytes.NewReader(raw_req_header)))
 		if req == nil {
 			lines := bytes.SplitN(raw_req_header, []byte(" "), 2)
-			Log.Debug(fmt.Sprintf("%s http://%s/ \"Unknow\" HTTP/1.1 unknow %s %d\n", lines[0], host, user.GetPort(), size))
+			Log.Debug(fmt.Sprintf("%s http://%s/ \"Unknow\" HTTP/1.1 unknow user-port: %d size: %d\n", lines[0], host, user.GetPort(), size))
 			return
 		}
 		res, _ := http.ReadResponse(bufio.NewReader(bytes.NewReader(raw_res_header)), req)
@@ -362,9 +362,9 @@ func showConn(raw_req_header, raw_res_header []byte, host string, user user.User
 		if res != nil {
 			statusCode = res.StatusCode
 		}
-		Log.Debug(fmt.Sprintf("%s http://%s%s \"%s\" %s %d %s %d\n", req.Method, req.Host, req.URL.String(), req.Header.Get("user-agent"), req.Proto, statusCode, user.GetPort(), size))
+		Log.Debug(fmt.Sprintf("%s http://%s%s \"%s\" %s %d  user-port: %d  size: %d\n", req.Method, req.Host, req.URL.String(), req.Header.Get("user-agent"), req.Proto, statusCode, user.GetPort(), size))
 	} else {
-		Log.Debug(fmt.Sprintf("CONNECT %s \"NONE\" NONE NONE %s %d\n", host, user.GetPort(), size))
+		Log.Debug(fmt.Sprintf("CONNECT %s \"NONE\" NONE NONE user-port: %d  size: %d\n", host, user.GetPort(), size))
 	}
 
 }
