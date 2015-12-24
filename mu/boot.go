@@ -71,14 +71,14 @@ func checkUsers(users []user.User) {
 
 		isExists, err := storage.Exists(user)
 		if err != nil {
-			Log.Error("check exists error: ",err)
+			Log.Error("check exists error: ", err)
 			continue
 		}
 		if !isExists && user.IsEnable() {
 			Log.Info("new user to run", user)
 			err := storage.StoreUser(user.GetUserInfo())
 			if err != nil {
-				Log.Error("store  error: ",err)
+				Log.Error("store  error: ", err)
 			}
 			go runWithCustomMethod(user)
 			continue
@@ -99,7 +99,7 @@ func checkUsers(users []user.User) {
 
 		sUser, err := storage.GetUserInfo(user)
 		if err != nil {
-			Log.Error("get user error: ",err)
+			Log.Error("get user error: ", err)
 			continue
 		}
 		if sUser.Passwd != user.GetPasswd() || sUser.Method != user.GetMethod() {
