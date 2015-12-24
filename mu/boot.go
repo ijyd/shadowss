@@ -46,7 +46,20 @@ func boot() {
 			checkUsers(users)
 			Log.Info("check finish...")
 			time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
-			Log.Info("wake up...")
+		}
+	}()
+
+	go func() {
+		for {
+			// check users
+			users, err = client.GetUsers()
+			if err != nil {
+				Log.Error(err)
+				// os.Exit(0)
+			}
+			syncUsers(users)
+			Log.Info("sync finish...")
+			time.Sleep(muconfig.Conf.Base.SyncTime * time.Second)
 		}
 	}()
 	waitSignal()
@@ -106,6 +119,28 @@ func checkUsers(users []user.User) {
 			Log.Info(fmt.Sprintf("user port [%v] passwd or method change ,restart user...", user.GetPort()))
 			passwdManager.del(strconv.Itoa(user.GetPort()))
 			go runWithCustomMethod(user)
+		}
+	}
+}
+
+// sync users traffic
+func syncUsers(users []user.User) {
+	for _,user := range users {
+		size,err := storage.GetSize(user)
+		if err != nil{
+			Log.Error(fmt.Sprintf("get size fail for port:%d",user.GetPort()),err)
+			continue
+		}
+		err = user.UpdatetTraffic(int(size))
+		if err != nil{
+			Log.Error(fmt.Sprintf("update size fail for port:%d",user.GetPort()),err)
+			continue
+		}
+		Log.Info(fmt.Sprintf("success update traffic usage for port %d,total update size %d",user.GetPort(),size))
+		err = storage.SetSize(user,0)
+		if err != nil{
+			Log.Error(fmt.Sprintf("set storage size to 0 fail for port:%d",user.GetPort()),err)
+			continue
 		}
 	}
 }

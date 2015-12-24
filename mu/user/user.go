@@ -31,7 +31,7 @@ type User interface {
 	GetMethod() string
 	IsEnable() bool
 	GetCipher() (*ss.Cipher, error)
-	UpdatetTraffic() error
+	UpdatetTraffic(storageSize int) error
 	GetUserInfo() UserInfo
 }
 

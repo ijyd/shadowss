@@ -7,6 +7,12 @@ import (
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
+var client *Client
+
+func SetClient(c *Client){
+	client = c
+}
+
 func NewClient() *Client {
 	mclient := new(Client)
 	return mclient
@@ -61,8 +67,8 @@ func (u *User) GetCipher() (*ss.Cipher, error) {
 	return ss.NewCipher(u.method, u.passwd)
 }
 
-func (u *User) UpdatetTraffic() error {
-	return nil
+func (u *User) UpdatetTraffic(storageSize int) error {
+	return client.db.Model(u).Update("d", gorm.Expr("d  + ?", storageSize)).Error
 }
 
 func (u *User) GetUserInfo() user.UserInfo {

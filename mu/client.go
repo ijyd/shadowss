@@ -24,6 +24,7 @@ func InitMySqlClient() error {
 	}
 	client.SetTable(table)
 	Client = client
+	mysql.SetClient(client)
 	user.SetClient(client)
 	return nil
 }
