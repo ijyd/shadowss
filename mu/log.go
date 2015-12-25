@@ -10,7 +10,7 @@ import (
 var (
 	Log     = logrus.New()
 	logPath = flag.String("log_path", "./ss.log", "log file path")
-	debug   = flag.Bool("debug", true, "debug")
+	debug   = flag.Bool("debug", false, "debug")
 )
 
 func init() {
