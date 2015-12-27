@@ -24,6 +24,7 @@ type Client struct {
 }
 
 type User struct {
+	id             int
 	port           int
 	passwd         string
 	method         string
@@ -68,7 +69,7 @@ func (u *User) GetCipher() (*ss.Cipher, error) {
 }
 
 func (u *User) UpdatetTraffic(storageSize int) error {
-	return client.db.Model(u).Update("d", gorm.Expr("d  + ?", storageSize)).Error
+	return client.db.Model(u).UpdateColumn("d", gorm.Expr("d  + ?", storageSize)).Error
 }
 
 func (u *User) GetUserInfo() user.UserInfo {
@@ -82,7 +83,7 @@ func (u *User) GetUserInfo() user.UserInfo {
 func (c *Client) GetUsers() ([]user.User, error) {
 	log.Log.Info("get mysql users")
 	var datas []*User
-	rows, err := c.db.Model(User{}).Select("passwd, port, method,enable,transfer_enable,u,d").Rows()
+	rows, err := c.db.Model(User{}).Select("id, passwd, port, method,enable,transfer_enable,u,d").Rows()
 	if err != nil {
 		log.Log.Error(err)
 		var users []user.User
@@ -91,7 +92,7 @@ func (c *Client) GetUsers() ([]user.User, error) {
 	defer rows.Close()
 	for rows.Next() {
 		var data User
-		err := rows.Scan(&data.passwd, &data.port, &data.method, &data.enable, &data.transferEnable, &data.u, &data.d)
+		err := rows.Scan(&data.id, &data.passwd, &data.port, &data.method, &data.enable, &data.transferEnable, &data.u, &data.d)
 		if err != nil {
 			log.Log.Error(err)
 			continue
