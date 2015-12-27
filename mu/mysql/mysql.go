@@ -9,7 +9,7 @@ import (
 
 var client *Client
 
-func SetClient(c *Client){
+func SetClient(c *Client) {
 	client = c
 }
 

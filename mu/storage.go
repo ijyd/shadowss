@@ -17,6 +17,6 @@ type Storage interface {
 	Del(user.User) error
 	ClearAll() error
 	IncrSize(u user.User, size int) error
-	GetSize(u user.User) (int64,error)
-	SetSize(u user.User,size int) error
+	GetSize(u user.User) (int64, error)
+	SetSize(u user.User, size int) error
 }

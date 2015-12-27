@@ -14,8 +14,6 @@ var (
 )
 
 func init() {
-	logrus.SetLevel(logrus.DebugLevel)
-
 	// Log.Formatter = new(logrus.JSONFormatter)
 	if *logPath != "" {
 		f, err := os.OpenFile(*logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
@@ -27,6 +25,7 @@ func init() {
 	}
 	if *debug {
 		Log.Level = logrus.DebugLevel
+		Log.Debug("debug on")
 	}
 
 }

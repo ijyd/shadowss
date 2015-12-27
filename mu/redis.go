@@ -67,10 +67,15 @@ func (r *RedisClient) IncrSize(u user.User, size int) error {
 }
 
 func (r *RedisClient) GetSize(u user.User) (int64, error) {
-	return r.client.Get(genUserFlowKey(u.GetUserInfo())).Int64()
+	key := genUserFlowKey(u.GetUserInfo())
+	isExits, err := r.client.Exists(key).Result()
+	if err != nil || !isExits {
+		return 0, err
+	}
+	return r.client.Get(key).Int64()
 }
 
-func(r *RedisClient) SetSize(u user.User,size int) error{
+func (r *RedisClient) SetSize(u user.User, size int) error {
 	key := genUserFlowKey(u.GetUserInfo())
 	return r.client.Set(key, size, DefaultExpireTime).Err()
 }

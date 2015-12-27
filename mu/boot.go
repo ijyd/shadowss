@@ -125,21 +125,24 @@ func checkUsers(users []user.User) {
 
 // sync users traffic
 func syncUsers(users []user.User) {
-	for _,user := range users {
-		size,err := storage.GetSize(user)
-		if err != nil{
-			Log.Error(fmt.Sprintf("get size fail for port:%d",user.GetPort()),err)
+	for _, user := range users {
+		size, err := storage.GetSize(user)
+		if err != nil {
+			Log.Error(fmt.Sprintf("get size fail for port:%d", user.GetPort()), err)
+			continue
+		}
+		if size < 1024 {
 			continue
 		}
 		err = user.UpdatetTraffic(int(size))
-		if err != nil{
-			Log.Error(fmt.Sprintf("update size fail for port:%d",user.GetPort()),err)
+		if err != nil {
+			Log.Error(fmt.Sprintf("update size fail for port:%d", user.GetPort()), err)
 			continue
 		}
-		Log.Info(fmt.Sprintf("success update traffic usage for port %d,total update size %d",user.GetPort(),size))
-		err = storage.SetSize(user,0)
-		if err != nil{
-			Log.Error(fmt.Sprintf("set storage size to 0 fail for port:%d",user.GetPort()),err)
+		Log.Info(fmt.Sprintf("success update traffic usage for port %d,total update size %d", user.GetPort(), size))
+		err = storage.SetSize(user, 0)
+		if err != nil {
+			Log.Error(fmt.Sprintf("set storage size to 0 fail for port:%d", user.GetPort()), err)
 			continue
 		}
 	}
