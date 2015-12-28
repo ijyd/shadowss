@@ -1,7 +1,7 @@
 /**
 @author orvice   https://github.com/orvice/shadowsocks-go
 @author Lupino   https://github.com/Lupino/shadowsocks-auth
- */
+*/
 
 package main
 

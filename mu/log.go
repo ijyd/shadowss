@@ -1,29 +1,24 @@
 package main
 
 import (
-	"flag"
 	"github.com/Sirupsen/logrus"
 	"io"
 	"os"
 )
 
-var (
-	Log     = logrus.New()
-	logPath = flag.String("log_path", "./ss.log", "log file path")
-	debug   = flag.Bool("debug", false, "debug")
-)
+var Log = logrus.New()
 
-func init() {
+func InitLog() {
 	// Log.Formatter = new(logrus.JSONFormatter)
-	if *logPath != "" {
-		f, err := os.OpenFile(*logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
+	if logPath != "" {
+		f, err := os.OpenFile(logPath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0600)
 		if err != nil {
 			panic(err)
 		}
 		writer := io.MultiWriter(os.Stdout, f)
 		Log.Out = writer
 	}
-	if *debug {
+	if debug {
 		Log.Level = logrus.DebugLevel
 		Log.Debug("debug on")
 	}
