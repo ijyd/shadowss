@@ -26,10 +26,10 @@ cp examlple.conf config.conf
 
 ### FAQ
 
-#### Disable debug log
+#### enable debug log
 
 ```
-./mu --debug -false
+./mu -debug
 ```
 
 
