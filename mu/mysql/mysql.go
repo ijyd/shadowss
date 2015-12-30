@@ -68,8 +68,8 @@ func (u *User) GetCipher() (*ss.Cipher, error) {
 	return ss.NewCipher(u.method, u.passwd)
 }
 
-func (u *User) UpdatetTraffic(storageSize int) error {
-	return client.db.Model(u).UpdateColumn("d", gorm.Expr("d  + ?", storageSize)).Error
+func (u *User) UpdateTraffic(storageSize int) error {
+	return client.db.Model(u).Where("id = ?", u.id).UpdateColumn("d", gorm.Expr("d  + ?", storageSize)).Error
 }
 
 func (u *User) GetUserInfo() user.UserInfo {

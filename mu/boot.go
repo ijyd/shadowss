@@ -134,7 +134,7 @@ func syncUsers(users []user.User) {
 		if size < 1024 {
 			continue
 		}
-		err = user.UpdatetTraffic(int(size))
+		err = user.UpdateTraffic(int(size))
 		if err != nil {
 			Log.Error(fmt.Sprintf("update size fail for port:%d", user.GetPort()), err)
 			continue
