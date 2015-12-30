@@ -5,6 +5,7 @@ import (
 	"github.com/orvice/shadowsocks-go/mu/log"
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+	"time"
 )
 
 var client *Client
@@ -69,7 +70,7 @@ func (u *User) GetCipher() (*ss.Cipher, error) {
 }
 
 func (u *User) UpdateTraffic(storageSize int) error {
-	return client.db.Model(u).Where("id = ?", u.id).UpdateColumn("d", gorm.Expr("d  + ?", storageSize)).Error
+	return client.db.Model(u).Where("id = ?", u.id).UpdateColumn("d", gorm.Expr("d  + ?", storageSize)).UpdateColumn("t", time.Now().Unix()).Error
 }
 
 func (u *User) GetUserInfo() user.UserInfo {
