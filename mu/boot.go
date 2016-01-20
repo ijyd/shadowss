@@ -37,32 +37,35 @@ func boot() {
 
 	go func() {
 		for {
-			// check users
-			users, err = client.GetUsers()
-			if err != nil {
-				Log.Error(err)
-				// os.Exit(0)
-			}
-			checkUsers(users)
-			Log.Info("check finish...")
+			go func(){
+				// check users
+				users, err = client.GetUsers()
+				if err != nil {
+					Log.Error(err)
+					// os.Exit(0)
+				}
+				checkUsers(users)
+				Log.Info("check finish...")
+			}()
 			time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 		}
 	}()
 
 	go func() {
 		for {
-			// check users
-			users, err = client.GetUsers()
-			if err != nil {
-				Log.Error(err)
-				// os.Exit(0)
-			}
-			syncUsers(users)
-			Log.Info("sync finish...")
+			go func(){
+				// check users
+				users, err = client.GetUsers()
+				if err != nil {
+					Log.Error(err)
+					// os.Exit(0)
+				}
+				syncUsers(users)
+				Log.Info("sync finish...")
+			}()
 			time.Sleep(muconfig.Conf.Base.SyncTime * time.Second)
 		}
 	}()
-	waitSignal()
 }
 
 // 第一次启动
@@ -72,6 +75,14 @@ func bootUsers(users []user.User) {
 		err := storage.StoreUser(user.GetUserInfo())
 		if err != nil {
 			Log.Error(err)
+		}
+		isExists, err := storage.Exists(user)
+		if err != nil {
+			Log.Error("check exists error: ", err)
+			continue
+		}
+		if isExists {
+			continue
 		}
 		go runWithCustomMethod(user)
 	}

@@ -352,7 +352,7 @@ func SetReadTimeout(c net.Conn) {
 
 func showConn(raw_req_header, raw_res_header []byte, host string, user user.User, size int, is_http bool) {
 	if size == 0 {
-		Log.Error(fmt.Sprintf("Error: user-port %d request %s cancel", user.GetPort(), host))
+		Log.Error(fmt.Sprintf("[port-%d]  Error: request %s cancel", user.GetPort(), host))
 		return
 	}
 	if is_http {

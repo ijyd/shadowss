@@ -2,6 +2,9 @@ package main
 
 import (
 	"os"
+	_ "net/http/pprof"
+	"log"
+	"net/http"
 )
 
 func main() {
@@ -18,5 +21,13 @@ func main() {
 		Log.Error("boot redis fail: ", err)
 		os.Exit(0)
 	}
+
+	if debug {
+		go func() {
+			log.Println(http.ListenAndServe("127.0.0.1:6060", nil))
+		}()
+	}
+
 	boot()
+	waitSignal()
 }
