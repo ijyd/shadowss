@@ -37,7 +37,7 @@ func boot() {
 
 	go func() {
 		for {
-			go func(){
+			go func() {
 				// check users
 				users, err = client.GetUsers()
 				if err != nil {
@@ -53,7 +53,7 @@ func boot() {
 
 	go func() {
 		for {
-			go func(){
+			go func() {
 				// check users
 				users, err = client.GetUsers()
 				if err != nil {
