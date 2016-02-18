@@ -6,7 +6,7 @@ type User struct {
 	passwd         string
 	method         string
 	enable         int
-	transferEnable int
+	transferEnable int `json:"transfer_enable"`
 	u              int
 	d              int
 }
