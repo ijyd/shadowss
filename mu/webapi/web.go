@@ -1,9 +1,9 @@
 package web
 
 import (
-	"github.com/orvice/shadowsocks-go/mu/user"
 	"encoding/json"
 	"github.com/orvice/shadowsocks-go/mu/log"
+	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
 var (
@@ -29,15 +29,15 @@ func (c *Client) setNodeId(id int) {
 }
 
 func (c *Client) GetUsers() ([]user.User, error) {
-	var datas []*User
-	res,err := c.httpGet(c.genGetUsersUrl())
-	if err != nil{
-		return datas,err
+	var tempUser []user.User
+	res, err := c.httpGet(c.genGetUsersUrl())
+	if err != nil {
+		return tempUser, err
 	}
 	var resData UserDataRet
-	err = json.Unmarshal([]byte(res),resData)
-	if err != nil{
-		return datas,err
+	err = json.Unmarshal([]byte(res), resData)
+	if err != nil {
+		return tempUser, err
 	}
 	userData := resData.Data
 	log.Log.Info(len(userData))
@@ -45,5 +45,5 @@ func (c *Client) GetUsers() ([]user.User, error) {
 	for k, v := range userData {
 		users[k] = v
 	}
-	return datas, nil
+	return users, nil
 }
