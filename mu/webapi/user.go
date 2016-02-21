@@ -3,6 +3,7 @@ package web
 import (
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+	"strconv"
 )
 
 type User struct {
@@ -29,6 +30,12 @@ func (u User) GetMethod() string {
 }
 
 func (u User) IsEnable() bool {
+	if u.enable == 0 {
+		return false
+	}
+	if u.transferEnable < (u.u + u.d) {
+		return false
+	}
 	return true
 }
 
@@ -37,10 +44,16 @@ func (u User) GetCipher() (*ss.Cipher, error) {
 }
 
 func (u User) UpdateTraffic(storageSize int) error {
-	return nil
+	dStr := strconv.Itoa(storageSize)
+	uStr := string('0')
+	return client.UpdateTraffic(u.id, uStr, dStr)
 }
 
 func (u User) GetUserInfo() user.UserInfo {
-	var user user.UserInfo
+	user := user.UserInfo{
+		Passwd: u.passwd,
+		Port:   u.port,
+		Method: u.method,
+	}
 	return user
 }
