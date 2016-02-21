@@ -4,6 +4,7 @@ import (
 	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 	"github.com/orvice/shadowsocks-go/mu/mysql"
 	"github.com/orvice/shadowsocks-go/mu/user"
+	"os"
 )
 
 var Client *mysql.Client
@@ -26,5 +27,8 @@ func InitMySqlClient() error {
 	Client = client
 	mysql.SetClient(client)
 	user.SetClient(client)
-	return nil
+	if err != nil {
+		Log.Error(err)
+		os.Exit(0)
+	}
 }

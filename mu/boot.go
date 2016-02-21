@@ -18,11 +18,15 @@ func boot() {
 
 	// log.SetOutput(os.Stdout)
 
-	err = InitMySqlClient()
-	if err != nil {
-		Log.Error(err)
-		os.Exit(0)
+	switch muconfig.Base.Client {
+	case "mysql":
+		InitMySqlClient()
+	case "webapi":
+		InitWebApi()
+	default:
+		InitWebApi()
 	}
+
 	client := user.GetClient()
 	users, err := client.GetUsers()
 	if err != nil {

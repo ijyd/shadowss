@@ -31,6 +31,7 @@ func (c *Config) SetBase(b *Base) {
 type Base struct {
 	N         float32       `goconf:"base:N"`
 	IP        string        `goconf:"base:ip"`
+	Client    string        `goconf:"base:client"`
 	CheckTime time.Duration `goconf:"base:checktime"`
 	SyncTime  time.Duration `goconf:"base:synctime"`
 }
