@@ -18,7 +18,7 @@ func boot() {
 
 	// log.SetOutput(os.Stdout)
 
-	switch muconfig.Base.Client {
+	switch muconfig.Conf.Base.Client {
 	case "mysql":
 		InitMySqlClient()
 	case "webapi":
@@ -35,9 +35,9 @@ func boot() {
 	}
 	Log.Info(len(users))
 	// clear storage
-	// storage.ClearAll()
-	bootUsers(users)
-	time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
+	storage.ClearAll()
+	//bootUsers(users)
+	//time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 
 	go func() {
 		for {

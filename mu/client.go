@@ -31,4 +31,5 @@ func InitMySqlClient() error {
 		Log.Error(err)
 		os.Exit(0)
 	}
+    return nil
 }
