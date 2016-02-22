@@ -7,53 +7,53 @@ import (
 )
 
 type User struct {
-	id             int
-	port           int
-	passwd         string
-	method         string
-	enable         int
-	transferEnable int `json:"transfer_enable"`
-	u              int
-	d              int
+	Id             int    `json:"id"`
+	Port           int    `json:"port"`
+	Passwd         string `json:"passwd"`
+	Method         string `json:"method"`
+	Enable         int    `json:"enable"`
+	TransferEnable int64  `json:"transfer_enable"`
+	U              int64  `json:"u"`
+	D              int64  `json:"d"`
 }
 
 func (u User) GetPort() int {
-	return u.id
+	return u.Port
 }
 
 func (u User) GetPasswd() string {
-	return u.passwd
+	return u.Passwd
 }
 
 func (u User) GetMethod() string {
-	return u.method
+	return u.Method
 }
 
 func (u User) IsEnable() bool {
-	if u.enable == 0 {
+	if u.Enable == 0 {
 		return false
 	}
-	if u.transferEnable < (u.u + u.d) {
+	if u.TransferEnable < (u.U + u.D) {
 		return false
 	}
 	return true
 }
 
 func (u User) GetCipher() (*ss.Cipher, error) {
-	return ss.NewCipher(u.method, u.passwd)
+	return ss.NewCipher(u.Method, u.Passwd)
 }
 
 func (u User) UpdateTraffic(storageSize int) error {
 	dStr := strconv.Itoa(storageSize)
 	uStr := string('0')
-	return client.UpdateTraffic(u.id, uStr, dStr)
+	return client.UpdateTraffic(u.Id, uStr, dStr)
 }
 
 func (u User) GetUserInfo() user.UserInfo {
 	user := user.UserInfo{
-		Passwd: u.passwd,
-		Port:   u.port,
-		Method: u.method,
+		Passwd: u.Passwd,
+		Port:   u.Port,
+		Method: u.Method,
 	}
 	return user
 }

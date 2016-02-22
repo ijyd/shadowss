@@ -30,7 +30,7 @@ func boot() {
 	client := user.GetClient()
 	users, err := client.GetUsers()
 	if err != nil {
-		Log.Error(err)
+		Log.Error("Get User Error", err)
 		os.Exit(0)
 	}
 	Log.Info(len(users))
@@ -45,9 +45,10 @@ func boot() {
 				// check users
 				users, err = client.GetUsers()
 				if err != nil {
-					Log.Error(err)
+					Log.Error("Get User Error", err)
 					// os.Exit(0)
 				}
+				Log.Debug(users)
 				checkUsers(users)
 				Log.Info("check finish...")
 			}()

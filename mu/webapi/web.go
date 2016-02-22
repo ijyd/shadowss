@@ -48,8 +48,9 @@ func (c *Client) GetUsers() ([]user.User, error) {
 	if err != nil {
 		return tempUser, err
 	}
+	log.Log.Debug(res)
 	var resData UserDataRet
-	err = json.Unmarshal([]byte(res), resData)
+	err = json.Unmarshal([]byte(res), &resData)
 	if err != nil {
 		return tempUser, err
 	}
