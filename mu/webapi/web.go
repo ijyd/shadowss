@@ -18,6 +18,18 @@ type Client struct {
 	nodeId  int
 }
 
+func NewClient() *Client {
+	return new(Client)
+}
+
+func SetClient(c *Client) {
+	client = c
+}
+
+func GetClient() *Client {
+	return client
+}
+
 func (c *Client) setBaseUrl(baseUrl string) {
 	c.baseUrl = baseUrl
 }

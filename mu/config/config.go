@@ -29,6 +29,10 @@ func (c *Config) SetBase(b *Base) {
 	c.Base = b
 }
 
+func (c *Config) SetWebApi(w *WebApi) {
+	c.WebApi = w
+}
+
 type Base struct {
 	N         float32       `goconf:"base:N"`
 	IP        string        `goconf:"base:ip"`
@@ -38,8 +42,9 @@ type Base struct {
 }
 
 type WebApi struct {
-	Url string `goconf:"url"`
-	Key string `goconf:"key"`
+	Url    string `goconf:"webapi:url"`
+	Key    string `goconf:"webapi:key"`
+	NodeId int    `goconf:"webapi:node_id"`
 }
 
 type MySql struct {

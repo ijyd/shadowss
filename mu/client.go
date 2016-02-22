@@ -4,12 +4,12 @@ import (
 	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 	"github.com/orvice/shadowsocks-go/mu/mysql"
 	"github.com/orvice/shadowsocks-go/mu/user"
+	webapi "github.com/orvice/shadowsocks-go/mu/webapi"
 	"os"
 )
 
-var Client *mysql.Client
-
 func InitMySqlClient() error {
+	initMysqlClientConfig()
 	conf := muconfig.GetConf().Mysql
 	client := new(mysql.Client)
 	dbType := "mysql"
@@ -24,12 +24,26 @@ func InitMySqlClient() error {
 		return err
 	}
 	client.SetTable(table)
-	Client = client
 	mysql.SetClient(client)
 	user.SetClient(client)
 	if err != nil {
 		Log.Error(err)
 		os.Exit(0)
 	}
-    return nil
+	return nil
+}
+
+func InitWebApi() error {
+	err := initWebApiConfig()
+	if err != nil {
+		Log.Error(err)
+		os.Exit(0)
+	}
+	conf := muconfig.GetConf().WebApi
+	webapi.SetClient(webapi.NewClient())
+	webapi.SetBaseUrl(conf.Url)
+	webapi.SetKey(conf.Key)
+	webapi.SetNodeId(conf.NodeId)
+	user.SetClient(webapi.GetClient())
+	return nil
 }
