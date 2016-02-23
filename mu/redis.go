@@ -55,7 +55,7 @@ func (r *RedisClient) ClearAll() error {
 // traffic
 func (r *RedisClient) IncrSize(u user.User, size int) error {
 	key := genUserFlowKey(u.GetUserInfo())
-	incrSize := int(float32(size) * muconfig.Conf.Base.N)
+	incrSize := int(float32(size))
 	isExits, err := r.client.Exists(key).Result()
 	if err != nil {
 		return err
