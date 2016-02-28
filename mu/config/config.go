@@ -7,9 +7,10 @@ import (
 var Conf = new(Config)
 
 type Config struct {
-	Mysql *MySql
-	Redis *Redis
-	Base  *Base
+	WebApi *WebApi
+	Mysql  *MySql
+	Redis  *Redis
+	Base   *Base
 }
 
 func GetConf() *Config {
@@ -28,10 +29,22 @@ func (c *Config) SetBase(b *Base) {
 	c.Base = b
 }
 
+func (c *Config) SetWebApi(w *WebApi) {
+	c.WebApi = w
+}
+
 type Base struct {
 	N         float32       `goconf:"base:N"`
+	IP        string        `goconf:"base:ip"`
+	Client    string        `goconf:"base:client"`
 	CheckTime time.Duration `goconf:"base:checktime"`
 	SyncTime  time.Duration `goconf:"base:synctime"`
+}
+
+type WebApi struct {
+	Url    string `goconf:"webapi:url"`
+	Key    string `goconf:"webapi:key"`
+	NodeId int    `goconf:"webapi:node_id"`
 }
 
 type MySql struct {

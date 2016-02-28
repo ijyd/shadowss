@@ -18,32 +18,37 @@ func boot() {
 
 	// log.SetOutput(os.Stdout)
 
-	err = InitMySqlClient()
-	if err != nil {
-		Log.Error(err)
-		os.Exit(0)
+	switch muconfig.Conf.Base.Client {
+	case "mysql":
+		InitMySqlClient()
+	case "webapi":
+		InitWebApi()
+	default:
+		InitWebApi()
 	}
+
 	client := user.GetClient()
 	users, err := client.GetUsers()
 	if err != nil {
-		Log.Error(err)
+		Log.Error("Get User Error", err)
 		os.Exit(0)
 	}
 	Log.Info(len(users))
 	// clear storage
-	// storage.ClearAll()
-	bootUsers(users)
-	time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
+	storage.ClearAll()
+	//bootUsers(users)
+	//time.Sleep(muconfig.Conf.Base.CheckTime * time.Second)
 
 	go func() {
 		for {
-			go func(){
+			go func() {
 				// check users
 				users, err = client.GetUsers()
 				if err != nil {
-					Log.Error(err)
+					Log.Error("Get User Error", err)
 					// os.Exit(0)
 				}
+				Log.Debug(users)
 				checkUsers(users)
 				Log.Info("check finish...")
 			}()
@@ -53,7 +58,7 @@ func boot() {
 
 	go func() {
 		for {
-			go func(){
+			go func() {
 				// check users
 				users, err = client.GetUsers()
 				if err != nil {

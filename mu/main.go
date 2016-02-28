@@ -1,10 +1,10 @@
 package main
 
 import (
-	"os"
-	_ "net/http/pprof"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
+	"os"
 )
 
 func main() {
