@@ -59,7 +59,7 @@ func boot() {
 	go func() {
 		for {
 			go func() {
-				// check users
+				// sync users
 				users, err = client.GetUsers()
 				if err != nil {
 					Log.Error(err)
@@ -134,6 +134,10 @@ func checkUsers(users []user.User) {
 		if sUser.Passwd != user.GetPasswd() || sUser.Method != user.GetMethod() {
 			Log.Info(fmt.Sprintf("user port [%v] passwd or method change ,restart user...", user.GetPort()))
 			passwdManager.del(strconv.Itoa(user.GetPort()))
+			err := storage.StoreUser(user.GetUserInfo())
+			if err != nil {
+				Log.Error("store  error: ", err)
+			}
 			go runWithCustomMethod(user)
 		}
 	}
