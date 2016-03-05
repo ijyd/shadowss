@@ -8,8 +8,9 @@ import (
 )
 
 var (
-	client            = new(Client)
-	UpdateTrafficFail = errors.New("Update Traffic Failed ")
+	client                = new(Client)
+	UpdateTrafficFail     = errors.New("Update Traffic Failed ")
+	UpdateOnlineCountFail = errors.New("Update Online Count Failed")
 )
 
 type Client struct {
@@ -75,6 +76,22 @@ func (c *Client) UpdateTraffic(userId int, u, d string) error {
 	}
 	if ret.Ret == 0 {
 		return UpdateTrafficFail
+	}
+	return nil
+}
+
+func (c *Client) LogNodeOnlineUser(onlineUserCount int) error {
+	res, err := c.httpPostNodeOnlineCount(onlineUserCount)
+	if err != nil {
+		return nil
+	}
+	var ret BaseRet
+	err = json.Unmarshal([]byte(res), &ret)
+	if err != nil {
+		return err
+	}
+	if ret.Ret == 0 {
+		return UpdateOnlineCountFail
 	}
 	return nil
 }

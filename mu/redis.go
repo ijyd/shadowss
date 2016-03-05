@@ -8,7 +8,8 @@ import (
 )
 
 const (
-	DefaultExpireTime = 0
+	DefaultExpireTime          = 0
+	DefaultOnlineKeyExpireTime = 300
 )
 
 var Redis = new(RedisClient)
@@ -85,6 +86,30 @@ func (r *RedisClient) SetSize(u user.User, size int) error {
 
 func (r *RedisClient) ClearSize() error {
 	return nil
+}
+
+func (r *RedisClient) MarkUserOnline(u user.User) error {
+	key := genUserOnlineKey(u.GetUserInfo())
+	return r.client.Set(key, "1", DefaultOnlineKeyExpireTime).Err()
+}
+
+func (r *RedisClient) IsUserOnline(u user.User) bool {
+	key := genUserOnlineKey(u.GetUserInfo())
+	isExits, err := r.client.Exists(key).Result()
+	if err != nil {
+		return false
+	}
+	return isExits
+}
+
+func (r *RedisClient) GetOnlineUsersCount(users []user.User) int {
+	count := 0
+	for _, v := range users {
+		if r.IsUserOnline(v) {
+			count++
+		}
+	}
+	return count
 }
 
 func InitRedis() error {

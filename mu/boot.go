@@ -66,11 +66,16 @@ func boot() {
 					// os.Exit(0)
 				}
 				syncUsers(users)
-				Log.Info("sync finish...")
+				Log.Info("sync finish...start logging online count")
+				err = client.LogNodeOnlineUser(storage.GetOnlineUsersCount(users))
+				if err != nil {
+					Log.Error(err)
+				}
 			}()
 			time.Sleep(muconfig.Conf.Base.SyncTime * time.Second)
 		}
 	}()
+
 }
 
 // 第一次启动
