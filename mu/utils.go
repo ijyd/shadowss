@@ -12,3 +12,7 @@ func genUserInfoKey(user user.UserInfo) string {
 func genUserFlowKey(user user.UserInfo) string {
 	return fmt.Sprintf("userflow:%v", user.Port)
 }
+
+func genUserOnlineKey(user user.UserInfo) string {
+	return fmt.Sprintf("useronline:%v", user.Port)
+}

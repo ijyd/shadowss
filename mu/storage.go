@@ -19,4 +19,7 @@ type Storage interface {
 	IncrSize(u user.User, size int) error
 	GetSize(u user.User) (int64, error)
 	SetSize(u user.User, size int) error
+	MarkUserOnline(u user.User) error
+	IsUserOnline(u user.User) bool
+	GetOnlineUsersCount(u []user.User) int
 }

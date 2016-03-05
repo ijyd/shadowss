@@ -107,3 +107,7 @@ func (c *Client) GetUsers() ([]user.User, error) {
 	}
 	return users, nil
 }
+
+func (c *Client) LogNodeOnlineUser(onlineUserCount int) error {
+	return nil
+}
