@@ -184,6 +184,11 @@ func handleConnection(user user.User, conn *ss.Conn) {
 			Log.Error(err)
 			return
 		}
+		err = storage.MarkUserOnline(user)
+		if err != nil {
+			Log.Error(err)
+			return
+		}
 		Log.Debug(fmt.Sprintf("[port-%d] store size: %d", user.GetPort(), res_size))
 	}
 	Log.Debug(fmt.Sprintf("piping %s<->%s", conn.RemoteAddr(), host))
