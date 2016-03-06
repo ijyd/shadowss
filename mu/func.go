@@ -179,6 +179,9 @@ func handleConnection(user user.User, conn *ss.Conn) {
 			Log.Error("write request extra error:", err)
 			return
 		}
+		// debug conn info
+		Log.Debug(fmt.Sprintf("%d conn debug:  local addr: %s | remote addr: %s network: %s ", user.GetPort(),
+			conn.LocalAddr().String(), conn.RemoteAddr().String(), conn.RemoteAddr().Network()))
 		err = storage.IncrSize(user, res_size)
 		if err != nil {
 			Log.Error(err)
