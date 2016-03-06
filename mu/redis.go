@@ -5,11 +5,12 @@ import (
 	muconfig "github.com/orvice/shadowsocks-go/mu/config"
 	"github.com/orvice/shadowsocks-go/mu/user"
 	"gopkg.in/redis.v3"
+	"time"
 )
 
 const (
 	DefaultExpireTime          = 0
-	DefaultOnlineKeyExpireTime = 300
+	DefaultOnlineKeyExpireTime = time.Minute * 5
 )
 
 var Redis = new(RedisClient)
