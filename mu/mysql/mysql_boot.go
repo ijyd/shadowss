@@ -21,7 +21,7 @@ func (c *Client) Boot(dbType, user, password, host, dbname string) error {
 	if err != nil {
 		return err
 	}
-	c.SetDb(&db)
+	c.SetDb(db)
 	c.db.DB()
 	return c.db.DB().Ping()
 }
