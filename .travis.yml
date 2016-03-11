@@ -16,5 +16,5 @@ install:
   - go get github.com/lib/pq
   - go install ./mu
 script:
-  - PATH=$PATH:$HOME/gopath/bin bash -x ./script/test.sh
+  - go build
 sudo: required
