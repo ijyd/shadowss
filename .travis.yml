@@ -16,5 +16,5 @@ install:
   - go get github.com/lib/pq
   - go install ./mu
 script:
-  - go build
+  - cd mu && go build
 sudo: required
