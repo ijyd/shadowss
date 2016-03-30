@@ -2,25 +2,26 @@ package system
 
 import (
 	"os/exec"
+	"strings"
 )
 
 type Client struct {
 }
 
 func GetLoad() (string, error) {
-	uptimeCommand := `cat /proc/loadavg | awk '{ print $1" "$2" "$3 }'`
-	output, err := exec.Command(uptimeCommand).Output()
+	output, err := exec.Command("cat", "/proc/loadavg").Output()
 	if err != nil {
 		return "", err
 	}
+
 	return string(output), nil
 }
 
 func GetUptime() (string, error) {
-	uptimeCommand := `cat /proc/uptime | awk '{ print $1 }'`
-	output, err := exec.Command(uptimeCommand).Output()
+	output, err := exec.Command("cat", "/proc/uptime").Output()
 	if err != nil {
 		return "", err
 	}
-	return string(output), nil
+	loadAry := strings.Split(string(output), " ")
+	return loadAry[0], nil
 }
