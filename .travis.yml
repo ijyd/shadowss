@@ -17,4 +17,5 @@ install:
   - go install ./mu
 script:
   - cd mu && go build
+  - go test -cover ./...
 sudo: required
