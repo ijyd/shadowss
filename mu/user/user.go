@@ -24,6 +24,7 @@ func SetClient(c Client) {
 type Client interface {
 	GetUsers() ([]User, error)
 	LogNodeOnlineUser(onlineUserCount int) error
+	UpdateNodeInfo() error
 }
 
 type User interface {

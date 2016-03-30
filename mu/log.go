@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/Sirupsen/logrus"
+	"github.com/orvice/shadowsocks-go/mu/log"
 	"io"
 	"os"
 )
@@ -22,5 +23,5 @@ func InitLog() {
 		Log.Level = logrus.DebugLevel
 		Log.Debug("debug on")
 	}
-
+	log.SetLogClient(Log)
 }

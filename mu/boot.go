@@ -71,6 +71,12 @@ func boot() {
 				if err != nil {
 					Log.Error(err)
 				}
+
+				err = client.UpdateNodeInfo()
+				if err != nil {
+					Log.Error(err)
+				}
+
 			}()
 			time.Sleep(muconfig.Conf.Base.SyncTime * time.Second)
 		}
