@@ -7,3 +7,7 @@ import (
 var (
 	Log = logrus.New()
 )
+
+func SetLogClient(client *logrus.Logger) {
+	Log = client
+}

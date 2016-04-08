@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"github.com/orvice/shadowsocks-go/mu/log"
+	"github.com/orvice/shadowsocks-go/mu/system"
 	"github.com/orvice/shadowsocks-go/mu/user"
 )
 
@@ -75,13 +76,41 @@ func (c *Client) UpdateTraffic(userId int, u, d string) error {
 		return err
 	}
 	if ret.Ret == 0 {
-		return UpdateTrafficFail
+		return errors.New(ret.Msg)
 	}
+	log.Log.Debug("update traffic debug:", ret.Msg)
 	return nil
 }
 
 func (c *Client) LogNodeOnlineUser(onlineUserCount int) error {
 	res, err := c.httpPostNodeOnlineCount(onlineUserCount)
+	if err != nil {
+		return nil
+	}
+	var ret BaseRet
+	err = json.Unmarshal([]byte(res), &ret)
+	if err != nil {
+		return err
+	}
+	if ret.Ret == 0 {
+		return UpdateOnlineCountFail
+	}
+	return nil
+}
+
+func (c *Client) UpdateNodeInfo() error {
+	uptime, err := system.GetUptime()
+	if err != nil {
+		log.Log.Error(err)
+		uptime = "0"
+	}
+
+	load, err := system.GetLoad()
+	if err != nil {
+		load = "0 0 0"
+	}
+
+	res, err := c.httpPostNodeInfo(load, uptime)
 	if err != nil {
 		return nil
 	}

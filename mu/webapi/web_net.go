@@ -20,6 +20,10 @@ func (c *Client) genNodeOnlineCountUrl(id int) string {
 	return fmt.Sprintf("%s/nodes/%d/online_count?key=%s", c.baseUrl, id, c.key)
 }
 
+func (c *Client) genNodeInfoUrl(id int) string {
+	return fmt.Sprintf("%s/nodes/%d/info?key=%s", c.baseUrl, id, c.key)
+}
+
 func (c *Client) httpGet(urlStr string) (string, error) {
 	resp, err := http.Get(urlStr)
 	if err != nil {
@@ -56,6 +60,23 @@ func (c *Client) httpPostNodeOnlineCount(count int) (string, error) {
 	countStr := strconv.Itoa(count)
 	resp, err := http.PostForm(urlStr,
 		url.Values{"count": {countStr}})
+
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func (c *Client) httpPostNodeInfo(load, uptime string) (string, error) {
+	urlStr := c.genNodeInfoUrl(c.nodeId)
+	resp, err := http.PostForm(urlStr,
+		url.Values{"load": {load}, "uptime": {uptime}})
 
 	if err != nil {
 		return "", err
