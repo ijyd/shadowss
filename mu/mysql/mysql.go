@@ -6,6 +6,7 @@ import (
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"time"
+	"strings"
 )
 
 var client *Client
@@ -65,8 +66,16 @@ func (u *User) IsEnable() bool {
 	return true
 }
 
-func (u *User) GetCipher() (*ss.Cipher, error) {
-	return ss.NewCipher(u.method, u.passwd)
+func (u *User) GetCipher() (*ss.Cipher, error, bool) {
+	method := u.method
+	auth := false
+
+	if strings.HasSuffix(method, "-auth") {
+	    method = method[:len(method)-5]
+	    auth = true
+	}   
+	s,e := ss.NewCipher(method, u.passwd)
+	return s, e, auth
 }
 
 func (u *User) UpdateTraffic(storageSize int) error {
