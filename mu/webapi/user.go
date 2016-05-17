@@ -4,6 +4,7 @@ import (
 	"github.com/orvice/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"strconv"
+	"strings"
 )
 
 type User struct {
@@ -39,8 +40,16 @@ func (u User) IsEnable() bool {
 	return true
 }
 
-func (u User) GetCipher() (*ss.Cipher, error) {
-	return ss.NewCipher(u.Method, u.Passwd)
+func (u User) GetCipher() (*ss.Cipher, error, bool) {
+	method := u.Method
+	auth := false
+
+	if strings.HasSuffix(method, "-auth") {
+	    method = method[:len(method)-5]
+	    auth = true
+	}   
+	s,e := ss.NewCipher(method, u.Passwd)
+	return s, e, auth
 }
 
 func (u User) UpdateTraffic(storageSize int) error {
