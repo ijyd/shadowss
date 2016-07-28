@@ -1,0 +1,128 @@
+{
+	"ImportPath": "github.com/shadowsocks/shadowsocks-go",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0-28-ga283a10",
+			"Rev": "a283a10442df8dc09befd873fab202bf8a253d6a"
+		},
+		{
+			"ImportPath": "github.com/Terry-Mao/goconf",
+			"Comment": "v1.0-4-g100b458",
+			"Rev": "100b4585853d399f9cbbdca8b5f5da2b50727241"
+		},
+		{
+			"ImportPath": "github.com/codahale/chacha20",
+			"Rev": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953"
+		},
+		{
+			"ImportPath": "github.com/cyfdecyf/leakybuf",
+			"Comment": "1.0",
+			"Rev": "ffae040843bee2891b6306d1d085c25ca822e72c"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-196-g3654d25",
+			"Rev": "3654d25ec346ee8ce71a68431025458d52a38ac0"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Comment": "v1.0-50-ga646b13",
+			"Rev": "a646b13548ec0aa812fe805b2780f460dd2771b6"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/inflection",
+			"Rev": "8f4d3a0d04ce0b7c0cf3126fb98524246d00d102"
+		},
+		{
+			"ImportPath": "github.com/lib/pq",
+			"Comment": "go1.0-cutoff-107-g4dd446e",
+			"Rev": "4dd446efc17690bc53e154025146f73203b18309"
+		},
+		{
+			"ImportPath": "github.com/lib/pq/oid",
+			"Comment": "go1.0-cutoff-107-g4dd446e",
+			"Rev": "4dd446efc17690bc53e154025146f73203b18309"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/config",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/log",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/mysql",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/system",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/user",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "github.com/orvice/shadowsocks-go/mu/webapi",
+			"Comment": "1.1.4-96-g64ced42",
+			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/cast5",
+			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
+			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "a646d33e2ee3172a661fc09bca23bb4889a41bc8"
+		},
+		{
+			"ImportPath": "gopkg.in/bsm/ratelimit.v1",
+			"Rev": "db14e161995a5177acef654cb0dd785e8ee8bc22"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3",
+			"Comment": "v3.6.4",
+			"Rev": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3/internal",
+			"Comment": "v3.6.4",
+			"Rev": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3/internal/consistenthash",
+			"Comment": "v3.6.4",
+			"Rev": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3/internal/hashtag",
+			"Comment": "v3.6.4",
+			"Rev": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
+		},
+		{
+			"ImportPath": "gopkg.in/redis.v3/internal/pool",
+			"Comment": "v3.6.4",
+			"Rev": "b5e368500d0a508ef8f16e9c2d4025a8a46bcc29"
+		}
+	]
+}
