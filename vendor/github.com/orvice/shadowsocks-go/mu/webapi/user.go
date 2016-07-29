@@ -1,7 +1,7 @@
 package web
 
 import (
-	"github.com/orvice/shadowsocks-go/mu/user"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"strconv"
 	"strings"

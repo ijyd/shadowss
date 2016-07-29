@@ -3,9 +3,9 @@ package web
 import (
 	"encoding/json"
 	"errors"
-	"github.com/orvice/shadowsocks-go/mu/log"
-	"github.com/orvice/shadowsocks-go/mu/system"
-	"github.com/orvice/shadowsocks-go/mu/user"
+	"github.com/shadowsocks/shadowsocks-go/mu/log"
+	"github.com/shadowsocks/shadowsocks-go/mu/system"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
 )
 
 var (

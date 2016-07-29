@@ -1,10 +1,11 @@
 package web
 
 import (
-	"github.com/orvice/shadowsocks-go/mu/user"
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"strconv"
 	"strings"
+
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
 type User struct {
@@ -45,10 +46,10 @@ func (u User) GetCipher() (*ss.Cipher, error, bool) {
 	auth := false
 
 	if strings.HasSuffix(method, "-auth") {
-	    method = method[:len(method)-5]
-	    auth = true
-	}   
-	s,e := ss.NewCipher(method, u.Passwd)
+		method = method[:len(method)-5]
+		auth = true
+	}
+	s, e := ss.NewCipher(method, u.Passwd)
 	return s, e, auth
 }
 

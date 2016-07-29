@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/Terry-Mao/goconf"
-	muconfig "github.com/orvice/shadowsocks-go/mu/config"
+	muconfig "github.com/shadowsocks/shadowsocks-go/mu/config"
 )
 
 var (

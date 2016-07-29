@@ -2,8 +2,8 @@ package mysql
 
 import (
 	"github.com/jinzhu/gorm"
-	"github.com/orvice/shadowsocks-go/mu/log"
-	"github.com/orvice/shadowsocks-go/mu/user"
+	"github.com/shadowsocks/shadowsocks-go/mu/log"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
 	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"time"
 	"strings"

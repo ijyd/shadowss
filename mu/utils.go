@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/orvice/shadowsocks-go/mu/user"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
 )
 
 func genUserInfoKey(user user.UserInfo) string {

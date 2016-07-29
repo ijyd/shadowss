@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/json"
-	muconfig "github.com/orvice/shadowsocks-go/mu/config"
-	"github.com/orvice/shadowsocks-go/mu/user"
-	"gopkg.in/redis.v3"
 	"time"
+
+	muconfig "github.com/shadowsocks/shadowsocks-go/mu/config"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	redis "gopkg.in/redis.v3"
 )
 
 const (

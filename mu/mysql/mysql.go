@@ -1,12 +1,14 @@
 package mysql
 
 import (
-	"github.com/jinzhu/gorm"
-	"github.com/orvice/shadowsocks-go/mu/log"
-	"github.com/orvice/shadowsocks-go/mu/user"
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
-	"time"
 	"strings"
+	"time"
+
+	"github.com/golang/glog"
+	"github.com/jinzhu/gorm"
+	"github.com/shadowsocks/shadowsocks-go/mu/log"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
 var client *Client
@@ -71,10 +73,10 @@ func (u *User) GetCipher() (*ss.Cipher, error, bool) {
 	auth := false
 
 	if strings.HasSuffix(method, "-auth") {
-	    method = method[:len(method)-5]
-	    auth = true
-	}   
-	s,e := ss.NewCipher(method, u.passwd)
+		method = method[:len(method)-5]
+		auth = true
+	}
+	s, e := ss.NewCipher(method, u.passwd)
 	return s, e, auth
 }
 
@@ -91,7 +93,7 @@ func (u *User) GetUserInfo() user.UserInfo {
 }
 
 func (c *Client) GetUsers() ([]user.User, error) {
-	log.Log.Info("get mysql users")
+	glog.Infoln("get mysql users")
 	var datas []*User
 	rows, err := c.db.Model(User{}).Select("id, passwd, port, method,enable,transfer_enable,u,d").Rows()
 	if err != nil {

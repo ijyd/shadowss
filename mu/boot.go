@@ -2,12 +2,14 @@ package main
 
 import (
 	"fmt"
-	muconfig "github.com/orvice/shadowsocks-go/mu/config"
-	"github.com/orvice/shadowsocks-go/mu/user"
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/golang/glog"
+	muconfig "github.com/shadowsocks/shadowsocks-go/mu/config"
+	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
 )
 
 var configFile string
@@ -27,10 +29,11 @@ func boot() {
 		InitWebApi()
 	}
 
+	glog.Infoln("Get User from", muconfig.Conf.Base.Client)
 	client := user.GetClient()
 	users, err := client.GetUsers()
 	if err != nil {
-		Log.Error("Get User Error", err)
+		glog.Errorf("Get User Error", err)
 		os.Exit(0)
 	}
 	Log.Info(len(users))

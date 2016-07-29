@@ -1,10 +1,11 @@
 package main
 
 import (
-	"github.com/Sirupsen/logrus"
-	"github.com/orvice/shadowsocks-go/mu/log"
 	"io"
 	"os"
+
+	"github.com/Sirupsen/logrus"
+	"github.com/shadowsocks/shadowsocks-go/mu/log"
 )
 
 var Log = logrus.New()

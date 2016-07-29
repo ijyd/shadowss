@@ -50,32 +50,32 @@
 			"Rev": "4dd446efc17690bc53e154025146f73203b18309"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/config",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/config",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/log",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/log",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/mysql",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/mysql",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/system",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/system",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/user",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/user",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
 		{
-			"ImportPath": "github.com/orvice/shadowsocks-go/mu/webapi",
+			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/webapi",
 			"Comment": "1.1.4-96-g64ced42",
 			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
 		},
