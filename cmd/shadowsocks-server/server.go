@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"syscall"
 
-	"shadowsocks-go/shadowsocks/util"
-	"shadowsocks-go/shadowsocks/util/flag"
+	"shadowsocks-go/pkg/config"
+	"shadowsocks-go/pkg/util/flag"
 
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
@@ -28,6 +28,16 @@ func waitSignal() {
 	}
 }
 
+func start() {
+	for _, v := range config.ServerCfg.Clients {
+		glog.V(5).Infof("listen pair(%v:%v) with auth:%v")
+		go run(v.Password, v.EncryptMethod, v.Port, v.EnableOTA)
+		if udp {
+			go runUDP(v.Password, v.EncryptMethod, v.Port)
+		}
+	}
+}
+
 func main() {
 	serverRunOptions := newServerOption()
 
@@ -35,27 +45,16 @@ func main() {
 	serverRunOptions.AddFlags(pflag.CommandLine)
 	flag.InitFlags()
 
-	if serverRunOptions.isPrintVersion {
-		util.PrintVersion()
-		os.Exit(0)
-	}
-
 	if serverRunOptions.cpuCoreNum > 0 {
 		runtime.GOMAXPROCS(serverRunOptions.cpuCoreNum)
 	}
 
-	config, err := serverRunOptions.loadUserConfig()
+	err := serverRunOptions.loadConfigFile()
 	if err != nil {
 		glog.Fatalln("load user configure error:\r\n", err)
 	}
 
-	for port, password := range config.PortPassword {
-		glog.Infof("listen pair(%v:%v) with auth:%v", port, password, config.Auth)
-		go run(port, password, config.Method, config.Auth)
-		if udp {
-			go runUDP(port, password, config.Method)
-		}
-	}
+	go start()
 
 	waitSignal()
 }

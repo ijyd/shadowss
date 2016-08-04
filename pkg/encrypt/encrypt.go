@@ -1,4 +1,4 @@
-package shadowsocks
+package encrypt
 
 import (
 	"crypto/aes"
@@ -16,6 +16,8 @@ import (
 	// "golang.org/x/crypto/salsa20/salsa"
 	//"github.com/codahale/chacha20"
 	//"shadowsocks/shadowsocks-go/vendor/golang.org/x/crypto/blowfish"
+
+	"shadowsocks-go/pkg/util"
 )
 
 var errEmptyPassword = errors.New("empty key")
@@ -113,9 +115,9 @@ func (c *salsaStreamCipher) XORKeyStream(dst, src []byte) {
 	dataSize := len(src) + padLen
 	if cap(dst) >= dataSize {
 		buf = dst[:dataSize]
-	} else if leakyBufSize >= dataSize {
-		buf = leakyBuf.Get()
-		defer leakyBuf.Put(buf)
+	} else if util.LeakyBufSize >= dataSize {
+		buf = util.LeakyBuffer.Get()
+		defer util.LeakyBuffer.Put(buf)
 		buf = buf[:dataSize]
 	} else {
 		buf = make([]byte, dataSize)
@@ -171,12 +173,12 @@ func CheckCipherMethod(method string) error {
 }
 
 type Cipher struct {
-	enc  cipher.Stream
-	dec  cipher.Stream
-	key  []byte
-	info *cipherInfo
-	ota  bool // one-time auth
-	iv   []byte
+	Enc  cipher.Stream
+	Dec  cipher.Stream
+	Key  []byte
+	Info *cipherInfo
+	Ota  bool // one-time auth
+	Iv   []byte
 }
 
 // NewCipher creates a cipher that can be used in Dial() etc.

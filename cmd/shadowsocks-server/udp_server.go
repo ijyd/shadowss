@@ -3,9 +3,6 @@ package main
 import (
 	"log"
 	"net"
-	"strconv"
-
-	ss "shadowsocks-go/shadowsocks"
 
 	"github.com/golang/glog"
 )
@@ -19,13 +16,9 @@ type UDPListener struct {
 	listener *net.UDPConn
 }
 
-func runUDP(port, password, method string) {
+func runUDP(password, method string, port int) {
 	var cipher *ss.Cipher
-	listenPort, err := strconv.Atoi(port)
-	if err != nil {
-		glog.Fatalf("covert(prot:%s) string into int error:%v\r\n", port, err)
-		return
-	}
+	listenPort := port
 
 	conn, err := net.ListenUDP("udp", &net.UDPAddr{
 		IP:   net.IPv6zero,

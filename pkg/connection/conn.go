@@ -1,4 +1,4 @@
-package shadowsocks
+package connection
 
 import (
 	"encoding/binary"
@@ -7,7 +7,8 @@ import (
 	"net"
 	"strconv"
 
-	"shadowsocks-go/shadowsocks/util"
+	encrypt "shadowsocks-go/pkg/encrypt"
+	"shadowsocks-go/pkg/util"
 )
 
 const (
@@ -17,23 +18,23 @@ const (
 
 type Conn struct {
 	net.Conn
-	*Cipher
+	*encrypt.Cipher
 	readBuf  []byte
 	writeBuf []byte
 	chunkId  uint32
 }
 
-func NewConn(c net.Conn, cipher *Cipher) *Conn {
+func NewConn(c net.Conn, cipher *encrypt.Cipher) *Conn {
 	return &Conn{
 		Conn:     c,
 		Cipher:   cipher,
-		readBuf:  leakyBuf.Get(),
-		writeBuf: leakyBuf.Get()}
+		readBuf:  util.LeakyBuffer.Get(),
+		writeBuf: util.LeakyBuffer.Get()}
 }
 
 func (c *Conn) Close() error {
-	leakyBuf.Put(c.readBuf)
-	leakyBuf.Put(c.writeBuf)
+	util.LeakyBuffer.Put(c.readBuf)
+	util.LeakyBuffer.Put(c.writeBuf)
 	return c.Conn.Close()
 }
 
@@ -60,22 +61,22 @@ func RawAddr(addr string) (buf []byte, err error) {
 // This is intended for use by users implementing a local socks proxy.
 // rawaddr shoud contain part of the data in socks request, starting from the
 // ATYP field. (Refer to rfc1928 for more information.)
-func DialWithRawAddr(rawaddr []byte, server string, cipher *Cipher) (c *Conn, err error) {
+func DialWithRawAddr(rawaddr []byte, server string, cipher *encrypt.Cipher) (c *Conn, err error) {
 	conn, err := net.Dial("tcp", server)
 	if err != nil {
 		return
 	}
 	c = NewConn(conn, cipher)
-	if cipher.ota {
-		if c.enc == nil {
-			if _, err = c.initEncrypt(); err != nil {
+	if cipher.Ota {
+		if c.Enc == nil {
+			if _, err = c.InitEncrypt(); err != nil {
 				return
 			}
 		}
 		// since we have initEncrypt, we must send iv manually
-		conn.Write(cipher.iv)
+		conn.Write(cipher.Iv)
 		rawaddr[0] |= OneTimeAuthMask
-		rawaddr = util.OtaConnectAuth(cipher.iv, cipher.key, rawaddr)
+		rawaddr = util.OtaConnectAuth(cipher.Iv, cipher.Key, rawaddr)
 	}
 	if _, err = c.write(rawaddr); err != nil {
 		c.Close()
@@ -85,7 +86,7 @@ func DialWithRawAddr(rawaddr []byte, server string, cipher *Cipher) (c *Conn, er
 }
 
 // addr should be in the form of host:port
-func Dial(addr, server string, cipher *Cipher) (c *Conn, err error) {
+func Dial(addr, server string, cipher *encrypt.Cipher) (c *Conn, err error) {
 	ra, err := RawAddr(addr)
 	if err != nil {
 		return
@@ -94,8 +95,8 @@ func Dial(addr, server string, cipher *Cipher) (c *Conn, err error) {
 }
 
 func (c *Conn) GetIv() (iv []byte) {
-	iv = make([]byte, len(c.iv))
-	copy(iv, c.iv)
+	iv = make([]byte, len(c.Iv))
+	copy(iv, c.Iv)
 	return
 }
 

@@ -1,4 +1,4 @@
-package shadowsocks
+package encrypt
 
 import (
 	"crypto/rand"

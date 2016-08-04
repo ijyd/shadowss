@@ -1,4 +1,4 @@
-package shadowsocks
+package connection
 
 import (
 	"bytes"
@@ -7,9 +7,9 @@ import (
 	"net"
 	"time"
 
-	"github.com/golang/glog"
+	"shadowsocks-go/pkg/util"
 
-	"shadowsocks-go/shadowsocks/util"
+	"github.com/golang/glog"
 )
 
 func SetReadTimeout(c net.Conn) {

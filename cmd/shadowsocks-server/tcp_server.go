@@ -11,10 +11,10 @@ import (
 	"strconv"
 	"syscall"
 
-	"github.com/golang/glog"
+	conn "shadowsocks-go/pkg/connection"
+	"shadowsocks-go/pkg/util"
 
-	ss "shadowsocks-go/shadowsocks"
-	"shadowsocks-go/shadowsocks/util"
+	"github.com/golang/glog"
 )
 
 const (
@@ -33,16 +33,14 @@ const (
 	lenHmacSha1 = 10
 )
 
-var debug ss.DebugLog
-
 // PortListener is a listener
 type PortListener struct {
 	password string
 	listener net.Listener
 }
 
-func getRequest(conn *ss.Conn, auth bool) (host string, ota bool, err error) {
-	ss.SetReadTimeout(conn)
+func getRequest(conn *conn.Conn, auth bool) (host string, ota bool, err error) {
+	conn.SetReadTimeout(conn)
 
 	// buf size should at least have the same size with the largest possible
 	// request size (when addrType is 3, domain name has at most 256 bytes)
@@ -55,7 +53,7 @@ func getRequest(conn *ss.Conn, auth bool) (host string, ota bool, err error) {
 
 	var reqStart, reqEnd int
 	addrType := buf[idType]
-	switch addrType & ss.AddrMask {
+	switch addrType & conn.AddrMask {
 	case typeIPv4:
 		reqStart, reqEnd = idIP0, idIP0+lenIPv4
 	case typeIPv6:
@@ -66,7 +64,7 @@ func getRequest(conn *ss.Conn, auth bool) (host string, ota bool, err error) {
 		}
 		reqStart, reqEnd = idDm0, int(idDm0+buf[idDmLen]+lenDmBase)
 	default:
-		err = fmt.Errorf("addr type %d not supported", addrType&ss.AddrMask)
+		err = fmt.Errorf("addr type %d not supported", addrType&conn.AddrMask)
 		return
 	}
 
@@ -77,7 +75,7 @@ func getRequest(conn *ss.Conn, auth bool) (host string, ota bool, err error) {
 	// Return string for typeIP is not most efficient, but browsers (Chrome,
 	// Safari, Firefox) all seems using typeDm exclusively. So this is not a
 	// big problem.
-	switch addrType & ss.AddrMask {
+	switch addrType & conn.AddrMask {
 	case typeIPv4:
 		host = net.IP(buf[idIP0 : idIP0+net.IPv4len]).String()
 	case typeIPv6:
@@ -89,7 +87,7 @@ func getRequest(conn *ss.Conn, auth bool) (host string, ota bool, err error) {
 	port := binary.BigEndian.Uint16(buf[reqEnd-2 : reqEnd])
 	host = net.JoinHostPort(host, strconv.Itoa(int(port)))
 	// if specified one time auth enabled, we should verify this
-	if auth || addrType&ss.OneTimeAuthMask > 0 {
+	if auth || addrType&conn.OneTimeAuthMask > 0 {
 		ota = true
 		if _, err = io.ReadFull(conn, buf[reqEnd:reqEnd+lenHmacSha1]); err != nil {
 			return
@@ -201,7 +199,7 @@ func handleConnection(conn *ss.Conn, auth bool) {
 // 	log.Println("password updated")
 // }
 
-func run(port, password, method string, auth bool) {
+func run(password, method string, port int, auth bool) {
 	ln, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Printf("error listening port %v: %v\n", port, err)

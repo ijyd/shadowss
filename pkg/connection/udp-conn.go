@@ -1,4 +1,4 @@
-package shadowsocks
+package connection
 
 import (
 	"encoding/binary"
@@ -8,6 +8,8 @@ import (
 	"sync"
 	"syscall"
 	"time"
+
+	encrypt "shadowsocks-go/pkg/encrypt"
 )
 
 const (
@@ -44,7 +46,7 @@ type UDP interface {
 // UDPConn maintain a udp connection list
 type UDPConn struct {
 	UDP
-	*Cipher
+	*encrypt.Cipher
 }
 
 func NewUDPConn(cn UDP, cipher *Cipher) *UDPConn {
