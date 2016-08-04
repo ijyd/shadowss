@@ -1,7 +1,7 @@
 package user
 
 import (
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+	ss "shadowsocks/shadowsocks-go/shadowsocks"
 )
 
 var (

@@ -20,9 +20,9 @@ You can also install from source (assume you have go installed):
 
 ```
 # on server
-go get github.com/shadowsocks/shadowsocks-go/cmd/shadowsocks-server
+go get shadowsocks/shadowsocks-go/cmd/shadowsocks-server
 # on client
-go get github.com/shadowsocks/shadowsocks-go/cmd/shadowsocks-local
+go get shadowsocks/shadowsocks-go/cmd/shadowsocks-local
 ```
 
 It's recommended to disable cgo when compiling shadowsocks-go. This will prevent the go runtime from creating too many threads for dns lookup.
@@ -31,7 +31,7 @@ It's recommended to disable cgo when compiling shadowsocks-go. This will prevent
 
 Both the server and client program will look for `config.json` in the current directory. You can use `-c` option to specify another configuration file.
 
-Configuration file is in json format and has the same syntax with [shadowsocks-nodejs](https://github.com/clowwindy/shadowsocks-nodejs/). You can download the sample [`config.json`](https://github.com/shadowsocks/shadowsocks-go/blob/master/config.json), change the following values:
+Configuration file is in json format and has the same syntax with [shadowsocks-nodejs](https://github.com/clowwindy/shadowsocks-nodejs/). You can download the sample [`config.json`](https://shadowsocks/shadowsocks-go/blob/master/config.json), change the following values:
 
 ```
 server          your server ip or hostname
@@ -78,7 +78,7 @@ Use `-d` option to enable debug message.
 server_password    specify multiple server and password, server should be in the form of host:port
 ```
 
-Here's a sample configuration [`client-multi-server.json`](https://github.com/shadowsocks/shadowsocks-go/blob/master/sample-config/client-multi-server.json). Given `server_password`, client program will ignore `server_port`, `server` and `password` options.
+Here's a sample configuration [`client-multi-server.json`](https://shadowsocks/shadowsocks-go/blob/master/sample-config/client-multi-server.json). Given `server_password`, client program will ignore `server_port`, `server` and `password` options.
 
 Servers are chosen in the order specified in the config. If a server can't be connected (connection failure), the client will try the next one. (Client will retry failed server with some probability to discover server recovery.)
 
@@ -90,7 +90,7 @@ The server can support users with different passwords. Each user will be served 
 port_password   specify multiple ports and passwords to support multiple users
 ```
 
-Here's a sample configuration [`server-multi-port.json`](https://github.com/shadowsocks/shadowsocks-go/blob/master/sample-config/server-multi-port.json). Given `port_password`, server program will ignore `server_port` and `password` options.
+Here's a sample configuration [`server-multi-port.json`](https://shadowsocks/shadowsocks-go/blob/master/sample-config/server-multi-port.json). Given `port_password`, server program will ignore `server_port` and `password` options.
 
 ### Update port password for a running server
 
@@ -98,6 +98,6 @@ Edit the config file used to start the server, then send `SIGHUP` to the server 
 
 # Note to OpenVZ users
 
-**Use OpenVZ VM that supports vswap**. Otherwise, the OS will incorrectly account much more memory than actually used. shadowsocks-go on OpenVZ VM with vswap takes about 3MB memory after startup. (Refer to [this issue](https://github.com/shadowsocks/shadowsocks-go/issues/3) for more details.)
+**Use OpenVZ VM that supports vswap**. Otherwise, the OS will incorrectly account much more memory than actually used. shadowsocks-go on OpenVZ VM with vswap takes about 3MB memory after startup. (Refer to [this issue](https://shadowsocks/shadowsocks-go/issues/3) for more details.)
 
 If vswap is not an option and memory usage is a problem for you, try [shadowsocks-libev](https://github.com/madeye/shadowsocks-libev).

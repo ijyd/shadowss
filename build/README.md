@@ -10,5 +10,5 @@ docker build --rm -t bjjyd/shadowsocket-go -f Dockerfile ../../
 
 ```
 docker run --rm -it bjjyd/shadowsocket-go /bin/bash
-docker run -d -p 18387-18388:8387-8388  bjjyd/shadowsocket-go
+docker run -d -p 20000-20100:20000-20100  bjjyd/shadowsocket-go
 ```

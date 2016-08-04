@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	"shadowsocks/shadowsocks-go/mu/user"
 )
 
 var storage Storage

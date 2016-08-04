@@ -6,6 +6,8 @@ import (
 	"io"
 	"net"
 	"strconv"
+
+	"shadowsocks-go/shadowsocks/util"
 )
 
 const (
@@ -16,9 +18,9 @@ const (
 type Conn struct {
 	net.Conn
 	*Cipher
-	readBuf   []byte
-	writeBuf  []byte
-	chunkId   uint32
+	readBuf  []byte
+	writeBuf []byte
+	chunkId  uint32
 }
 
 func NewConn(c net.Conn, cipher *Cipher) *Conn {
@@ -73,7 +75,7 @@ func DialWithRawAddr(rawaddr []byte, server string, cipher *Cipher) (c *Conn, er
 		// since we have initEncrypt, we must send iv manually
 		conn.Write(cipher.iv)
 		rawaddr[0] |= OneTimeAuthMask
-		rawaddr = otaConnectAuth(cipher.iv, cipher.key, rawaddr)
+		rawaddr = util.OtaConnectAuth(cipher.iv, cipher.key, rawaddr)
 	}
 	if _, err = c.write(rawaddr); err != nil {
 		c.Close()
@@ -144,7 +146,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 func (c *Conn) Write(b []byte) (n int, err error) {
 	if c.ota {
 		chunkId := c.GetAndIncrChunkId()
-		b = otaReqChunkAuth(c.iv, chunkId, b)
+		b = util.OtaReqChunkAuth(c.iv, chunkId, b)
 	}
 	return c.write(b)
 }

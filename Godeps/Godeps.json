@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/shadowsocks/shadowsocks-go",
+	"ImportPath": "shadowsocks/shadowsocks-go",
 	"GoVersion": "go1.6",
 	"GodepVersion": "v74",
 	"Packages": [
@@ -17,10 +17,6 @@
 			"Rev": "100b4585853d399f9cbbdca8b5f5da2b50727241"
 		},
 		{
-			"ImportPath": "github.com/codahale/chacha20",
-			"Rev": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953"
-		},
-		{
 			"ImportPath": "github.com/cyfdecyf/leakybuf",
 			"Comment": "1.0",
 			"Rev": "ffae040843bee2891b6306d1d085c25ca822e72c"
@@ -29,6 +25,10 @@
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.2-196-g3654d25",
 			"Rev": "3654d25ec346ee8ce71a68431025458d52a38ac0"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
 		},
 		{
 			"ImportPath": "github.com/jinzhu/gorm",
@@ -50,46 +50,20 @@
 			"Rev": "4dd446efc17690bc53e154025146f73203b18309"
 		},
 		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/config",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
-		},
-		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/log",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
-		},
-		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/mysql",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
-		},
-		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/system",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
-		},
-		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/user",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
-		},
-		{
-			"ImportPath": "github.com/shadowsocks/shadowsocks-go/mu/webapi",
-			"Comment": "1.1.4-96-g64ced42",
-			"Rev": "64ced42c0699ec7a0874aeb2bb9062e27900bdbc"
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "1560c1005499d61b80f865c04d39ca7505bf7f0b"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
-			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+			"Rev": "611beeb3d5df450a45f4b67f9e25235f54beda72"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/cast5",
-			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+			"Rev": "611beeb3d5df450a45f4b67f9e25235f54beda72"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
-			"Rev": "bc89c496413265e715159bdc8478ee9a92fdc265"
+			"Rev": "611beeb3d5df450a45f4b67f9e25235f54beda72"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",

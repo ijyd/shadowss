@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"time"
 
-	muconfig "github.com/shadowsocks/shadowsocks-go/mu/config"
-	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	muconfig "shadowsocks/shadowsocks-go/mu/config"
+	"shadowsocks/shadowsocks-go/mu/user"
 	redis "gopkg.in/redis.v3"
 )
 

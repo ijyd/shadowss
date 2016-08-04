@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/shadowsocks/shadowsocks-go/mu/log"
+	"shadowsocks/shadowsocks-go/mu/log"
 )
 
 var Log = logrus.New()

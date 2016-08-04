@@ -9,12 +9,13 @@ import (
 	"crypto/rc4"
 	"encoding/binary"
 	"errors"
-	"github.com/codahale/chacha20"
-	"golang.org/x/crypto/blowfish"
-	"golang.org/x/crypto/cast5"
-	"golang.org/x/crypto/salsa20/salsa"
 	"io"
 	"strings"
+	// "golang.org/x/crypto/blowfish"
+	// "golang.org/x/crypto/cast5"
+	// "golang.org/x/crypto/salsa20/salsa"
+	//"github.com/codahale/chacha20"
+	//"shadowsocks/shadowsocks-go/vendor/golang.org/x/crypto/blowfish"
 )
 
 var errEmptyPassword = errors.New("empty key")
@@ -75,13 +76,15 @@ func newDESStream(key, iv []byte, doe DecOrEnc) (cipher.Stream, error) {
 }
 
 func newBlowFishStream(key, iv []byte, doe DecOrEnc) (cipher.Stream, error) {
-	block, err := blowfish.NewCipher(key)
-	return newStream(block, err, key, iv, doe)
+	//block, err := blowfish.NewCipher(key)
+	//return newStream(block, err, key, iv, doe)
+	return nil, nil
 }
 
 func newCast5Stream(key, iv []byte, doe DecOrEnc) (cipher.Stream, error) {
-	block, err := cast5.NewCipher(key)
-	return newStream(block, err, key, iv, doe)
+	//block, err := cast5.NewCipher(key)
+	//return newStream(block, err, key, iv, doe)
+	return nil, nil
 }
 
 func newRC4MD5Stream(key, iv []byte, _ DecOrEnc) (cipher.Stream, error) {
@@ -94,7 +97,8 @@ func newRC4MD5Stream(key, iv []byte, _ DecOrEnc) (cipher.Stream, error) {
 }
 
 func newChaCha20Stream(key, iv []byte, _ DecOrEnc) (cipher.Stream, error) {
-	return chacha20.New(key, iv)
+	//return chacha20.New(key, iv)
+	return nil, nil
 }
 
 type salsaStreamCipher struct {
@@ -124,7 +128,7 @@ func (c *salsaStreamCipher) XORKeyStream(dst, src []byte) {
 	// It's difficult to avoid data copy here. src or dst maybe slice from
 	// Conn.Read/Write, which can't have padding.
 	copy(buf[padLen:], src[:])
-	salsa.XORKeyStream(buf, buf, &subNonce, &c.key)
+	//salsa.XORKeyStream(buf, buf, &subNonce, &c.key)
 	copy(dst, buf[padLen:])
 
 	c.counter += len(src)
@@ -184,7 +188,7 @@ func NewCipher(method, password string) (c *Cipher, err error) {
 	}
 	var ota bool
 	if strings.HasSuffix(strings.ToLower(method), "-ota") {
-		method = method[:len(method) - 4] // len("-ota") = 4
+		method = method[:len(method)-4] // len("-ota") = 4
 		ota = true
 	} else {
 		ota = false

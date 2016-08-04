@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/shadowsocks/shadowsocks-go/mu/user"
+	"shadowsocks/shadowsocks-go/mu/user"
 )
 
 type Client interface {

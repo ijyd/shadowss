@@ -5,7 +5,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	ss "github.com/shadowsocks/shadowsocks-go/shadowsocks"
+	ss "shadowsocks/shadowsocks-go/shadowsocks"
 	"io"
 	"log"
 	"math/rand"
@@ -246,7 +246,7 @@ func connectToServer(serverId int, rawaddr []byte, addr string) (remote *ss.Conn
 		}
 		return nil, err
 	}
-	debug.Printf("connected to %s via %s\n", addr, se.server)
+	glog.V(5).Infof("connected to %s via %s\n", addr, se.server)
 	servers.failCnt[serverId] = 0
 	return
 }
@@ -282,7 +282,7 @@ func createServerConn(rawaddr []byte, addr string) (remote *ss.Conn, err error) 
 
 func handleConnection(conn net.Conn) {
 	if debug {
-		debug.Printf("socks connect from %s\n", conn.RemoteAddr().String())
+		glog.V(5).Infof("socks connect from %s\n", conn.RemoteAddr().String())
 	}
 	closed := false
 	defer func() {
