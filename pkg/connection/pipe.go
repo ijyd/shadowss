@@ -12,26 +12,26 @@ import (
 	"github.com/golang/glog"
 )
 
-func SetReadTimeout(c net.Conn) {
-	if readTimeout != 0 {
-		c.SetReadDeadline(time.Now().Add(readTimeout))
+func SetReadTimeout(c net.Conn, timeout time.Duration) {
+	if timeout != 0 {
+		c.SetReadDeadline(time.Now().Add(timeout))
 	}
 }
 
 // PipeThenClose copies data from src to dst, closes dst when done.
-func PipeThenClose(src, dst net.Conn) {
+func PipeThenClose(src, dst net.Conn, timeout time.Duration) {
 	defer dst.Close()
 	buf := leakyBuf.Get()
 	defer leakyBuf.Put(buf)
 	for {
-		SetReadTimeout(src)
+		SetReadTimeout(src, timeout)
 		n, err := src.Read(buf)
 		// read may return EOF with n > 0
 		// should always process n > 0 bytes before handling error
 		if n > 0 {
 			// Note: avoid overwrite err returned by Read.
 			if _, err := dst.Write(buf[0:n]); err != nil {
-				Debug.Println("write:", err)
+				glog.Errorf("write err:%v", err)
 				break
 			}
 		}
@@ -50,7 +50,7 @@ func PipeThenClose(src, dst net.Conn) {
 }
 
 // PipeThenClose copies data from src to dst, closes dst when done, with ota verification.
-func PipeThenCloseOta(src *Conn, dst net.Conn) {
+func PipeThenCloseOta(src *Conn, dst net.Conn, timeout time.Duration) {
 	const (
 		dataLenLen  = 2
 		hmacSha1Len = 10
@@ -66,12 +66,13 @@ func PipeThenCloseOta(src *Conn, dst net.Conn) {
 	i := 0
 	for {
 		i += 1
-		SetReadTimeout(src)
+		SetReadTimeout(src, timeout)
 		if n, err := io.ReadFull(src, buf[:dataLenLen+hmacSha1Len]); err != nil {
 			if err == io.EOF {
 				break
 			}
-			glog.V(5).Infof("conn=%p #%v read header error n=%v: %v", src, i, n, err)
+
+			glog.Errorf("conn=%p #%v read header error n=%v: %v", src, i, n, err)
 			break
 		}
 		dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])

@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+
+	"github.com/golang/glog"
 )
 
 // ServerConfig for server configure
@@ -38,10 +40,12 @@ func (s *ServerConfig) Parse(file string) error {
 		return err
 	}
 
-	config := &ServerConfig{}
-	if err = json.Unmarshal(data, config); err != nil {
+	//config := &ServerConfig{}
+	if err = json.Unmarshal(data, s); err != nil {
 		return err
 	}
+	//copy(s, config)
+	glog.V(5).Infoln("Got Configure clients:%+v", s)
 
 	return s.verifyConfig()
 }
