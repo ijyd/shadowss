@@ -226,6 +226,22 @@ func (c *Cipher) initEncrypt() (iv []byte, err error) {
 	return
 }
 
+//initEncryptFake allways init iv
+func (c *Cipher) initEncryptFake() (iv []byte, err error) {
+
+	iv = make([]byte, c.info.ivLen)
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return nil, err
+	}
+	c.iv = iv
+
+	c.enc, err = c.info.newStream(c.key, iv, Encrypt)
+	if err != nil {
+		return nil, err
+	}
+	return
+}
+
 func (c *Cipher) initDecrypt(iv []byte) (err error) {
 	c.dec, err = c.info.newStream(c.key, iv, Decrypt)
 	return
