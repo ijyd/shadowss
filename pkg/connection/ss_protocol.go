@@ -65,8 +65,8 @@ func decrypt(encBuffer []byte, cipher *Cipher) ([]byte, error) {
 	iv := make([]byte, ivLen)
 	copy(iv, encBuffer[0:cipher.info.ivLen])
 
-	glog.Infof("Got  decrypt cipher ivlen(%d) iv:%s", ivLen, util.DumpHex(iv[:]))
-	glog.Infof("Got  decrypt datalen(%d) data:%s", byteLen, util.DumpHex(encBuffer[ivLen:]))
+	glog.V(5).Infof("Got  decrypt cipher ivlen(%d) iv:%s", ivLen, util.DumpHex(iv[:]))
+	glog.V(5).Infof("Got  decrypt datalen(%d) data:%s", byteLen, util.DumpHex(encBuffer[ivLen:]))
 
 	if err := cipher.initDecrypt(iv); err != nil {
 		glog.Errorf("init decrypt failure:%v\r\n", err)
@@ -92,7 +92,7 @@ func Parse(input []byte, byteLen int, cipher *Cipher) *SSProtocol {
 	}
 	validBufferLen := byteLen - cipher.info.ivLen
 
-	glog.Infof("Got decrypt plain text buffer(%s) \r\n", util.DumpHex(decBuffer[0:validBufferLen]))
+	glog.V(5).Infof("Got decrypt plain text buffer(%s) \r\n", util.DumpHex(decBuffer[0:validBufferLen]))
 
 	ssProtocal := new(SSProtocol)
 	parseLen := 0
