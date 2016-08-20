@@ -157,11 +157,22 @@ func (pxy *Proxy) handleRequest(recv receive) {
 	}
 
 	//check ota
-	hmac := util.HmacSha1(append(ssProtocol.IV, pxy.cipher.key...), recv.buffer)
-	if !bytes.Equal(ssProtocol.HMAC[:], hmac) {
-		glog.Errorf("request hmac %s \r\n actual hmac %s \r\n", util.DumpHex(ssProtocol.HMAC[:]), util.DumpHex(hmac))
-		//err = fmt.Errorf("verify one time auth failed, iv=%v key=%v data=%v", iv, key, buf[:reqEnd])
-		return
+	if pxy.oneTimeAuth {
+		if ssProtocol.OneTimeAuth {
+			authKey := append(ssProtocol.IV, pxy.cipher.key...)
+			authData := append(ssProtocol.RespHeader, ssProtocol.Data...)
+
+			hmac := util.HmacSha1(authKey, authData)
+			if !bytes.Equal(ssProtocol.HMAC[:], hmac) {
+				glog.Errorf("Unauthorized request\r\n")
+				return
+			}
+		} else {
+			glog.Warningf("invalid request with auth \r\n")
+			return
+		}
+	} else {
+		glog.V(5).Infof("this client(%d) not enable auth\r\n", pxy.port)
 	}
 
 	serverAddr := &net.UDPAddr{

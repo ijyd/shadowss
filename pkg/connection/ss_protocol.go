@@ -135,7 +135,7 @@ func Parse(input []byte, byteLen int, cipher *Cipher) (*SSProtocol, error) {
 	ssProtocal.RespHeader = make([]byte, parseLen)
 	copy(ssProtocal.RespHeader, decBuffer[:parseLen])
 	//need to fix resp header
-	ssProtocal.RespHeader[0] = ssProtocal.AddrType
+	//ssProtocal.RespHeader[0] = ssProtocal.AddrType
 
 	dataBufferLen := 0
 	if ssProtocal.OneTimeAuth {

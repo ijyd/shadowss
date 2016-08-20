@@ -67,10 +67,11 @@ func coverUserToConfig(user *User) *config.ConnectionInfo {
 		Port:          user.Port,
 		EncryptMethod: user.Method,
 		Password:      user.Passwd,
-		EnableOTA:     user.Enable == 0,
+		EnableOTA:     user.Enable != 0,
 		Timeout:       60,
 	}
 }
+
 func runSync(users *Users) {
 	for {
 		go func() {
