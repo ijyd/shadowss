@@ -9,6 +9,7 @@ import (
 
 	"shadowsocks-go/cmd/shadowss"
 	"shadowsocks-go/pkg/proxyserver"
+	"shadowsocks-go/pkg/users"
 	"shadowsocks-go/pkg/util/flag"
 
 	"github.com/golang/glog"
@@ -45,9 +46,12 @@ func waitSignal() {
 
 func main() {
 	serverRunOptions := shadowss.NewServerOption()
-
 	// Parse command line flags.
 	serverRunOptions.AddFlags(pflag.CommandLine)
+
+	users := users.NewUsers()
+	users.AddFlags(pflag.CommandLine)
+
 	flag.InitFlags()
 
 	if serverRunOptions.CpuCoreNum > 0 {
@@ -63,5 +67,6 @@ func main() {
 	pxy := proxyserver.NewServers(serverRunOptions.EnableUDPRelay)
 	pxy.Start()
 
+	users.CreateUsersSync(pxy)
 	waitSignal()
 }
