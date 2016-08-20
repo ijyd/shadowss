@@ -2,6 +2,7 @@ package config
 
 // ConnectionInfo description connection base information
 type ConnectionInfo struct {
+	ID            int64  `json:"id"`
 	Host          string `json:"host"`
 	Port          int    `json:"port"`
 	EncryptMethod string `json:"encrypt"`

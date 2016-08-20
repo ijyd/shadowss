@@ -1,4 +1,4 @@
-package shadowss
+package tcp
 
 import (
 	"bytes"
@@ -7,11 +7,12 @@ import (
 	"io"
 	"log"
 	"net"
-	"os"
+	"reflect"
 	"strconv"
 	"syscall"
 	"time"
 
+	"shadowsocks-go/pkg/config"
 	connection "shadowsocks-go/pkg/connection"
 	encrypt "shadowsocks-go/pkg/connection"
 	"shadowsocks-go/pkg/util"
@@ -41,8 +42,27 @@ type PortListener struct {
 	listener net.Listener
 }
 
+//TCPServer maintain a listener
+type TCPServer struct {
+	Config *config.ConnectionInfo
+	quit   chan struct{}
+}
+
+//NewTCPServer create a TCPServer
+func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
+	return &TCPServer{
+		Config: cfg,
+		quit:   make(chan struct{}),
+	}
+}
+
+//Stop implement quit go routine
+func (tcpSrv *TCPServer) Stop() {
+	glog.V(5).Infof("tcp server close %v\r\n", tcpSrv.Config)
+	close(tcpSrv.quit)
+}
+
 func getRequest(conn *connection.Conn, auth bool, timeout time.Duration) (host string, ota bool, err error) {
-	glog.V(5).Infoln("getRequest from remote34342")
 
 	connection.SetReadTimeout(conn, timeout)
 
@@ -168,6 +188,7 @@ func handleConnection(conn *connection.Conn, auth bool, timeout time.Duration) {
 		} else {
 			glog.Errorf(" connecting to:%v occur err:%v", host, err)
 		}
+
 		return
 	}
 	defer func() {
@@ -188,60 +209,133 @@ func handleConnection(conn *connection.Conn, auth bool, timeout time.Duration) {
 	return
 }
 
-// func updatePasswd() {
-// 	log.Println("updating password")
-// 	newconfig, err := ss.ParseConfig(configFile)
-// 	if err != nil {
-// 		log.Printf("error parsing config file %s to update password: %v\n", configFile, err)
-// 		return
-// 	}
-// 	oldconfig := config
-// 	config = newconfig
-//
-// 	if err = unifyPortPassword(config); err != nil {
-// 		return
-// 	}
-// 	for port, passwd := range config.PortPassword {
-// 		passwdManager.updatePortPasswd(port, passwd, config.Auth)
-// 		if oldconfig.PortPassword != nil {
-// 			delete(oldconfig.PortPassword, port)
-// 		}
-// 	}
-// 	// port password still left in the old config should be closed
-// 	for port, _ := range oldconfig.PortPassword {
-// 		log.Printf("closing port %s as it's deleted\n", port)
-// 		passwdManager.del(port)
-// 	}
-// 	log.Println("password updated")
-// }
+//Run start a tcp listen for user
+func (tcpSrv *TCPServer) Run() {
 
-func Run(password, method string, port int, auth bool, timeout time.Duration) {
+	password := tcpSrv.Config.Password
+	method := tcpSrv.Config.EncryptMethod
+	port := tcpSrv.Config.Port
+	auth := tcpSrv.Config.EnableOTA
+	timeout := time.Duration(tcpSrv.Config.Timeout) * time.Second
+
 	portStr := strconv.Itoa(port)
 	ln, err := net.Listen("tcp", ":"+portStr)
 	if err != nil {
-		log.Printf("error listening port %v: %v\n", port, err)
-		os.Exit(1)
+		glog.Errorf("tcp server(%v) error: %v\n", port, err)
 	}
-	passwdManager.add(password, port, ln)
-	var cipher *encrypt.Cipher
-	log.Printf("server listening port %v ...\n", port)
+	defer ln.Close()
+
+	glog.Infof("creating cipher for port :%v and method: %v\r\n", port, method)
+	cipher, err := encrypt.NewCipher(method, password)
+	if err != nil {
+		glog.Errorf("Error generating cipher for port: %s %v\n", port, err)
+		return
+	}
+
+	glog.V(5).Infof("tcp server listening on %v port %v  ...\n", ln.Addr().String(), port)
+
 	for {
-		conn, err := ln.Accept()
-		if err != nil {
-			// listener maybe closed to update password
-			glog.V(5).Infof("accept error: %v\n", err)
-			return
+		type accepted struct {
+			conn net.Conn
+			err  error
 		}
-		// Creating cipher upon first connection.
-		if cipher == nil {
-			glog.Infof("creating cipher for port :%v and method: %v\r\n", port, method)
-			cipher, err = encrypt.NewCipher(method, password)
-			if err != nil {
-				glog.Errorf("Error generating cipher for port: %s %v\n", port, err)
-				conn.Close()
+		c := make(chan accepted, 1)
+		go func() {
+			glog.Infof("wait for accept\r\n")
+			var conn net.Conn
+			conn, err = ln.Accept()
+			c <- accepted{conn: conn, err: err}
+		}()
+
+		select {
+		case <-tcpSrv.quit:
+			glog.Infof("Receive Quit singal for %s\r\n", port)
+			return
+		case accept := <-c:
+			if accept.err != nil {
+				glog.V(5).Infof("accept error: %v\n", err)
 				continue
 			}
+			go handleConnection(connection.NewConn(accept.conn, cipher.Copy()), auth, timeout)
 		}
-		go handleConnection(connection.NewConn(conn, cipher.Copy()), auth, timeout)
 	}
 }
+
+// func (tcpSrv *TCPServer) Run() {
+//
+// 	password := tcpSrv.Config.Password
+// 	method := tcpSrv.Config.EncryptMethod
+// 	port := tcpSrv.Config.Port
+// 	auth := tcpSrv.Config.EnableOTA
+// 	timeout := time.Duration(tcpSrv.Config.Timeout) * time.Second
+//
+// 	portStr := strconv.Itoa(port)
+// 	ln, err := net.Listen("tcp", ":"+portStr)
+// 	if err != nil {
+// 		glog.Errorf("tcp server(%v) error: %v\n", port, err)
+// 		os.Exit(1)
+// 	}
+// 	//passwdManager.add(password, port, ln)
+// 	var cipher *encrypt.Cipher
+// 	glog.V(5).Infof("tcp server listening on %v port %v  ...\n", ln.Addr().String(), port)
+// 	for {
+// 		select {
+// 		case <-tcpSrv.quit:
+// 			glog.Infof("Receive Quit singal for %s\r\n", port)
+// 			ln.Close()
+// 			break
+// 		default:
+// 			glog.Infof("wait for accept\r\n")
+// 			conn, err := ln.Accept()
+// 			if err != nil {
+// 				glog.V(5).Infof("accept error: %v\n", err)
+// 				return
+// 			}
+// 			if cipher == nil {
+// 				glog.Infof("creating cipher for port :%v and method: %v\r\n", port, method)
+// 				cipher, err = encrypt.NewCipher(method, password)
+// 				if err != nil {
+// 					glog.Errorf("Error generating cipher for port: %s %v\n", port, err)
+// 					conn.Close()
+// 					continue
+// 				}
+// 			}
+// 			go handleConnection(connection.NewConn(conn, cipher.Copy()), auth, timeout)
+// 		}
+// 	}
+// }
+
+func (tcpSrv *TCPServer) Compare(client *config.ConnectionInfo) bool {
+	return reflect.DeepEqual(*tcpSrv.Config, *client)
+}
+
+// func Run(password, method string, port int, auth bool, timeout time.Duration) {
+// 	portStr := strconv.Itoa(port)
+// 	ln, err := net.Listen("tcp", ":"+portStr)
+// 	if err != nil {
+// 		log.Printf("error listening port %v: %v\n", port, err)
+// 		os.Exit(1)
+// 	}
+// 	//passwdManager.add(password, port, ln)
+// 	var cipher *encrypt.Cipher
+// 	log.Printf("server listening port %v ...\n", port)
+// 	for {
+// 		conn, err := ln.Accept()
+// 		if err != nil {
+// 			// listener maybe closed to update password
+// 			glog.V(5).Infof("accept error: %v\n", err)
+// 			return
+// 		}
+// 		// Creating cipher upon first connection.
+// 		if cipher == nil {
+// 			glog.Infof("creating cipher for port :%v and method: %v\r\n", port, method)
+// 			cipher, err = encrypt.NewCipher(method, password)
+// 			if err != nil {
+// 				glog.Errorf("Error generating cipher for port: %s %v\n", port, err)
+// 				conn.Close()
+// 				continue
+// 			}
+// 		}
+// 		go handleConnection(connection.NewConn(conn, cipher.Copy()), auth, timeout)
+// 	}
+// }

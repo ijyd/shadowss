@@ -2,6 +2,7 @@ package connection
 
 import (
 	"net"
+	"sync"
 
 	"github.com/golang/glog"
 )
@@ -10,6 +11,7 @@ import (
 type Connection struct {
 	ClientAddr *net.UDPAddr // Address of the client
 	ServerConn *net.UDPConn // UDP connection to server
+	Quit       chan struct{}
 }
 
 //NewConnection Generate a new connection by opening a UDP connection to the server
@@ -23,30 +25,53 @@ func NewConnection(srvAddr, cliAddr *net.UDPAddr) *Connection {
 	}
 
 	conn.ServerConn = srvudp
+	conn.Quit = make(chan struct{})
 	return conn
 }
 
 //RunConnection Go routine which manages connection from server to single client
-func RunConnection(conn *Connection, write *net.UDPConn, cipher *Cipher, respHeader []byte) {
+func (conn *Connection) RunConnection(write *net.UDPConn, cipher *Cipher, respHeader []byte, wg sync.WaitGroup) {
+	wg.Add(1)
 	for {
 		// Read from server
-		buffer := make([]byte, 2048)
-		n, err := conn.ServerConn.Read(buffer[0:])
-		if err != nil {
-			glog.Errorf("read %s->%s failure %v \r\n", conn.ClientAddr.String(), conn.ServerConn.RemoteAddr().String(), err)
-			continue
+		type receive struct {
+			readLen int
+			err     error
+			buffer  []byte
 		}
 
-		// Relay it to client
-		respHeaderLen := len(respHeader)
-		resp := make([]byte, n+respHeaderLen)
-		copy(resp[:], respHeader)
-		copy(resp[respHeaderLen:], buffer[0:n])
-		encBuff, err := encodeUDPResp(resp[:], n+respHeaderLen, cipher)
-		_, err = write.WriteToUDP(encBuff[:], conn.ClientAddr)
-		if err != nil {
-			glog.Errorf("write local->%s failure %v \r\n", conn.ClientAddr.String(), err)
-			continue
+		recvChan := make(chan receive, 1)
+		go func() {
+			buffer := make([]byte, 2048)
+			n, err := conn.ServerConn.Read(buffer[0:])
+			recvChan <- receive{n, err, buffer[0:n]}
+		}()
+
+		select {
+		case <-conn.Quit:
+			glog.Infof("quit remote Connection %v->%v \r\n", conn.ClientAddr.String(), conn.ServerConn.RemoteAddr().String())
+			conn.ServerConn.Close()
+			wg.Done()
+			return
+		case recv := <-recvChan:
+			if recv.err != nil {
+				glog.Errorf("read %s->%s failure %v \r\n", conn.ClientAddr.String(), conn.ServerConn.RemoteAddr().String(), recv.err)
+				continue
+			}
+
+			buffer := recv.buffer
+			n := recv.readLen
+
+			// Relay it to client
+			respHeaderLen := len(respHeader)
+			resp := make([]byte, n+respHeaderLen)
+			copy(resp[:], respHeader)
+			copy(resp[respHeaderLen:], buffer[0:n])
+			encBuff, err := encodeUDPResp(resp[:], n+respHeaderLen, cipher)
+			_, err = write.WriteToUDP(encBuff[:], conn.ClientAddr)
+			if err != nil {
+				glog.Errorf("write local->%s failure %v \r\n", conn.ClientAddr.String(), err)
+			}
 		}
 	}
 }

@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
+	"math/rand"
 	"os"
 
 	"github.com/golang/glog"
@@ -12,6 +13,10 @@ import (
 type ServerConfig struct {
 	Clients []ConnectionInfo `json:"clients"`
 }
+
+const (
+	generateRandID = 100000000
+)
 
 // ServerCfg server configure handle
 var ServerCfg = NewServerConfig()
@@ -24,6 +29,15 @@ func NewServerConfig() *ServerConfig {
 }
 
 func (s *ServerConfig) verifyConfig() error {
+	for idx, v := range s.Clients {
+		glog.Infof("verify config %v", v)
+		if v.ID == 0 {
+			//generate default id for this clients
+			id := rand.Int63n(generateRandID)
+			s.Clients[idx].ID = (id + generateRandID) * 100
+		}
+	}
+
 	return nil
 }
 
