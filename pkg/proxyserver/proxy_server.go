@@ -10,50 +10,27 @@ import (
 
 //Servers hold on a list of proxyserver
 type Servers struct {
-	tcpSrv    []ProxyServer
-	udpSrv    []ProxyServer
-	tcpSrvMap map[int64]int //id to srv index map
-	udpSrvMap map[int64]int //id to srv index map
+	tcpSrvMap map[int64]ProxyServer //id to srv interface map
+	udpSrvMap map[int64]ProxyServer //id to srv interface map
 	enableUDP bool
 }
 
 //NewServers create a servers
 func NewServers(udp bool) *Servers {
 	return &Servers{
-		tcpSrv:    make([]ProxyServer, 0),
-		udpSrv:    make([]ProxyServer, 0),
-		tcpSrvMap: make(map[int64]int),
-		udpSrvMap: make(map[int64]int),
+		tcpSrvMap: make(map[int64]ProxyServer),
+		udpSrvMap: make(map[int64]ProxyServer),
 		enableUDP: udp,
 	}
 }
 
-func appendSrv(slice []ProxyServer, elements ProxyServer) ([]ProxyServer, int) {
-	n := len(slice)
-
-	total := len(slice) + 1
-	if total > cap(slice) {
-		// Reallocate. Grow to 1.5 times the new size, so we can still grow.
-		newSize := total*3/2 + 1
-		newSlice := make([]ProxyServer, total, newSize)
-		copy(newSlice, slice)
-		slice = newSlice
-	}
-
-	slice = slice[:total]
-	slice = append(slice, elements)
-	return slice, n + 1
-}
-
 func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.ConnectionInfo) {
-	idx := 0
+	srv.tcpSrvMap[cfg.ID] = tcp
 
-	srv.tcpSrv, idx = appendSrv(srv.tcpSrv, tcp)
-	srv.tcpSrvMap[cfg.ID] = idx
+	glog.Infof("store id %d  tcp :%p\r\n", cfg.ID, tcp)
 
 	if srv.enableUDP {
-		srv.udpSrv, idx = appendSrv(srv.udpSrv, udp)
-		srv.udpSrvMap[cfg.ID] = idx
+		srv.udpSrvMap[cfg.ID] = udp
 	}
 }
 
@@ -61,9 +38,9 @@ func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.Conne
 func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 
 	var equal bool
-	v, exist := srv.tcpSrvMap[client.ID]
+	tcpSrv, exist := srv.tcpSrvMap[client.ID]
 	if exist {
-		tcpSrv := srv.tcpSrv[v]
+		glog.Infof("check id %dtcp :%p\r\n", client.ID, tcpSrv)
 		equal = tcpSrv.Compare(client)
 	}
 
@@ -73,15 +50,13 @@ func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 //GetTraffic collection traffic for user
 func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, error) {
 	var tcpUpload, tcpDownload, udpUpload, udpDownload int64
-	v, exist := srv.tcpSrvMap[client.ID]
+	tcpSrv, exist := srv.tcpSrvMap[client.ID]
 	if exist {
-		tcpSrv := srv.tcpSrv[v]
 		tcpUpload, tcpDownload = tcpSrv.Traffic()
 	} else {
 		if srv.enableUDP {
-			v, exist := srv.udpSrvMap[client.ID]
+			udpSrv, exist := srv.udpSrvMap[client.ID]
 			if exist {
-				udpSrv := srv.udpSrv[v]
 				udpUpload, udpDownload = udpSrv.Traffic()
 			} else {
 				glog.Errorf("use udp relay but not found\r\n")
@@ -94,28 +69,20 @@ func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, err
 
 //StopServer create new server for users
 func (srv *Servers) StopServer(client *config.ConnectionInfo) {
-	v, ok := srv.tcpSrvMap[client.ID]
+	tcpSrv, ok := srv.tcpSrvMap[client.ID]
 	if !ok {
 		glog.Warningf("not found tcp server %s\r\n", client.Port)
 	} else {
-		tcpSrv := srv.tcpSrv[v]
 		tcpSrv.Stop()
-		//remove it from slice
-		srv.tcpSrv = append(srv.tcpSrv[:v], srv.tcpSrv[v+1:]...)
-		//remove from map
 		delete(srv.tcpSrvMap, client.ID)
 	}
 
 	if srv.enableUDP {
-		v, ok := srv.udpSrvMap[client.ID]
+		udpSrv, ok := srv.udpSrvMap[client.ID]
 		if !ok {
 			glog.Warningf("not found tcp server %s\r\n", client.Port)
 		} else {
-			udpSrv := srv.udpSrv[v]
 			udpSrv.Stop()
-			//remove it from slice
-			srv.udpSrv = append(srv.udpSrv[:v], srv.udpSrv[v+1:]...)
-			//remove from map
 			delete(srv.udpSrvMap, client.ID)
 		}
 	}

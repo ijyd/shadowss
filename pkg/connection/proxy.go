@@ -177,7 +177,12 @@ func (pxy *Proxy) handleRequest(recv receive) {
 	if pxy.oneTimeAuth {
 		if ssProtocol.OneTimeAuth {
 			authKey := append(ssProtocol.IV, pxy.cipher.key...)
-			authData := append(ssProtocol.RespHeader, ssProtocol.Data...)
+			reqHeader := make([]byte, len(ssProtocol.RespHeader))
+			copy(reqHeader, ssProtocol.RespHeader)
+			reqHeader[0] = ssProtocol.AddrType | (addrOneTimeAuthFlag)
+
+			authData := append(reqHeader, ssProtocol.Data...)
+			glog.V(5).Infof("request auth data: \r\n %s \r\n  ", util.DumpHex(authData))
 
 			hmac := util.HmacSha1(authKey, authData)
 			if !bytes.Equal(ssProtocol.HMAC[:], hmac) {

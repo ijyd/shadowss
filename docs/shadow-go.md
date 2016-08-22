@@ -45,7 +45,18 @@ shadowsocks UDP Request and Response (after encrypted)
 +-------+--------------+
 ```
 
+## run server
 
+```
+./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-type="mysql" --sync-user-interval=20 --server-list="sspanel:sspanel@tcp(192.168.60.132:13306)/sspanel"
+```
+
+test with dig
+
+```
+dig dig @192.168.1.1 www.google.com
+
+```
 
 
 # 调试问题汇总
@@ -68,3 +79,9 @@ shadowsocks UDP Request and Response (after encrypted)
 - `ss-tunnel`收到返回请求后，检查如果是一个有效的应答包，就会去除shadows的头字段，把数据部分发给chinadns
 - chinadns获取到的就是一个dns的resp，如果是一个有效的dns resp，那么它就会将此响应透传给dnsmasq
 - 最终dnsmasq将dns应答发给client
+
+## ss-tunenl
+
+```
+/usr/bin/ss-tunnel -c /var/etc/shadowsocks.json -A -u -l 53000 -L 8.8.4.4:53 -f /var/run/ss-tunnel.pid
+```
