@@ -28,7 +28,11 @@ func NewUDPServer(cfg *config.ConnectionInfo) *UDPServer {
 func (udpSrv *UDPServer) Stop() {
 	glog.V(5).Infof("udp server close %v\r\n", udpSrv.Config)
 	udpSrv.udpProxy.Stop()
-	//udpSrv.wg.Wait()
+}
+
+//Traffic get user traffic
+func (udpSrv *UDPServer) Traffic() (int64, int64) {
+	return udpSrv.udpProxy.Traffic()
 }
 
 //Run implement a new udp listener

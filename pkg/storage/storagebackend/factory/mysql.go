@@ -10,26 +10,18 @@ import (
 	dbmysql "github.com/jinzhu/gorm"
 )
 
-// func genConnStr(user, password, host, dbname string) string {
-// 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=True", user, password, host, dbname)
-// }
-
 //connectionStr: user:password@tcp(host:port)/dbname
 func newMysqlClient(connectionStr string) (*dbmysql.DB, error) {
 	var err error
 	connStr := string(connectionStr) + string("?parseTime=True")
 	db, err := dbmysql.Open(string("mysql"), connStr)
+	//db.LogMode(true)
 	if err != nil {
 		return nil, err
 	}
 
 	return db, db.DB().Ping()
 }
-
-// func (c *Client) SetTable(table string) {
-// 	tableName = table
-// 	c.table = table
-// }
 
 func newMysqlStorage(c storagebackend.Config) (storage.Interface, error) {
 	endpoints := c.ServerList

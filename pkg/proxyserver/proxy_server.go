@@ -70,6 +70,28 @@ func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 	return exist, equal
 }
 
+//GetTraffic collection traffic for user
+func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, error) {
+	var tcpUpload, tcpDownload, udpUpload, udpDownload int64
+	v, exist := srv.tcpSrvMap[client.ID]
+	if exist {
+		tcpSrv := srv.tcpSrv[v]
+		tcpUpload, tcpDownload = tcpSrv.Traffic()
+	} else {
+		if srv.enableUDP {
+			v, exist := srv.udpSrvMap[client.ID]
+			if exist {
+				udpSrv := srv.udpSrv[v]
+				udpUpload, udpDownload = udpSrv.Traffic()
+			} else {
+				glog.Errorf("use udp relay but not found\r\n")
+			}
+		}
+	}
+
+	return tcpUpload + udpUpload, tcpDownload + udpDownload, nil
+}
+
 //StopServer create new server for users
 func (srv *Servers) StopServer(client *config.ConnectionInfo) {
 	v, ok := srv.tcpSrvMap[client.ID]

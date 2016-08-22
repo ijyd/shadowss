@@ -60,6 +60,19 @@ func (u *Users) getUsers() ([]User, error) {
 	return get(u.StorageHandler)
 }
 
+func (u *Users) refreshTraffic(config *config.ConnectionInfo, user *User) error {
+	//update users traffic
+	upload, download, err := u.ProxyServer.GetTraffic(config)
+	if err != nil {
+		return err
+	}
+
+	totalUpload := int64(user.UploadTraffic) + upload
+	totalDownlaod := int64(user.DownloadTraffic) + download
+
+	return updateTraffic(u.StorageHandler, int(config.ID), totalUpload, totalDownlaod)
+}
+
 func coverUserToConfig(user *User) *config.ConnectionInfo {
 	return &config.ConnectionInfo{
 		ID:            int64(user.ID),
@@ -91,9 +104,11 @@ func runSync(users *Users) {
 						if !equal {
 							//re add modify server
 							users.ProxyServer.StopServer(config)
+							time.Sleep(time.Duration(500) * time.Microsecond)
 							users.ProxyServer.StartWithConfig(config)
 						}
 					}
+					users.refreshTraffic(config, &v)
 				}
 			}
 		}()

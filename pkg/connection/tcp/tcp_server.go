@@ -62,6 +62,11 @@ func (tcpSrv *TCPServer) Stop() {
 	close(tcpSrv.quit)
 }
 
+//Traffic get user traffic
+func (tcpSrv *TCPServer) Traffic() (int64, int64) {
+	return 0, 0
+}
+
 func getRequest(conn *connection.Conn, auth bool, timeout time.Duration) (host string, ota bool, err error) {
 
 	connection.SetReadTimeout(conn, timeout)

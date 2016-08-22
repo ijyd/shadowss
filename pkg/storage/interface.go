@@ -6,4 +6,5 @@ type GetResult func(x, y int) error
 //Interface implement a storeage backend
 type Interface interface {
 	GetToList(table string, fields []string, result interface{}) error
+	GuaranteedUpdate(table string, conditionFields []string, updateFields []string, obj interface{}) error
 }

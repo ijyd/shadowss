@@ -9,9 +9,10 @@ import (
 
 //Connection implement for every conection
 type Connection struct {
-	ClientAddr *net.UDPAddr // Address of the client
-	ServerConn *net.UDPConn // UDP connection to server
-	Quit       chan struct{}
+	ClientAddr      *net.UDPAddr // Address of the client
+	ServerConn      *net.UDPConn // UDP connection to server
+	Quit            chan struct{}
+	DownloadTraffic int64 //download traffic
 }
 
 //NewConnection Generate a new connection by opening a UDP connection to the server
@@ -72,6 +73,7 @@ func (conn *Connection) RunConnection(write *net.UDPConn, cipher *Cipher, respHe
 			if err != nil {
 				glog.Errorf("write local->%s failure %v \r\n", conn.ClientAddr.String(), err)
 			}
+			conn.DownloadTraffic += int64(len(encBuff[:]))
 		}
 	}
 }

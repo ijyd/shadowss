@@ -113,6 +113,7 @@ func (s *store) GetToList(table string, fields []string, result interface{}) err
 		return err
 	}
 
+	glog.Infof("elem type:%+v", elemType)
 	rows, err := s.client.Table(table).Model(elemType).Select(fields).Rows()
 	if err != nil {
 		return err
@@ -155,4 +156,72 @@ func (s *store) GetToList(table string, fields []string, result interface{}) err
 		sliceValue.Set(reflect.Append(sliceValue, objVal))
 	}
 	return nil
+}
+
+//return sliceValue, elemType in slice, error
+func (*store) checkObjInterface(result interface{}) error {
+	if result == nil {
+		return fmt.Errorf("Cannot restore result from <nil>")
+	}
+
+	resultValue := reflect.ValueOf(result)
+	if resultValue.IsNil() {
+		return fmt.Errorf("Cantnot reflect on a nil pointer")
+	}
+
+	resultType := resultValue.Type()
+	resultKind := resultType.Kind()
+
+	if resultKind != reflect.Ptr {
+		return fmt.Errorf("Cannot reflect into non-poiner")
+	}
+
+	objValue := resultValue.Elem()
+	objKind := objValue.Kind()
+
+	if objKind != reflect.Struct {
+		return fmt.Errorf("Pointer must point to a slice")
+	}
+
+	return nil
+}
+
+func (s *store) GuaranteedUpdate(table string, conditionFields []string, updateFields []string, obj interface{}) error {
+	err := s.checkObjInterface(obj)
+	if err != nil {
+		return err
+	}
+
+	resultValue := reflect.ValueOf(obj)
+
+	elem := resultValue.Elem()
+	elemType := elem.Type()
+
+	structFiledMap, err := s.filedsToStructFieldsMap(updateFields, elemType)
+	if err != nil {
+		return err
+	}
+
+	formStructValue := elem
+
+	cond := make(map[string]interface{})
+	for _, v := range conditionFields {
+		glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
+		cond[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
+	}
+
+	update := make(map[string]interface{})
+	for _, v := range updateFields {
+		glog.V(5).Infof("update %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
+		update[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
+	}
+
+	err = s.client.Table(table).Where(cond).Updates(update).Error
+	if err != nil {
+		glog.Errorf("update err %v\r\n", err)
+		return err
+	}
+
+	return nil
+
 }
