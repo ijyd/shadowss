@@ -54,7 +54,7 @@ shadowsocks UDP Request and Response (after encrypted)
 test with dig
 
 ```
-dig dig @192.168.1.1 www.google.com
+dig @192.168.1.1 www.google.com
 
 ```
 

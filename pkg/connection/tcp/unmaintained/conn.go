@@ -1,4 +1,4 @@
-package connection
+package unmaintained
 
 import (
 	"encoding/binary"
@@ -18,9 +18,11 @@ const (
 type Conn struct {
 	net.Conn
 	*Cipher
-	readBuf  []byte
-	writeBuf []byte
-	chunkId  uint32
+	readBuf         []byte
+	writeBuf        []byte
+	chunkId         uint32
+	UploadTraffic   int64 //request upload traffic
+	DownloadTraffic int64 //request download traffic
 }
 
 func NewConn(c net.Conn, cipher *Cipher) *Conn {

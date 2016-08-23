@@ -1,4 +1,4 @@
-package connection
+package protocol
 
 import (
 	"encoding/binary"
@@ -26,7 +26,7 @@ const (
 )
 
 const (
-	addrOneTimeAuthFlag = 0x10
+	AddrOneTimeAuthFlag = 0x10
 	addrTypeFlag        = 0x0F
 )
 
@@ -48,58 +48,20 @@ type SSProtocol struct {
 	HMAC        [10]byte
 }
 
-//Decrypt decrypt data to plain text
-func decrypt(encBuffer []byte, cipher *Cipher) ([]byte, error) {
-
-	byteLen := len(encBuffer)
-	ivLen := cipher.info.ivLen
-	if byteLen < ivLen {
-		return nil, fmt.Errorf("request body too short\r\n")
-	}
-
-	iv := make([]byte, ivLen)
-	copy(iv, encBuffer[0:cipher.info.ivLen])
-
-	glog.V(5).Infof("Got  decrypt cipher ivlen(%d) iv: \r\n%s", ivLen, util.DumpHex(iv[:]))
-	glog.V(5).Infof("Got  decrypt datalen(%d) data:\r\n%s", byteLen, util.DumpHex(encBuffer[ivLen:byteLen]))
-
-	if err := cipher.initDecrypt(iv); err != nil {
-		glog.Errorf("init decrypt failure:%v\r\n", err)
-		return nil, err
-	}
-
-	if len(cipher.iv) == 0 {
-		cipher.iv = iv
-	}
-
-	decBuffer := make([]byte, byteLen-ivLen)
-
-	cipher.decrypt(decBuffer[:], encBuffer[ivLen:byteLen])
-	return decBuffer, nil
-}
-
 //Parse ss packet into SSProtocol
-func Parse(input []byte, byteLen int, cipher *Cipher) (*SSProtocol, error) {
-
-	decBuffer, err := decrypt(input[0:byteLen], cipher)
-	if err != nil {
-		return nil, err
-	}
+func Parse(decBuffer []byte, byteLen, ivLen int) (*SSProtocol, error) {
 
 	ssProtocal := new(SSProtocol)
-	ivLen := cipher.info.ivLen
 	ssProtocal.IV = make([]byte, ivLen)
-	copy(ssProtocal.IV, input[0:ivLen])
+	copy(ssProtocal.IV, decBuffer[0:ivLen])
 
-	parseLen := 0
+	parseLen := 0 + ivLen
 	addr := decBuffer[parseLen]
 	ssProtocal.AddrType = addr & addrTypeFlag
-	ssProtocal.OneTimeAuth = 0x10 == (addr & addrOneTimeAuthFlag)
+	ssProtocal.OneTimeAuth = 0x10 == (addr & AddrOneTimeAuthFlag)
 	parseLen++
 
-	validBufferLen := byteLen - cipher.info.ivLen
-
-	glog.V(5).Infof("Got decrypt plain text data buffer \r\n%s \r\n", util.DumpHex(decBuffer[0:validBufferLen]))
+	glog.V(5).Infof("Got decrypt plain text data buffer \r\n%s \r\n", util.DumpHex(decBuffer[ivLen:]))
 
 	glog.V(5).Infof("Got AddrType:%d  one time auth:%t\r\n", ssProtocal.AddrType, ssProtocal.OneTimeAuth)
 
@@ -132,20 +94,20 @@ func Parse(input []byte, byteLen int, cipher *Cipher) (*SSProtocol, error) {
 	ssProtocal.DstAddr.Port = int(binary.BigEndian.Uint16(decBuffer[parseLen : parseLen+dstAddrPortLen]))
 	parseLen += dstAddrPortLen
 
-	ssProtocal.RespHeader = make([]byte, parseLen)
-	copy(ssProtocal.RespHeader, decBuffer[:parseLen])
+	ssProtocal.RespHeader = make([]byte, parseLen-ivLen)
+	copy(ssProtocal.RespHeader, decBuffer[ivLen:parseLen])
 	//need to fix resp header
 	ssProtocal.RespHeader[0] = ssProtocal.AddrType
 
 	dataBufferLen := 0
 	if ssProtocal.OneTimeAuth {
-		dataBufferLen = validBufferLen - parseLen - protocalHMACLen
+		dataBufferLen = byteLen - parseLen - protocalHMACLen
 
-		copy(ssProtocal.HMAC[:], decBuffer[parseLen+dataBufferLen:validBufferLen])
+		copy(ssProtocal.HMAC[:], decBuffer[parseLen+dataBufferLen:])
 
 		glog.V(5).Infof("Got decrypt HMAC buffer \r\n%s \r\n", util.DumpHex(ssProtocal.HMAC[:]))
 	} else {
-		dataBufferLen = validBufferLen - parseLen
+		dataBufferLen = byteLen - parseLen
 	}
 	dataBufferEndIdex := dataBufferLen + parseLen
 	ssProtocal.Data = make([]byte, dataBufferLen)
@@ -155,30 +117,30 @@ func Parse(input []byte, byteLen int, cipher *Cipher) (*SSProtocol, error) {
 	return ssProtocal, nil
 }
 
-//encodeUDPResp encode buffer for resp.  n = iv + payload
-func encodeUDPResp(b []byte, byteLen int, cipher *Cipher) ([]byte, error) {
-	dataStart := 0
-
-	iv, err := cipher.initEncryptFake()
-	if err != nil {
-		glog.Errorf("init encrypt failure %v\r\n", err)
-		return nil, err
-	}
-
-	dataSize := byteLen + len(iv) // for addr type
-	cipherData := make([]byte, dataSize)
-	copy(cipherData[0:], iv)
-	dataStart = len(iv)
-
-	plainText := make([]byte, byteLen)
-	copy(plainText[:], b[:])
-
-	glog.V(5).Infof("encrypt cipher ivlen(%d) iv: \r\n%s \r\n", len(iv), util.DumpHex(iv))
-	glog.V(5).Infof("encrypt plainText data : \r\n%s \r\n", util.DumpHex(plainText[:]))
-
-	cipher.encrypt(cipherData[dataStart:], plainText)
-
-	glog.V(5).Infof("encrypt data: \r\n%s \r\n", util.DumpHex(cipherData[dataStart:]))
-
-	return cipherData, nil
-}
+// //encodeUDPResp encode buffer for resp.  n = iv + payload
+// func encodeUDPResp(b []byte, byteLen int, cipher *Cipher) ([]byte, error) {
+// 	dataStart := 0
+//
+// 	iv, err := cipher.initEncryptFake()
+// 	if err != nil {
+// 		glog.Errorf("init encrypt failure %v\r\n", err)
+// 		return nil, err
+// 	}
+//
+// 	dataSize := byteLen + len(iv) // for addr type
+// 	cipherData := make([]byte, dataSize)
+// 	copy(cipherData[0:], iv)
+// 	dataStart = len(iv)
+//
+// 	plainText := make([]byte, byteLen)
+// 	copy(plainText[:], b[:])
+//
+// 	glog.V(5).Infof("encrypt cipher ivlen(%d) iv: \r\n%s \r\n", len(iv), util.DumpHex(iv))
+// 	glog.V(5).Infof("encrypt plainText data : \r\n%s \r\n", util.DumpHex(plainText[:]))
+//
+// 	cipher.encrypt(cipherData[dataStart:], plainText)
+//
+// 	glog.V(5).Infof("encrypt data: \r\n%s \r\n", util.DumpHex(cipherData[dataStart:]))
+//
+// 	return cipherData, nil
+// }

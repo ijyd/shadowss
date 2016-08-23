@@ -1,5 +1,5 @@
 // Provides leaky buffer, based on the example in Effective Go.
-package connection
+package unmaintained
 
 type LeakyBuf struct {
 	bufSize  int // size of each buffer

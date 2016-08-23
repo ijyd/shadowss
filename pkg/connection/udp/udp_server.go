@@ -5,8 +5,7 @@ import (
 	"time"
 
 	"shadowsocks-go/pkg/config"
-	conn "shadowsocks-go/pkg/connection"
-	encrypt "shadowsocks-go/pkg/connection"
+	"shadowsocks-go/pkg/crypto"
 
 	"github.com/golang/glog"
 )
@@ -14,7 +13,7 @@ import (
 //UDPServer maintain a listener
 type UDPServer struct {
 	Config   *config.ConnectionInfo
-	udpProxy *conn.Proxy
+	udpProxy *Proxy
 }
 
 //NewUDPServer create a TCPServer
@@ -44,13 +43,13 @@ func (udpSrv *UDPServer) Run() {
 	auth := udpSrv.Config.EnableOTA
 	timeout := time.Duration(udpSrv.Config.Timeout) * time.Second
 
-	cipher, err := encrypt.NewCipher(method, password)
+	crypto, err := crypto.NewCrypto(method, password)
 	if err != nil {
 		glog.Fatalf("Error generating cipher for udp port: %d %v\n", port, err)
 		return
 	}
 
-	proxy := conn.NewProxy(port, cipher.Copy(), auth, timeout)
+	proxy := NewProxy(port, crypto, auth, timeout)
 	if proxy == nil {
 		glog.Fatalf("listening upd port: %v error:%v\r\n", port, err)
 		return

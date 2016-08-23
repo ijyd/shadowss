@@ -1,4 +1,4 @@
-package connection
+package tcp
 
 import (
 	"bytes"
@@ -7,6 +7,7 @@ import (
 	"net"
 	"time"
 
+	connection "shadowsocks-go/pkg/connection/tcp/unmaintained"
 	"shadowsocks-go/pkg/util"
 
 	"github.com/golang/glog"
@@ -19,10 +20,10 @@ func SetReadTimeout(c net.Conn, timeout time.Duration) {
 }
 
 // PipeThenClose copies data from src to dst, closes dst when done.
-func PipeThenClose(src, dst net.Conn, timeout time.Duration) {
+func (tcpSrv *TCPServer) PipeThenClose(src, dst net.Conn, timeout time.Duration, inDirect bool) {
 	defer dst.Close()
-	buf := leakyBuf.Get()
-	defer leakyBuf.Put(buf)
+	buf := make([]byte, 4108)
+
 	for {
 		SetReadTimeout(src, timeout)
 		n, err := src.Read(buf)
@@ -34,23 +35,20 @@ func PipeThenClose(src, dst net.Conn, timeout time.Duration) {
 				glog.Errorf("write err:%v", err)
 				break
 			}
+			if inDirect {
+				tcpSrv.UploadTraffic += int64(n)
+			} else {
+				tcpSrv.DownloadTraffic += int64(n)
+			}
 		}
 		if err != nil {
-			// Always "use of closed network connection", but no easy way to
-			// identify this specific error. So just leave the error along for now.
-			// More info here: https://code.google.com/p/go/issues/detail?id=4373
-			/*
-				if bool(Debug) && err != io.EOF {
-					Debug.Println("read:", err)
-				}
-			*/
 			break
 		}
 	}
 }
 
 // PipeThenClose copies data from src to dst, closes dst when done, with ota verification.
-func PipeThenCloseOta(src *Conn, dst net.Conn, timeout time.Duration) {
+func (tcpSrv *TCPServer) handleRequest(src *connection.Conn, dst net.Conn, timeout time.Duration) {
 	const (
 		dataLenLen  = 2
 		hmacSha1Len = 10
@@ -61,8 +59,7 @@ func PipeThenCloseOta(src *Conn, dst net.Conn, timeout time.Duration) {
 		dst.Close()
 	}()
 	// sometimes it have to fill large block
-	buf := leakyBuf.Get()
-	defer leakyBuf.Put(buf)
+	buf := make([]byte, 4108)
 	i := 0
 	for {
 		i += 1
@@ -71,7 +68,6 @@ func PipeThenCloseOta(src *Conn, dst net.Conn, timeout time.Duration) {
 			if err == io.EOF {
 				break
 			}
-
 			glog.Errorf("conn=%p #%v read header error n=%v: %v", src, i, n, err)
 			break
 		}
@@ -99,9 +95,12 @@ func PipeThenCloseOta(src *Conn, dst net.Conn, timeout time.Duration) {
 			glog.V(5).Infof("conn=%p #%v read data hmac-sha1 mismatch, iv=%v chunkId=%v src=%v dst=%v len=%v expeced=%v actual=%v", src, i, src.GetIv(), chunkId, src.RemoteAddr(), dst.RemoteAddr(), dataLen, expectedHmacSha1, actualHmacSha1)
 			break
 		}
-		if n, err := dst.Write(dataBuf); err != nil {
-			glog.V(5).Infof("conn=%p #%v write data error n=%v: %v", dst, i, n, err)
+		var writeLen int
+		var err error
+		if writeLen, err = dst.Write(dataBuf); err != nil {
+			glog.V(5).Infof("conn=%p #%v write data error n=%v: %v", dst, i, writeLen, err)
 			break
 		}
+		tcpSrv.UploadTraffic += int64(writeLen)
 	}
 }

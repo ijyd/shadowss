@@ -206,13 +206,13 @@ func (s *store) GuaranteedUpdate(table string, conditionFields []string, updateF
 
 	cond := make(map[string]interface{})
 	for _, v := range conditionFields {
-		glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
+		//glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
 		cond[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
 	}
 
 	update := make(map[string]interface{})
 	for _, v := range updateFields {
-		glog.V(5).Infof("update %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
+		//glog.V(5).Infof("update %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
 		update[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
 	}
 

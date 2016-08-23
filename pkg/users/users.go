@@ -97,6 +97,7 @@ func runSync(users *Users) {
 				for _, v := range userList {
 					config := coverUserToConfig(&v)
 					exist, equal := users.ProxyServer.CheckServer(config)
+					users.refreshTraffic(config, &v)
 					if !exist {
 						//force add for new item
 						users.ProxyServer.StartWithConfig(config)
@@ -108,7 +109,6 @@ func runSync(users *Users) {
 							users.ProxyServer.StartWithConfig(config)
 						}
 					}
-					users.refreshTraffic(config, &v)
 				}
 			}
 		}()

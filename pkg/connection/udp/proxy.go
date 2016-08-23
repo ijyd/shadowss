@@ -1,4 +1,4 @@
-package connection
+package udp
 
 import (
 	"bytes"
@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"shadowsocks-go/pkg/crypto"
+	"shadowsocks-go/pkg/protocol"
 	"shadowsocks-go/pkg/util"
 
 	"github.com/golang/glog"
@@ -14,11 +16,11 @@ import (
 
 //Proxy Information maintained for each client/server connection
 type Proxy struct {
-	port        int           //this proxy listen port
-	cipher      *Cipher       //decode data read from client
-	timeout     time.Duration //write or read timeoutt
-	proxyConn   *net.UDPConn  //listener connection
-	oneTimeAuth bool          //account configure one time auth
+	port        int            //this proxy listen port
+	cryp        *crypto.Crypto //decode data read from client
+	timeout     time.Duration  //write or read timeoutt
+	proxyConn   *net.UDPConn   //listener connection
+	oneTimeAuth bool           //account configure one time auth
 
 	//ClientDict Mapping from client addresses (as host:port) to connection
 	ClientDict map[string]*Connection
@@ -41,7 +43,7 @@ type receive struct {
 }
 
 //NewProxy implement new a proxy. it listen on given port
-func NewProxy(port int, cipher *Cipher, auth bool, timeout time.Duration) *Proxy {
+func NewProxy(port int, cryp *crypto.Crypto, auth bool, timeout time.Duration) *Proxy {
 	proxy := new(Proxy)
 	// Set up Proxy
 	saddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf(":%d", port))
@@ -56,7 +58,7 @@ func NewProxy(port int, cipher *Cipher, auth bool, timeout time.Duration) *Proxy
 
 	glog.V(5).Infof("Proxy serving on port %d\n", port)
 	proxy.proxyConn = pudp
-	proxy.cipher = cipher
+	proxy.cryp = cryp
 	proxy.timeout = timeout
 	proxy.oneTimeAuth = auth
 
@@ -93,56 +95,6 @@ func (pxy *Proxy) Traffic() (int64, int64) {
 	return upload, download
 }
 
-// func (pxy *Proxy) process() {
-// 	var buffer [4096]byte
-// 	n, cliaddr, err := pxy.proxyConn.ReadFromUDP(buffer[:])
-// 	if err != nil {
-// 		//glog.Errorf("Read from %s occur error:%v\r\n", cliaddr.String(), err)
-// 		return
-// 	}
-//
-// 	saddr := cliaddr.String()
-//
-// 	ssProtocol := Parse(buffer[:n], n, pxy.cipher)
-// 	if ssProtocol == nil {
-// 		glog.Warningln("parse empty request ignore \r\n")
-// 		return
-// 	}
-//
-// 	serverAddr := &net.UDPAddr{
-// 		IP:   ssProtocol.DstAddr.IP,
-// 		Port: ssProtocol.DstAddr.Port,
-// 	}
-//
-// 	glog.V(5).Infof("from client %s to severr %s , read Read len(%d) buffer \r\n%s",
-// 		cliaddr.String(), serverAddr.String(),
-// 		n, util.DumpHex(ssProtocol.Data[:]))
-//
-// 	//check our local map for connection
-// 	pxy.dlock()
-// 	conn, found := pxy.ClientDict[saddr]
-// 	if !found {
-// 		conn = NewConnection(serverAddr, cliaddr)
-// 		pxy.ClientDict[saddr] = conn
-// 		pxy.dunlock()
-//
-// 		glog.V(5).Infof("Created new connection for client %s\n", saddr)
-// 		// Fire up routine to manage new connection
-// 		pxy.wg.Add(1)
-// 		go RunConnection(conn, pxy.proxyConn, pxy.cipher, ssProtocol.RespHeader, &pxy.quit, pxy.wg)
-// 	} else {
-// 		glog.V(5).Infof("Found connection for client %s\n", saddr)
-// 		pxy.dunlock()
-// 	}
-//
-// 	// Relay to server
-// 	_, err = conn.ServerConn.Write(ssProtocol.Data[:])
-// 	if err != nil {
-// 		glog.Warningln("write buffer into remote server failure:", err)
-// 		return
-// 	}
-// }
-
 func (pxy *Proxy) cleanup() {
 	glog.Infof("Stop Proxy with %v\r\n", pxy.port)
 	err := pxy.proxyConn.Close()
@@ -157,6 +109,47 @@ func (pxy *Proxy) cleanup() {
 	pxy.wg.Done()
 }
 
+//decrypt decrypt data to plain text
+func (pxy *Proxy) decrypt(encBuffer []byte) ([]byte, error) {
+
+	byteLen := len(encBuffer)
+	ivLen := pxy.cryp.GetIVLen()
+	if byteLen < ivLen {
+		return nil, fmt.Errorf("request body too short\r\n")
+	}
+
+	decBuffer := make([]byte, byteLen)
+	copy(decBuffer[0:ivLen], encBuffer[0:ivLen])
+	pxy.cryp.Decrypt(decBuffer[0:ivLen], decBuffer[ivLen:], encBuffer[ivLen:byteLen])
+
+	glog.V(5).Infof("Got  decrypt cipher ivlen(%d) iv: \r\n%s", ivLen, util.DumpHex(decBuffer[0:ivLen]))
+	glog.V(5).Infof("Got  decrypt datalen(%d) data:\r\n%s", byteLen, util.DumpHex(encBuffer[ivLen:byteLen]))
+	glog.V(5).Infof("Got  plainText data:\r\n%s", util.DumpHex(decBuffer[ivLen:]))
+
+	return decBuffer, nil
+}
+
+func AssembleResp(resp []byte, byteLen int, crypto *crypto.Crypto) ([]byte, error) {
+	dataStart := 0
+
+	dataSize := byteLen + crypto.GetIVLen() // for addr type
+	cipherData := make([]byte, dataSize)
+
+	dataStart = crypto.GetIVLen()
+
+	plainText := make([]byte, byteLen)
+	copy(plainText[:], resp[:])
+
+	iv, err := crypto.Encrypt(cipherData[dataStart:], plainText)
+	copy(cipherData[0:dataStart], iv)
+
+	glog.V(5).Infof("encrypt cipher ivlen(%d) iv: \r\n%s \r\n", len(iv), util.DumpHex(iv))
+	glog.V(5).Infof("encrypt plainText data : \r\n%s \r\n", util.DumpHex(plainText[:]))
+	glog.V(5).Infof("encrypt data: \r\n%s \r\n", util.DumpHex(cipherData[dataStart:]))
+
+	return cipherData, err
+}
+
 func (pxy *Proxy) handleRequest(recv receive) {
 
 	saddr := recv.cliAddr.String()
@@ -167,7 +160,13 @@ func (pxy *Proxy) handleRequest(recv receive) {
 		return
 	}
 
-	ssProtocol, err := Parse(recv.buffer, n, pxy.cipher)
+	decBuffer, err := pxy.decrypt(recv.buffer[0:recv.readLen])
+	if err != nil {
+		glog.Warningf("decrypt request failure(%v) ignore \r\n", err)
+		return
+	}
+
+	ssProtocol, err := protocol.Parse(decBuffer, n, pxy.cryp.GetIVLen())
 	if err != nil {
 		glog.Warningf("parse request failure(%v) ignore \r\n", err)
 		return
@@ -176,13 +175,13 @@ func (pxy *Proxy) handleRequest(recv receive) {
 	//check ota
 	if pxy.oneTimeAuth {
 		if ssProtocol.OneTimeAuth {
-			authKey := append(ssProtocol.IV, pxy.cipher.key...)
+			authKey := append(ssProtocol.IV, pxy.cryp.Key...)
 			reqHeader := make([]byte, len(ssProtocol.RespHeader))
 			copy(reqHeader, ssProtocol.RespHeader)
-			reqHeader[0] = ssProtocol.AddrType | (addrOneTimeAuthFlag)
+			reqHeader[0] = ssProtocol.AddrType | (protocol.AddrOneTimeAuthFlag)
 
 			authData := append(reqHeader, ssProtocol.Data...)
-			glog.V(5).Infof("request auth data: \r\n %s \r\n  ", util.DumpHex(authData))
+			glog.V(5).Infof("request auth data: \r\n %s \r\n  authKey:\r\n %s \r\n", util.DumpHex(authData), util.DumpHex(authKey))
 
 			hmac := util.HmacSha1(authKey, authData)
 			if !bytes.Equal(ssProtocol.HMAC[:], hmac) {
@@ -221,7 +220,7 @@ func (pxy *Proxy) handleRequest(recv receive) {
 
 		glog.V(5).Infof("Created new connection for client %s\n", saddr)
 		// Fire up routine to manage new connection
-		go conn.RunConnection(pxy.proxyConn, pxy.cipher, ssProtocol.RespHeader, pxy.wg)
+		go conn.RunConnection(pxy.proxyConn, pxy.cryp, ssProtocol.RespHeader, pxy.wg)
 	} else {
 		glog.V(5).Infof("Found connection for client %s\n", saddr)
 		pxy.dunlock()

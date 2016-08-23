@@ -40,27 +40,28 @@ func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 	var equal bool
 	tcpSrv, exist := srv.tcpSrvMap[client.ID]
 	if exist {
-		glog.Infof("check id %dtcp :%p\r\n", client.ID, tcpSrv)
 		equal = tcpSrv.Compare(client)
 	}
 
 	return exist, equal
 }
 
-//GetTraffic collection traffic for user
+//GetTraffic collection traffic for user,return upload traffic and download traffic
 func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, error) {
 	var tcpUpload, tcpDownload, udpUpload, udpDownload int64
 	tcpSrv, exist := srv.tcpSrvMap[client.ID]
 	if exist {
 		tcpUpload, tcpDownload = tcpSrv.Traffic()
-	} else {
-		if srv.enableUDP {
-			udpSrv, exist := srv.udpSrvMap[client.ID]
-			if exist {
-				udpUpload, udpDownload = udpSrv.Traffic()
-			} else {
-				glog.Errorf("use udp relay but not found\r\n")
-			}
+		glog.V(5).Infof("Got %d Tcp traffic upload %d download:%d\r\n", client.Port, tcpUpload, tcpDownload)
+	}
+
+	if srv.enableUDP {
+		udpSrv, exist := srv.udpSrvMap[client.ID]
+		if exist {
+			udpUpload, udpDownload = udpSrv.Traffic()
+			glog.V(5).Infof("Got %d udp traffic upload %d download:%d\r\n", client.Port, udpUpload, udpDownload)
+		} else {
+			glog.Errorf("use udp relay but not found\r\n")
 		}
 	}
 

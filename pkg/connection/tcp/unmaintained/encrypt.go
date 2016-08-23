@@ -1,4 +1,4 @@
-package connection
+package unmaintained
 
 import (
 	"crypto/aes"

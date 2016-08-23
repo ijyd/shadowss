@@ -1,8 +1,10 @@
-package connection
+package udp
 
 import (
 	"net"
 	"sync"
+
+	"shadowsocks-go/pkg/crypto"
 
 	"github.com/golang/glog"
 )
@@ -31,7 +33,7 @@ func NewConnection(srvAddr, cliAddr *net.UDPAddr) *Connection {
 }
 
 //RunConnection Go routine which manages connection from server to single client
-func (conn *Connection) RunConnection(write *net.UDPConn, cipher *Cipher, respHeader []byte, wg sync.WaitGroup) {
+func (conn *Connection) RunConnection(write *net.UDPConn, crypto *crypto.Crypto, respHeader []byte, wg sync.WaitGroup) {
 	wg.Add(1)
 	for {
 		// Read from server
@@ -68,7 +70,7 @@ func (conn *Connection) RunConnection(write *net.UDPConn, cipher *Cipher, respHe
 			resp := make([]byte, n+respHeaderLen)
 			copy(resp[:], respHeader)
 			copy(resp[respHeaderLen:], buffer[0:n])
-			encBuff, err := encodeUDPResp(resp[:], n+respHeaderLen, cipher)
+			encBuff, err := AssembleResp(resp[:], n+respHeaderLen, crypto)
 			_, err = write.WriteToUDP(encBuff[:], conn.ClientAddr)
 			if err != nil {
 				glog.Errorf("write local->%s failure %v \r\n", conn.ClientAddr.String(), err)
