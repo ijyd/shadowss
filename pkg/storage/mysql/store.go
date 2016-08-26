@@ -5,8 +5,11 @@ import (
 	"reflect"
 	"strconv"
 
+	"shadowsocks-go/pkg/storage"
+
 	"github.com/golang/glog"
 	dbmysql "github.com/jinzhu/gorm"
+	"golang.org/x/net/context"
 )
 
 type store struct {
@@ -15,7 +18,8 @@ type store struct {
 
 const (
 	//StructTagKey struct tag key
-	StructTagKey = "column"
+	StructTagKey    = "column"
+	ContextTableKey = "table"
 )
 
 type result struct {
@@ -58,9 +62,25 @@ func (s *store) convertByteArry(kind reflect.Kind, buffer []byte) (interface{}, 
 
 	switch kind {
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
-		v, err = strconv.Atoi(strBuffer)
+		fval, _ := strconv.Atoi(strBuffer)
+		v = int64(fval)
 	case reflect.String:
 		v = string(buffer)
+	default:
+		err = fmt.Errorf("not support field type %v", kind)
+	}
+
+	return v, err
+}
+
+func (s *store) convertToInterface(kind reflect.Kind, src interface{}) (interface{}, error) {
+	var v interface{}
+	var err error
+
+	switch t := src.(type) {
+	//case reflect.Int8, reflect.Int16, reflect.Int, reflect.Int32, reflect.Int64:
+	case int, int8, int16, int32, int64:
+		v = reflect.ValueOf(t).Int()
 	default:
 		err = fmt.Errorf("not support field type %v", kind)
 	}
@@ -96,7 +116,7 @@ func (*store) checkResultInterface(result interface{}) error {
 	return nil
 }
 
-func (s *store) GetToList(table string, fields []string, result interface{}) error {
+func (s *store) GetToList(ctx context.Context, filter storage.Filter, result interface{}) error {
 	err := s.checkResultInterface(result)
 	if err != nil {
 		return err
@@ -108,18 +128,23 @@ func (s *store) GetToList(table string, fields []string, result interface{}) err
 	sliceType := sliceValue.Type()
 	elemType := sliceType.Elem()
 
-	structFiledMap, err := s.filedsToStructFieldsMap(fields, elemType)
+	structFiledMap, err := s.filedsToStructFieldsMap(filter.Field(), elemType)
 	if err != nil {
 		return err
 	}
 
-	glog.Infof("elem type:%+v", elemType)
-	rows, err := s.client.Table(table).Model(elemType).Select(fields).Rows()
+	query, queryArgs := filter.Condition()
+
+	rows, err := s.client.Table(ctx.Value(ContextTableKey).(string)).Model(elemType).Select(filter.Field()).Where(query, queryArgs...).Rows()
+	//rows, err := s.client.Table(ctx.Table).Model(elemType).Select(filter.ResultFields).Where("id BETWEEN ? AND ?", 50, 100).Rows()
+
 	if err != nil {
+		glog.Errorf("query row failure \r\n")
 		return err
 	}
 	defer rows.Close()
 
+	glog.Infof("scan....\r\n")
 	columns, _ := rows.Columns()
 	count := len(columns)
 	values := make([]interface{}, count)
@@ -149,7 +174,11 @@ func (s *store) GetToList(table string, fields []string, result interface{}) err
 				}
 				fieldVal.Set(reflect.ValueOf(v))
 			} else {
-				return fmt.Errorf("not a []byte value(%v) unexcept error\r\n", b)
+				v, err := s.convertToInterface(fieldVal.Kind(), val)
+				if err != nil {
+					return err
+				}
+				fieldVal.Set(reflect.ValueOf(v))
 			}
 		}
 
@@ -186,7 +215,7 @@ func (*store) checkObjInterface(result interface{}) error {
 	return nil
 }
 
-func (s *store) GuaranteedUpdate(table string, conditionFields []string, updateFields []string, obj interface{}) error {
+func (s *store) GuaranteedUpdate(ctx context.Context, keyField string, updateFields []string, obj interface{}) error {
 	err := s.checkObjInterface(obj)
 	if err != nil {
 		return err
@@ -205,10 +234,8 @@ func (s *store) GuaranteedUpdate(table string, conditionFields []string, updateF
 	formStructValue := elem
 
 	cond := make(map[string]interface{})
-	for _, v := range conditionFields {
-		//glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
-		cond[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
-	}
+	//glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
+	cond[keyField] = formStructValue.FieldByName(structFiledMap[keyField]).Interface()
 
 	update := make(map[string]interface{})
 	for _, v := range updateFields {
@@ -216,7 +243,7 @@ func (s *store) GuaranteedUpdate(table string, conditionFields []string, updateF
 		update[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
 	}
 
-	err = s.client.Table(table).Where(cond).Updates(update).Error
+	err = s.client.Table(ctx.Value(ContextTableKey).(string)).Where(cond).Updates(update).Error
 	if err != nil {
 		glog.Errorf("update err %v\r\n", err)
 		return err

@@ -1,21 +1,15 @@
 language: go
 go:
-  - 1.5.3
+  - 1.6.2
+  - tip
+
+go_import_path: shadowsocks-go
+
+before_install:
+  - go get github.com/tools/godep
+
 install:
-  - go get golang.org/x/crypto/blowfish
-  - go get golang.org/x/crypto/cast5
-  - go get golang.org/x/crypto/salsa20
-  - go get github.com/codahale/chacha20
-  - go get shadowsocks/shadowsocks-go/shadowsocks
-  - go get github.com/Sirupsen/logrus
-  - go get github.com/Terry-Mao/goconf
-  - go get github.com/go-sql-driver/mysql
-  - go get github.com/jinzhu/gorm
-  - go get gopkg.in/redis.v3
-  - go get github.com/cyfdecyf/leakybuf
-  - go get github.com/lib/pq
-  - go install ./mu
+  - godep restore
+
 script:
-  - cd mu && go build
-  - go test -cover ./...
-sudo: required
+  - cd cmd/shadowss/server && go build -a  -o shadowss

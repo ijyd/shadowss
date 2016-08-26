@@ -36,9 +36,13 @@ func (tcpSrv *TCPServer) PipeThenClose(src, dst net.Conn, timeout time.Duration,
 				break
 			}
 			if inDirect {
-				tcpSrv.UploadTraffic += int64(n)
+				tcpSrv.lock()
+				tcpSrv.uploadTraffic += int64(n)
+				tcpSrv.unlock()
 			} else {
-				tcpSrv.DownloadTraffic += int64(n)
+				tcpSrv.lock()
+				tcpSrv.downloadTraffic += int64(n)
+				tcpSrv.unlock()
 			}
 		}
 		if err != nil {
@@ -101,6 +105,8 @@ func (tcpSrv *TCPServer) handleRequest(src *connection.Conn, dst net.Conn, timeo
 			glog.V(5).Infof("conn=%p #%v write data error n=%v: %v", dst, i, writeLen, err)
 			break
 		}
-		tcpSrv.UploadTraffic += int64(writeLen)
+		tcpSrv.lock()
+		tcpSrv.uploadTraffic += int64(writeLen)
+		tcpSrv.unlock()
 	}
 }

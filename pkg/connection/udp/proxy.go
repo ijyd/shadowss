@@ -32,7 +32,7 @@ type Proxy struct {
 
 	wg sync.WaitGroup
 
-	UploadTraffic int64 //request upload traffic
+	uploadTraffic int64 //request upload traffic
 }
 
 type receive struct {
@@ -88,9 +88,18 @@ func (pxy *Proxy) Stop() {
 func (pxy *Proxy) Traffic() (int64, int64) {
 	var upload, download int64
 	for _, val := range pxy.ClientDict {
+		val.Dmutex.Lock()
+
 		download += val.DownloadTraffic
+		val.DownloadTraffic = 0
+
+		val.Dmutex.Unlock()
 	}
-	upload = pxy.UploadTraffic
+
+	pxy.dlock()
+	upload = pxy.uploadTraffic
+	pxy.uploadTraffic = 0
+	pxy.dunlock()
 
 	return upload, download
 }
@@ -232,7 +241,9 @@ func (pxy *Proxy) handleRequest(recv receive) {
 		glog.Warningln("write buffer into remote server failure:", err)
 		return
 	}
-	pxy.UploadTraffic += int64(len(ssProtocol.Data[:]))
+	pxy.dlock()
+	pxy.uploadTraffic += int64(len(ssProtocol.Data[:]))
+	pxy.dunlock()
 }
 
 //RunProxy Routine to handle inputs to Proxy port

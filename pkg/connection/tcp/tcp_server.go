@@ -40,8 +40,8 @@ const (
 type TCPServer struct {
 	Config          *config.ConnectionInfo
 	quit            chan struct{}
-	UploadTraffic   int64 //request upload traffic
-	DownloadTraffic int64 //request download traffic
+	uploadTraffic   int64 //request upload traffic
+	downloadTraffic int64 //request download traffic
 	//ClientDict Mapping from client addresses (as host:port) to connection
 	clientDict map[string]*connector
 
@@ -77,7 +77,16 @@ func (tcpSrv *TCPServer) Stop() {
 
 //Traffic ollection traffic for client,return upload traffic and download traffic
 func (tcpSrv *TCPServer) Traffic() (int64, int64) {
-	return tcpSrv.UploadTraffic, tcpSrv.DownloadTraffic
+	tcpSrv.lock()
+	upload := tcpSrv.uploadTraffic
+	download := tcpSrv.downloadTraffic
+
+	//clear traffic
+	tcpSrv.uploadTraffic = 0
+	tcpSrv.downloadTraffic = 0
+	tcpSrv.unlock()
+
+	return upload, download
 }
 
 func getRequest(conn *connection.Conn, auth bool, timeout time.Duration) (host string, ota bool, err error) {

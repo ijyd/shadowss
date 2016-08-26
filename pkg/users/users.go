@@ -1,6 +1,7 @@
 package users
 
 import (
+	"fmt"
 	"time"
 
 	"shadowsocks-go/pkg/config"
@@ -48,6 +49,7 @@ func (u *Users) CreateUsersSync(proxySrv *proxyserver.Servers) {
 		u.StorageHandler, err = newStorage(u.StorageConfig)
 		if err != nil {
 			glog.Errorf("Create backend error:%v\r\n", err)
+			return
 		}
 	}
 
@@ -57,7 +59,16 @@ func (u *Users) CreateUsersSync(proxySrv *proxyserver.Servers) {
 }
 
 func (u *Users) getUsers() ([]User, error) {
-	return get(u.StorageHandler)
+	node, err := getnodes(u.StorageHandler)
+	if err != nil {
+		return nil, err
+	}
+	if node == nil {
+		return nil, fmt.Errorf("this node not found\r\n")
+	}
+	glog.V(5).Infof("Got node %+v \r\n", node)
+
+	return get(u.StorageHandler, node.StartUserID, node.EndUserID)
 }
 
 func (u *Users) refreshTraffic(config *config.ConnectionInfo, user *User) error {
@@ -70,14 +81,14 @@ func (u *Users) refreshTraffic(config *config.ConnectionInfo, user *User) error 
 	totalUpload := int64(user.UploadTraffic) + upload
 	totalDownlaod := int64(user.DownloadTraffic) + download
 
-	return updateTraffic(u.StorageHandler, int(config.ID), totalUpload, totalDownlaod)
+	return updateTraffic(u.StorageHandler, config.ID, totalUpload, totalDownlaod)
 }
 
 func coverUserToConfig(user *User) *config.ConnectionInfo {
 	return &config.ConnectionInfo{
 		ID:            int64(user.ID),
 		Host:          string("0.0.0.0"),
-		Port:          user.Port,
+		Port:          int(user.Port),
 		EncryptMethod: user.Method,
 		Password:      user.Passwd,
 		EnableOTA:     user.Enable != 0,
