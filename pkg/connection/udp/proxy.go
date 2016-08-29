@@ -1,7 +1,6 @@
 package udp
 
 import (
-	"bytes"
 	"fmt"
 	"net"
 	"sync"
@@ -175,7 +174,7 @@ func (pxy *Proxy) handleRequest(recv receive) {
 		return
 	}
 
-	ssProtocol, err := protocol.Parse(decBuffer, n, pxy.cryp.GetIVLen())
+	ssProtocol, err := protocol.ParseUDPReq(decBuffer, n, pxy.cryp.GetIVLen())
 	if err != nil {
 		glog.Warningf("parse request failure(%v) ignore \r\n", err)
 		return
@@ -183,22 +182,9 @@ func (pxy *Proxy) handleRequest(recv receive) {
 
 	//check ota
 	if pxy.oneTimeAuth {
-		if ssProtocol.OneTimeAuth {
-			authKey := append(ssProtocol.IV, pxy.cryp.Key...)
-			reqHeader := make([]byte, len(ssProtocol.RespHeader))
-			copy(reqHeader, ssProtocol.RespHeader)
-			reqHeader[0] = ssProtocol.AddrType | (protocol.AddrOneTimeAuthFlag)
-
-			authData := append(reqHeader, ssProtocol.Data...)
-			glog.V(5).Infof("request auth data: \r\n %s \r\n  authKey:\r\n %s \r\n", util.DumpHex(authData), util.DumpHex(authKey))
-
-			hmac := util.HmacSha1(authKey, authData)
-			if !bytes.Equal(ssProtocol.HMAC[:], hmac) {
-				glog.Errorf("Unauthorized request\r\n")
-				return
-			}
-		} else {
-			glog.Warningf("invalid request with auth \r\n")
+		result := ssProtocol.CheckHMAC(pxy.cryp.Key[:])
+		if !result {
+			glog.Errorln("invalid not auth request")
 			return
 		}
 	} else {

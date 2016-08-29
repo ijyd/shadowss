@@ -108,16 +108,20 @@ func runSync(users *Users) {
 				for _, v := range userList {
 					config := coverUserToConfig(&v)
 					exist, equal := users.ProxyServer.CheckServer(config)
-					users.refreshTraffic(config, &v)
 					if !exist {
 						//force add for new item
 						users.ProxyServer.StartWithConfig(config)
 					} else {
 						if !equal {
-							//re add modify server
 							users.ProxyServer.StopServer(config)
+							users.refreshTraffic(config, &v)
+							//release this server re add
+							users.ProxyServer.CleanUpServer(config)
+
 							time.Sleep(time.Duration(500) * time.Microsecond)
 							users.ProxyServer.StartWithConfig(config)
+						} else {
+							users.refreshTraffic(config, &v)
 						}
 					}
 				}

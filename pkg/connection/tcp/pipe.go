@@ -3,110 +3,182 @@ package tcp
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"io"
 	"net"
 	"time"
 
-	connection "shadowsocks-go/pkg/connection/tcp/unmaintained"
+	"golang.org/x/net/context"
+
 	"shadowsocks-go/pkg/util"
 
 	"github.com/golang/glog"
 )
 
-func SetReadTimeout(c net.Conn, timeout time.Duration) {
-	if timeout != 0 {
-		c.SetReadDeadline(time.Now().Add(timeout))
-	}
+type receive struct {
+	buffer []byte
+	err    error
 }
 
-// PipeThenClose copies data from src to dst, closes dst when done.
-func (tcpSrv *TCPServer) PipeThenClose(src, dst net.Conn, timeout time.Duration, inDirect bool) {
-	defer dst.Close()
-	buf := make([]byte, 4108)
-
-	for {
-		SetReadTimeout(src, timeout)
-		n, err := src.Read(buf)
-		// read may return EOF with n > 0
-		// should always process n > 0 bytes before handling error
-		if n > 0 {
-			// Note: avoid overwrite err returned by Read.
-			if _, err := dst.Write(buf[0:n]); err != nil {
-				glog.Errorf("write err:%v", err)
-				break
-			}
-			if inDirect {
-				tcpSrv.lock()
-				tcpSrv.uploadTraffic += int64(n)
-				tcpSrv.unlock()
-			} else {
-				tcpSrv.lock()
-				tcpSrv.downloadTraffic += int64(n)
-				tcpSrv.unlock()
-			}
-		}
-		if err != nil {
-			break
-		}
-	}
+type result struct {
+	unloadTraffic   int64
+	downloadTraffic int64
+	err             error
 }
 
-// PipeThenClose copies data from src to dst, closes dst when done, with ota verification.
-func (tcpSrv *TCPServer) handleRequest(src *connection.Conn, dst net.Conn, timeout time.Duration) {
+func readReqData(conn net.Conn, chunkId int, iv []byte) ([]byte, error) {
 	const (
-		dataLenLen  = 2
-		hmacSha1Len = 10
-		idxData0    = dataLenLen + hmacSha1Len
+		dataLenLen   = 2
+		hmacSha1Len  = 10
+		dataStartIdx = dataLenLen + hmacSha1Len
 	)
 
-	defer func() {
-		dst.Close()
-	}()
-	// sometimes it have to fill large block
-	buf := make([]byte, 4108)
-	i := 0
-	for {
-		i += 1
-		SetReadTimeout(src, timeout)
-		if n, err := io.ReadFull(src, buf[:dataLenLen+hmacSha1Len]); err != nil {
-			if err == io.EOF {
-				break
-			}
-			glog.Errorf("conn=%p #%v read header error n=%v: %v", src, i, n, err)
-			break
-		}
-		dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])
-		expectedHmacSha1 := buf[dataLenLen:idxData0]
+	buffer := make([]byte, dataLenLen+hmacSha1Len)
+	if n, err := io.ReadFull(conn, buffer[:]); err != nil {
+		glog.Errorf("conn=%v read header error n=%v: %v", conn, n, err)
+		return nil, err
+	}
 
-		var dataBuf []byte
-		if len(buf) < int(idxData0+dataLen) {
-			dataBuf = make([]byte, dataLen)
-		} else {
-			dataBuf = buf[idxData0 : idxData0+dataLen]
-		}
-		if n, err := io.ReadFull(src, dataBuf); err != nil {
-			if err == io.EOF {
-				break
+	dataLen := binary.BigEndian.Uint16(buffer[:dataLenLen])
+	expectedHmacSha1 := buffer[dataLenLen:dataStartIdx]
+
+	dataBuf := make([]byte, dataLen)
+	if n, err := io.ReadFull(conn, dataBuf); err != nil {
+		glog.V(5).Infof("conn=%p  read data error n=%v: %v", conn, n, err)
+		return nil, err
+	}
+
+	chunkIdBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(chunkIdBytes, uint32(chunkId))
+	actualHmacSha1 := util.HmacSha1(append(iv, chunkIdBytes...), dataBuf)
+	if !bytes.Equal(expectedHmacSha1, actualHmacSha1) {
+		glog.Errorf("conn=%v read data hmac-sha1 mismatch, iv=%v chunkId=%v src=%v dst=%v len=%v expeced=%v actual=%v",
+			conn, iv, chunkId, conn.LocalAddr(), conn.RemoteAddr(), dataLen, expectedHmacSha1, actualHmacSha1)
+		err := fmt.Errorf("not auth request")
+		return nil, err
+	}
+
+	return dataBuf, nil
+}
+
+func handleData(ctx context.Context, src, dst net.Conn, iv []byte) <-chan *result {
+	i := 0
+	var upload int64
+	var download int64
+
+	rst := make(chan *result)
+	for {
+		timeout := ctx.Value(timeoutKey)
+
+		//handle client request
+		recvClient := make(chan *receive, 1)
+		go func() {
+			var err error
+			setReadTimeout(src, timeout.(time.Duration))
+
+			buf, err := readReqData(src, i, iv)
+			if err != nil {
+				glog.V(5).Infof("conn=%p #%v read data error n=%v: %v", src, i, err)
+			} else {
+				i++
 			}
-			glog.V(5).Infof("conn=%p #%v read data error n=%v: %v", src, i, n, err)
-			break
+
+			recvClient <- &receive{buffer: buf, err: err}
+		}()
+
+		//handle remote server
+		recvRemote := make(chan *receive, 1)
+		go func() {
+			readBuf := make([]byte, 4108)
+
+			setReadTimeout(dst, timeout.(time.Duration))
+
+			n, err := dst.Read(readBuf)
+			if err != nil {
+				glog.V(5).Infof("conn=%v  read %v data error  %v \r\n", src.RemoteAddr().String(), n, err)
+			}
+
+			recvRemote <- &receive{buffer: readBuf[0:n], err: err}
+		}()
+
+		select {
+		case <-ctx.Done():
+			rst <- &result{
+				unloadTraffic:   upload,
+				downloadTraffic: download,
+				err:             nil,
+			}
+			return rst
+		case recvData := <-recvClient:
+			if recvData.err != nil {
+				rst <- &result{
+					unloadTraffic:   upload,
+					downloadTraffic: download,
+					err:             recvData.err,
+				}
+				return rst
+			} else {
+				var err error
+				var writeLen int
+
+				if writeLen, err = dst.Write(recvData.buffer); err != nil {
+					glog.V(5).Infof("conn=%p #%v write data error n=%v: %v", dst, i, writeLen, err)
+				} else {
+					upload += int64(writeLen)
+				}
+			}
+		case recvData := <-recvRemote:
+			if recvData.err != nil {
+				rst <- &result{
+					unloadTraffic:   upload,
+					downloadTraffic: download,
+					err:             recvData.err,
+				}
+				return rst
+			} else {
+				_, err := dst.Write(recvData.buffer[:])
+				if err != nil {
+					glog.Errorf("write err:%v", err)
+				} else {
+					download += int64(len(recvData.buffer))
+				}
+
+			}
 		}
-		chunkIdBytes := make([]byte, 4)
-		chunkId := src.GetAndIncrChunkId()
-		binary.BigEndian.PutUint32(chunkIdBytes, chunkId)
-		actualHmacSha1 := util.HmacSha1(append(src.GetIv(), chunkIdBytes...), dataBuf)
-		if !bytes.Equal(expectedHmacSha1, actualHmacSha1) {
-			glog.V(5).Infof("conn=%p #%v read data hmac-sha1 mismatch, iv=%v chunkId=%v src=%v dst=%v len=%v expeced=%v actual=%v", src, i, src.GetIv(), chunkId, src.RemoteAddr(), dst.RemoteAddr(), dataLen, expectedHmacSha1, actualHmacSha1)
-			break
+	}
+}
+
+func process(ctx context.Context, iv []byte, client, remote net.Conn) (<-chan int64, <-chan int64) {
+
+	upload := make(chan int64)
+	download := make(chan int64)
+
+	for {
+
+		//add context if timeout we assume this connection not read data anymore
+		//need to close
+		timeout := time.Minute * 30
+		ctx = context.WithValue(ctx, timeoutKey, timeout)
+
+		reqRst := make(chan *result, 1)
+		go func() {
+			rst := handleData(ctx, client, remote, iv)
+			rstInfo := <-rst
+			reqRst <- &result{
+				unloadTraffic:   rstInfo.unloadTraffic,
+				downloadTraffic: rstInfo.downloadTraffic,
+				err:             rstInfo.err,
+			}
+
+		}()
+
+		select {
+		case <-ctx.Done():
+			return upload, download
+		case reqResult := <-reqRst:
+			upload <- reqResult.unloadTraffic
+			download <- reqResult.downloadTraffic
+			return upload, download
 		}
-		var writeLen int
-		var err error
-		if writeLen, err = dst.Write(dataBuf); err != nil {
-			glog.V(5).Infof("conn=%p #%v write data error n=%v: %v", dst, i, writeLen, err)
-			break
-		}
-		tcpSrv.lock()
-		tcpSrv.uploadTraffic += int64(writeLen)
-		tcpSrv.unlock()
 	}
 }
