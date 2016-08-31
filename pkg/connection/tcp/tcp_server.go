@@ -34,34 +34,35 @@ type TCPServer struct {
 	//mutex Mutex used to serialize access to the dictionary
 	mapMutex  *sync.Mutex
 	dataMutex *sync.Mutex
-	cryp      *crypto.Crypto //decode data read from client
 }
 
-type accepted struct {
-	conn net.Conn
-	err  error
+type remoteConnHelper struct {
+	cryp        *crypto.Crypto //every to remote request have diff iv
+	server      net.Conn       //proxy to remote connnection
+	chunkID     uint32         //record request count for this remote
+	iv          []byte         //store first request iv for continue request use
+	oneTimeAuth bool           //for this remote oneTimeAuth flag
 }
 
 type connector struct {
 	clientConn net.Conn
-	remoteConn map[string]net.Conn //proxy to remote connnection
+	remoteConn map[string]*remoteConnHelper
+}
+
+func (r *remoteConnHelper) increaseChunkID() uint32 {
+	chunkID := r.chunkID
+	r.chunkID += 1
+	return chunkID
 }
 
 //NewTCPServer create a TCPServer
 func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
-	crypto, err := crypto.NewCrypto(cfg.EncryptMethod, cfg.Password)
-	if err != nil {
-		glog.Errorf("create crypto error :%v", err)
-		return nil
-	}
-
 	return &TCPServer{
 		Config:     cfg,
 		quit:       make(chan struct{}),
 		clientDict: make(map[string]*connector),
 		mapMutex:   new(sync.Mutex),
 		dataMutex:  new(sync.Mutex),
-		cryp:       crypto,
 	}
 }
 
@@ -84,14 +85,36 @@ func (tcpSrv *TCPServer) Traffic() (int64, int64) {
 	return upload, download
 }
 
+func (tcpSrv *TCPServer) parseRequest(client net.Conn, cryp *crypto.Crypto) (*protocol.SSProtocol, error) {
+	ssProtocol, err := protocol.ParseTcpReq(client, cryp)
+	if err != nil {
+		return nil, err
+	}
+
+	if tcpSrv.Config.EnableOTA {
+		reqHeader := make([]byte, len(ssProtocol.RespHeader))
+		copy(reqHeader, ssProtocol.RespHeader)
+		reqHeader[0] = ssProtocol.AddrType | (protocol.AddrOneTimeAuthFlag)
+
+		result := ssProtocol.CheckHMAC(cryp.Key[:], reqHeader)
+		if !result {
+			glog.Errorln("invalid not auth request")
+			return nil, fmt.Errorf("not auth")
+		}
+	}
+
+	return ssProtocol, nil
+}
+
 func (tcpSrv *TCPServer) handleRequest(ctx context.Context, client net.Conn, reqAddr string) {
 
 	lock(tcpSrv.mapMutex)
 	conn, found := tcpSrv.clientDict[reqAddr]
 	if !found {
+
 		conn = &connector{
 			clientConn: client,
-			remoteConn: make(map[string]net.Conn),
+			remoteConn: make(map[string]*remoteConnHelper),
 		}
 		glog.V(5).Infof("Created new connection for client %s\n", reqAddr)
 
@@ -104,6 +127,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, client net.Conn, req
 	}
 
 	defer func() {
+		glog.V(5).Infof("close pipe %v\r\n", reqAddr)
 		conn.clientConn.Close()
 
 		lock(tcpSrv.mapMutex)
@@ -111,102 +135,123 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, client net.Conn, req
 		unlock(tcpSrv.mapMutex)
 	}()
 
-	var wg sync.WaitGroup
+	//new cyrpto for this remote
+	crypto, err := crypto.NewCrypto(tcpSrv.Config.EncryptMethod, tcpSrv.Config.Password)
+	if err != nil {
+		glog.Errorf("create crypto error :%v", err)
+		return
+	}
+	ssProtocol, err := tcpSrv.parseRequest(conn.clientConn, crypto)
+	if err != nil {
+		glog.Errorf("get invalid request  from %s error %v\r\n", reqAddr, err)
+		return
+	}
 
 	var host string
-	var remote net.Conn
-	for {
-		type request struct {
-			client net.Conn
-			remote net.Conn
-			iv     []byte
-			err    error
-		}
+	var remote *remoteConnHelper
 
-		reqChan := make(chan request, 1)
-		go func() {
-			ssProtocol, err := protocol.ParseTcpReq(conn.clientConn, tcpSrv.cryp)
+	remoteAddr := &net.TCPAddr{
+		IP:   ssProtocol.DstAddr.IP,
+		Port: ssProtocol.DstAddr.Port,
+	}
+
+	type request struct {
+		client net.Conn
+		remote *remoteConnHelper
+		iv     []byte
+		err    error
+	}
+	reqChan := make(chan request, 1)
+	go func() {
+		lock(tcpSrv.mapMutex)
+		host = remoteAddr.String()
+		remote, found = conn.remoteConn[host]
+		if !found {
+			remoteSrv, err := net.Dial("tcp", remoteAddr.String())
 			if err != nil {
-				glog.Errorf("read a eof maybe remote close socket %v\r\n", err)
+				glog.Errorf(" connecting to:%v occur err:%v", host, err)
+				reqChan <- request{
+					err: fmt.Errorf("remote connecting failure"),
+				}
+				return
+			}
+
+			//reset encrypt stream
+			_, err = crypto.UpdataCipherStream(ssProtocol.IV, true)
+			if err != nil {
 				reqChan <- request{
 					err: err,
 				}
+				return
 			}
 
-			if tcpSrv.Config.EnableOTA {
-				result := ssProtocol.CheckHMAC(tcpSrv.cryp.Key[:])
-				if !result {
-					glog.Errorln("invalid not auth request")
-					reqChan <- request{
-						err: fmt.Errorf("not auth"),
-					}
-				}
+			remote = &remoteConnHelper{
+				cryp:        crypto,
+				server:      remoteSrv,
+				iv:          ssProtocol.IV,
+				chunkID:     0,
+				oneTimeAuth: tcpSrv.Config.EnableOTA,
 			}
+			conn.remoteConn[host] = remote
 
-			remoteAddr := &net.TCPAddr{
-				IP:   ssProtocol.DstAddr.IP,
-				Port: ssProtocol.DstAddr.Port,
-			}
+			glog.V(5).Infof("Created new remote connection for client %s\n", host)
+		}
+		unlock(tcpSrv.mapMutex)
 
-			lock(tcpSrv.mapMutex)
-			host = remoteAddr.String()
-			remote, found = conn.remoteConn[host]
-			if !found {
-				remote, err = net.Dial("tcp", remoteAddr.String())
-				if err != nil {
-					glog.Errorf(" connecting to:%v occur err:%v", host, err)
-					reqChan <- request{
-						err: fmt.Errorf("remote connecting failure"),
-					}
+		reqChan <- request{
+			client: conn.clientConn,
+			remote: remote,
+			iv:     ssProtocol.IV,
+		}
+	}()
 
-				}
-				conn.remoteConn[host] = remote
-
-				glog.V(5).Infof("Created new remote connection for client %s\n", host)
-			}
-			unlock(tcpSrv.mapMutex)
-
-			reqChan <- request{
-				client: conn.clientConn,
-				remote: remote,
-				iv:     ssProtocol.IV,
-			}
-		}()
-
+	var wg sync.WaitGroup
+	processDone := make(chan struct{})
+	for {
 		select {
 		case <-ctx.Done():
+			glog.V(5).Infof("handle %s read requet will be done\n", reqAddr)
+			wg.Wait()
+			return
+		case <-processDone:
+			glog.V(5).Infof("handle %s read requet process done \n", reqAddr)
 			wg.Wait()
 			return
 		case req := <-reqChan:
 			if req.err != nil {
+				glog.Errorf("handle %s read requet error: %v\n", reqAddr, req.err)
 				err := req.err
 				if err.Error() == "not auth" {
 					continue
 				} else if err == io.EOF {
+					glog.Errorf("handle %s read requet error: %v will be return\n", reqAddr, req.err)
 					return
 				} else if err.Error() == "remote connecting failure" {
 					continue
 				} else {
-					glog.Errorf("un implement error %v\r\n", err)
-					continue
+					glog.Errorf("not implement error %v\r\n", err)
+					return
 				}
 			}
 
 			wg.Add(1)
 			go func() {
-				upload, download := process(ctx, req.iv, req.client, req.remote)
+				glog.Infof("handle %s read process %v->%v\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
+				upload, download := process(ctx, req.client, req.remote)
 
+				glog.Infof("handle %s read process %v->%v done\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
 				lock(tcpSrv.dataMutex)
 				tcpSrv.uploadTraffic += <-upload
 				tcpSrv.downloadTraffic += <-download
 				unlock(tcpSrv.dataMutex)
 
-				remote.Close()
+				remote.server.Close()
 				lock(tcpSrv.mapMutex)
 				delete(conn.remoteConn, host)
 				unlock(tcpSrv.mapMutex)
 
 				wg.Done()
+				close(processDone)
 			}()
 		}
 	}
@@ -232,10 +277,14 @@ func (tcpSrv *TCPServer) Run() {
 	}()
 
 	var wg sync.WaitGroup
+	type accepted struct {
+		conn net.Conn
+		err  error
+	}
 	for {
 		c := make(chan accepted, 1)
 		go func() {
-			glog.V(5).Infoln("wait for accept")
+			glog.V(5).Infof("wait for accept on %v \r\n", port)
 			var conn net.Conn
 			conn, err = ln.Accept()
 			c <- accepted{conn: conn, err: err}
@@ -253,6 +302,7 @@ func (tcpSrv *TCPServer) Run() {
 			}
 			reqAddr := accept.conn.RemoteAddr().String()
 
+			glog.V(5).Infof("accept remote client: %v\n", reqAddr)
 			go func() {
 				wg.Add(1)
 				tcpSrv.handleRequest(ctx, accept.conn, reqAddr)

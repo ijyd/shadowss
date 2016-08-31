@@ -128,7 +128,15 @@ func (pxy *Proxy) decrypt(encBuffer []byte) ([]byte, error) {
 
 	decBuffer := make([]byte, byteLen)
 	copy(decBuffer[0:ivLen], encBuffer[0:ivLen])
-	pxy.cryp.Decrypt(decBuffer[0:ivLen], decBuffer[ivLen:], encBuffer[ivLen:byteLen])
+
+	_, err := pxy.cryp.UpdataCipherStream(decBuffer[0:ivLen], false)
+	if err != nil {
+		return nil, err
+	}
+	err = pxy.cryp.Decrypt(decBuffer[ivLen:], encBuffer[ivLen:byteLen])
+	if err != nil {
+		return nil, err
+	}
 
 	glog.V(5).Infof("Got  decrypt cipher ivlen(%d) iv: \r\n%s", ivLen, util.DumpHex(decBuffer[0:ivLen]))
 	glog.V(5).Infof("Got  decrypt datalen(%d) data:\r\n%s", byteLen, util.DumpHex(encBuffer[ivLen:byteLen]))
@@ -148,7 +156,16 @@ func AssembleResp(resp []byte, byteLen int, crypto *crypto.Crypto) ([]byte, erro
 	plainText := make([]byte, byteLen)
 	copy(plainText[:], resp[:])
 
-	iv, err := crypto.Encrypt(cipherData[dataStart:], plainText)
+	iv, err := crypto.UpdataCipherStream(nil, true)
+	if err != nil {
+		return nil, err
+	}
+
+	err = crypto.Encrypt(cipherData[dataStart:], plainText)
+	if err != nil {
+		return nil, err
+	}
+
 	copy(cipherData[0:dataStart], iv)
 
 	glog.V(5).Infof("encrypt cipher ivlen(%d) iv: \r\n%s \r\n", len(iv), util.DumpHex(iv))
@@ -182,7 +199,15 @@ func (pxy *Proxy) handleRequest(recv receive) {
 
 	//check ota
 	if pxy.oneTimeAuth {
-		result := ssProtocol.CheckHMAC(pxy.cryp.Key[:])
+		reqHeader := make([]byte, len(ssProtocol.RespHeader))
+		copy(reqHeader, ssProtocol.RespHeader)
+		reqHeader[0] = ssProtocol.AddrType | (protocol.AddrOneTimeAuthFlag)
+
+		authData := append(reqHeader, ssProtocol.Data...)
+		glog.V(5).Infof("read req header(%s) data:%s\r\n",
+			util.DumpHex(reqHeader[:]), util.DumpHex(ssProtocol.Data[:]))
+
+		result := ssProtocol.CheckHMAC(pxy.cryp.Key[:], authData)
 		if !result {
 			glog.Errorln("invalid not auth request")
 			return

@@ -1,5 +1,11 @@
 package protocol
 
+import (
+	"shadowsocks-go/pkg/util"
+
+	"github.com/golang/glog"
+)
+
 func ParseUDPReq(decBuffer []byte, byteLen int, ivLen int) (*SSProtocol, error) {
 	ssProtocol := NewSSProcol(ivLen)
 
@@ -14,12 +20,18 @@ func ParseUDPReq(decBuffer []byte, byteLen int, ivLen int) (*SSProtocol, error) 
 		return nil, err
 	}
 
+	glog.V(5).Infof("read req header(%s)\r\n",
+		util.DumpHex(ssProtocol.RespHeader[:]))
+
 	parseLen += tmpLen
 
 	if ssProtocol.AddrType == addrTypeDomain {
 		tmpLen = ssProtocol.ParseReqDomainLen(decBuffer[parseLen : parseLen+protocolHostLen])
 		parseLen += tmpLen
 	}
+
+	glog.V(5).Infof("read req header(%s)\r\n",
+		util.DumpHex(ssProtocol.RespHeader[:]))
 
 	endIndex = parseLen + ssProtocol.HostLen + protocolDstAddrPortLen
 	tmpLen, err = ssProtocol.ParseReqAddrAndPort(decBuffer[parseLen:endIndex])
