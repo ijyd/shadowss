@@ -222,12 +222,12 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, client net.Conn, req
 				glog.Errorf("handle %s read requet error: %v\n", reqAddr, req.err)
 				err := req.err
 				if err.Error() == "not auth" {
-					continue
+					return
 				} else if err == io.EOF {
 					glog.Errorf("handle %s read requet error: %v will be return\n", reqAddr, req.err)
 					return
 				} else if err.Error() == "remote connecting failure" {
-					continue
+					return
 				} else {
 					glog.Errorf("not implement error %v\r\n", err)
 					return
@@ -235,24 +235,25 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, client net.Conn, req
 			}
 
 			wg.Add(1)
-			go func() {
-				glog.Infof("handle %s read process %v->%v\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
-				upload, download := process(ctx, req.client, req.remote)
+			//go func() {
+			glog.Infof("handle %s read process %v->%v\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
+			upload, download := process(ctx, req.client, req.remote)
+			//tcpSrv.handleRequestData(conn, remote, timeout)
+			glog.Infof("handle %s read process %v->%v done\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
+			lock(tcpSrv.dataMutex)
+			tcpSrv.uploadTraffic += <-upload
+			tcpSrv.downloadTraffic += <-download
+			unlock(tcpSrv.dataMutex)
 
-				glog.Infof("handle %s read process %v->%v done\n", reqAddr, req.client.RemoteAddr().String(), req.remote.server.RemoteAddr().String())
-				lock(tcpSrv.dataMutex)
-				tcpSrv.uploadTraffic += <-upload
-				tcpSrv.downloadTraffic += <-download
-				unlock(tcpSrv.dataMutex)
+			remote.server.Close()
+			lock(tcpSrv.mapMutex)
+			delete(conn.remoteConn, host)
+			unlock(tcpSrv.mapMutex)
 
-				remote.server.Close()
-				lock(tcpSrv.mapMutex)
-				delete(conn.remoteConn, host)
-				unlock(tcpSrv.mapMutex)
-
-				wg.Done()
-				close(processDone)
-			}()
+			wg.Done()
+			close(processDone)
+			//}()
+			//tcpSrv.PipeThenClose(remote, conn, timeout, false)
 		}
 	}
 
