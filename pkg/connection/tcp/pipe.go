@@ -27,6 +27,7 @@ func (tcpSrv *TCPServer) PipeThenClose(src, dst net.Conn, timeout time.Duration,
 	for {
 		SetReadTimeout(src, timeout)
 		n, err := src.Read(buf)
+		glog.V(5).Infof("Got  remote original data \r\n%s\r\n", util.DumpHex(buf[0:n]))
 		// read may return EOF with n > 0
 		// should always process n > 0 bytes before handling error
 		if n > 0 {

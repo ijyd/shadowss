@@ -7,6 +7,8 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/golang/glog"
+
 	"shadowsocks-go/pkg/util"
 )
 
@@ -147,6 +149,7 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 func (c *Conn) Write(b []byte) (n int, err error) {
 	if c.ota {
+		glog.V(5).Infof("####need write with ota\r\n")
 		chunkId := c.GetAndIncrChunkId()
 		b = util.OtaReqChunkAuth(c.iv, chunkId, b)
 	}
@@ -176,7 +179,11 @@ func (c *Conn) write(b []byte) (n int, err error) {
 		copy(cipherData, iv)
 	}
 
+	glog.V(5).Infof("####need write with iv\r\n%s\r\n", util.DumpHex(cipherData[:]))
+
 	c.encrypt(cipherData[len(iv):], b)
+
+	glog.V(5).Infof("####need write with cipher data\r\n%s\r\n", util.DumpHex(cipherData[:]))
 	n, err = c.Conn.Write(cipherData)
 	return
 }
