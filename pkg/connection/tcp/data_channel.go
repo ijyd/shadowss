@@ -10,6 +10,7 @@ import (
 
 	"golang.org/x/net/context"
 
+	"shadowsocks-go/pkg/crypto"
 	"shadowsocks-go/pkg/util"
 
 	"github.com/golang/glog"
@@ -24,6 +25,30 @@ type result struct {
 	unloadTraffic   int64
 	downloadTraffic int64
 	err             error
+}
+
+type remoteConnHelper struct {
+	cryp        *crypto.Crypto //every to remote request have diff iv
+	server      net.Conn       //proxy to remote connnection
+	chunkID     uint32         //record request count for this remote
+	iv          []byte         //store first request iv for continue request use
+	oneTimeAuth bool           //for this remote oneTimeAuth flag
+}
+
+const (
+	timeoutKey = string("timeout")
+)
+
+func setReadTimeout(c net.Conn, timeout time.Duration) {
+	if timeout != 0 {
+		c.SetReadDeadline(time.Now().Add(timeout))
+	}
+}
+
+func (r *remoteConnHelper) increaseChunkID() uint32 {
+	chunkID := r.chunkID
+	r.chunkID += 1
+	return chunkID
 }
 
 func WriteToClient(client net.Conn, remote *remoteConnHelper, data []byte) (int, error) {
