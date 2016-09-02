@@ -15,7 +15,7 @@ func ParseUDPReq(decBuffer []byte, byteLen int, ivLen int) (*SSProtocol, error) 
 
 	parseLen := ssProtocol.ParseReqIV(decBuffer[0:ivLen])
 
-	tmpLen, err = ssProtocol.ParseReqAddrType(decBuffer[parseLen : parseLen+protocolAddrTypeLen])
+	tmpLen, err = ssProtocol.ParseReqAddrType(decBuffer[parseLen : parseLen+ProtocolAddrTypeLen])
 	if err != nil {
 		return nil, err
 	}
@@ -25,15 +25,15 @@ func ParseUDPReq(decBuffer []byte, byteLen int, ivLen int) (*SSProtocol, error) 
 
 	parseLen += tmpLen
 
-	if ssProtocol.AddrType == addrTypeDomain {
-		tmpLen = ssProtocol.ParseReqDomainLen(decBuffer[parseLen : parseLen+protocolHostLen])
+	if ssProtocol.AddrType == AddrTypeDomain {
+		tmpLen = ssProtocol.ParseReqDomainLen(decBuffer[parseLen : parseLen+ProtocolHostLen])
 		parseLen += tmpLen
 	}
 
 	glog.V(5).Infof("read req header(%s)\r\n",
 		util.DumpHex(ssProtocol.RespHeader[:]))
 
-	endIndex = parseLen + ssProtocol.HostLen + protocolDstAddrPortLen
+	endIndex = parseLen + ssProtocol.HostLen + ProtocolDstAddrPortLen
 	tmpLen, err = ssProtocol.ParseReqAddrAndPort(decBuffer[parseLen:endIndex])
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func ParseUDPReq(decBuffer []byte, byteLen int, ivLen int) (*SSProtocol, error) 
 	parseLen += tmpLen
 
 	if ssProtocol.OneTimeAuth {
-		endIndex = byteLen - protocolHMACLen
+		endIndex = byteLen - ProtocolHMACLen
 		tmpLen = ssProtocol.ParseUDPReqData(decBuffer[parseLen:endIndex])
 		parseLen += tmpLen
 

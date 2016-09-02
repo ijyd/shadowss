@@ -12,17 +12,17 @@ import (
 )
 
 const (
-	protocolAddrTypeLen    = 1
-	protocolDstAddrIPv4Len = net.IPv4len
-	protocolDstAddrIPv6Len = net.IPv6len
-	protocolDstAddrPortLen = 2
-	protocolHostLen        = 1
-	protocolHMACLen        = 10
+	ProtocolAddrTypeLen    = 1
+	ProtocolDstAddrIPv4Len = net.IPv4len
+	ProtocolDstAddrIPv6Len = net.IPv6len
+	ProtocolDstAddrPortLen = 2
+	ProtocolHostLen        = 1
+	ProtocolHMACLen        = 10
 )
 
 const (
 	addrTypeIPv4   = 1
-	addrTypeDomain = 3
+	AddrTypeDomain = 3
 	addrTypeIPv6   = 4
 )
 
@@ -86,16 +86,16 @@ func (ssProtocol *SSProtocol) ParseReqAddrType(decBuffer []byte) (int, error) {
 
 	switch ssProtocol.AddrType {
 	case addrTypeIPv4:
-		ssProtocol.HostLen = protocolDstAddrIPv4Len
+		ssProtocol.HostLen = ProtocolDstAddrIPv4Len
 	case addrTypeIPv6:
-		ssProtocol.HostLen = protocolDstAddrIPv6Len
-	case addrTypeDomain:
+		ssProtocol.HostLen = ProtocolDstAddrIPv6Len
+	case AddrTypeDomain:
 		ssProtocol.HostLen = 0
 	default:
 		err = fmt.Errorf("addr type %v not supported\r\n", ssProtocol.AddrType)
 	}
 
-	return protocolAddrTypeLen, err
+	return ProtocolAddrTypeLen, err
 }
 
 func (ssProtocol *SSProtocol) ParseReqDomainLen(decBuffer []byte) int {
@@ -107,7 +107,7 @@ func (ssProtocol *SSProtocol) ParseReqDomainLen(decBuffer []byte) int {
 
 	ssProtocol.RespHeader = append(ssProtocol.RespHeader, decBuffer[0])
 
-	return protocolHostLen
+	return ProtocolHostLen
 }
 
 func (ssProtocol *SSProtocol) ParseReqAddrAndPort(decBuffer []byte) (int, error) {
@@ -116,7 +116,7 @@ func (ssProtocol *SSProtocol) ParseReqAddrAndPort(decBuffer []byte) (int, error)
 	switch ssProtocol.AddrType {
 	case addrTypeIPv4, addrTypeIPv6:
 		ssProtocol.DstAddr.IP = net.IP(decBuffer[:ssProtocol.HostLen])
-	case addrTypeDomain:
+	case AddrTypeDomain:
 		domainEndIdx := ssProtocol.HostLen
 		domain := string(decBuffer[:domainEndIdx])
 
@@ -131,16 +131,16 @@ func (ssProtocol *SSProtocol) ParseReqAddrAndPort(decBuffer []byte) (int, error)
 	}
 
 	parseLen := ssProtocol.HostLen
-	ssProtocol.DstAddr.Port = int(binary.BigEndian.Uint16(decBuffer[parseLen : parseLen+protocolDstAddrPortLen]))
-	parseLen += protocolDstAddrPortLen
+	ssProtocol.DstAddr.Port = int(binary.BigEndian.Uint16(decBuffer[parseLen : parseLen+ProtocolDstAddrPortLen]))
+	parseLen += ProtocolDstAddrPortLen
 
 	return parseLen, nil
 }
 
 func (ssProtocol *SSProtocol) ParseReqHMAC(decBuffer []byte) int {
-	copy(ssProtocol.HMAC[:], decBuffer[:protocolHMACLen])
+	copy(ssProtocol.HMAC[:], decBuffer[:ProtocolHMACLen])
 
-	return protocolHMACLen
+	return ProtocolHMACLen
 }
 
 func (ssProtocol *SSProtocol) ParseUDPReqData(decBuffer []byte) int {
