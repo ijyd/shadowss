@@ -23,8 +23,6 @@ type TCPServer struct {
 	quit            chan struct{}
 	uploadTraffic   int64 //request upload traffic
 	downloadTraffic int64 //request download traffic
-	//ClientDict Mapping from client addresses (as host:port) to connection
-	clientDict map[string]*connector
 
 	//mutex Mutex used to serialize access to the dictionary
 	mapMutex  *sync.Mutex
@@ -39,11 +37,10 @@ type connector struct {
 //NewTCPServer create a TCPServer
 func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
 	return &TCPServer{
-		Config:     cfg,
-		quit:       make(chan struct{}),
-		clientDict: make(map[string]*connector),
-		mapMutex:   new(sync.Mutex),
-		dataMutex:  new(sync.Mutex),
+		Config:    cfg,
+		quit:      make(chan struct{}),
+		mapMutex:  new(sync.Mutex),
+		dataMutex: new(sync.Mutex),
 	}
 }
 
@@ -82,10 +79,6 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		serverConn: make(map[string]net.Conn),
 	}
 
-	defer func() {
-		connHelper.client.Close()
-	}()
-
 	ssProtocol, err := connHelper.client.ParseTcpReq()
 	if err != nil {
 		glog.Errorf("get invalid request  from %s error %v\r\n", reqAddr, err)
@@ -111,13 +104,21 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		uploadTraffic   int64
 		downloadTraffic int64
 	}
-	pipeResult := make(chan result, 1)
-	go func() {
-		upload, download := PipeData(ctx, connHelper.client, remote, timeout)
-		pipeResult <- result{upload, download}
-	}()
 
 	var wg sync.WaitGroup
+	pipeResult := make(chan result, 1)
+	go func() {
+		wg.Add(1)
+		upload, download := PipeData(ctx, connHelper.client, remote, timeout)
+		pipeResult <- result{upload, download}
+		wg.Done()
+	}()
+
+	defer func() {
+		connHelper.client.Close()
+		remote.Close()
+	}()
+
 	for {
 
 		select {
@@ -131,114 +132,14 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 			tcpSrv.downloadTraffic += result.downloadTraffic
 			unlock(tcpSrv.dataMutex)
 
-			remote.Close()
-			lock(tcpSrv.mapMutex)
-			delete(connHelper.serverConn, host)
-			unlock(tcpSrv.mapMutex)
 			glog.Infof("handle %s read requet will be done with result %+v\n", reqAddr, result)
 			return
 		default:
 			time.Sleep(1 * time.Second)
 		}
-
 	}
 
 }
-
-// func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn) {
-//
-// 	reqAddr := acceptConn.RemoteAddr().String()
-// 	timeout := time.Duration(tcpSrv.Config.Timeout) * time.Second
-//
-// 	lock(tcpSrv.mapMutex)
-// 	connHelper, found := tcpSrv.clientDict[reqAddr]
-// 	unlock(tcpSrv.mapMutex)
-// 	if !found {
-// 		crypto, err := crypto.NewCrypto(tcpSrv.Config.EncryptMethod, tcpSrv.Config.Password)
-// 		if err != nil {
-// 			glog.Errorf("create crypto error :%v", err)
-// 			return
-// 		}
-// 		client := ssclient.NewClient(acceptConn, crypto)
-// 		connHelper = &connector{
-// 			client:     client,
-// 			serverConn: make(map[string]net.Conn),
-// 		}
-//
-// 		lock(tcpSrv.mapMutex)
-// 		tcpSrv.clientDict[reqAddr] = connHelper
-// 		unlock(tcpSrv.mapMutex)
-//
-// 		glog.V(5).Infof("Created new connection for client %s\n", reqAddr)
-// 	} else {
-// 		glog.V(5).Infof("Found connection for client %s\n", reqAddr)
-// 	}
-//
-// 	defer func() {
-// 		connHelper.client.Close()
-//
-// 		lock(tcpSrv.mapMutex)
-// 		delete(tcpSrv.clientDict, reqAddr)
-// 		unlock(tcpSrv.mapMutex)
-//
-// 	}()
-//
-// 	ssProtocol, err := connHelper.client.ParseTcpReq()
-// 	if err != nil {
-// 		glog.Errorf("get invalid request  from %s error %v\r\n", reqAddr, err)
-// 		return
-// 	}
-// 	remoteAddr := &net.TCPAddr{
-// 		IP:   ssProtocol.DstAddr.IP,
-// 		Port: ssProtocol.DstAddr.Port,
-// 	}
-// 	host := remoteAddr.String()
-//
-// 	remote, err := net.Dial("tcp", host)
-// 	if err != nil {
-// 		if ne, ok := err.(*net.OpError); ok && (ne.Err == syscall.EMFILE || ne.Err == syscall.ENFILE) {
-// 			glog.Errorf("dial error:%v\r\n", err)
-// 		} else {
-// 			glog.Errorf(" connecting to:%v occur err:%v", host, err)
-// 		}
-// 		return
-// 	}
-// 	connHelper.serverConn[host] = remote
-//
-// 	type result struct {
-// 		uploadTraffic   int64
-// 		downloadTraffic int64
-// 	}
-// 	pipeResult := make(chan result, 1)
-// 	go func() {
-// 		upload, download := PipeData(ctx, connHelper.client, remote, timeout)
-// 		pipeResult <- result{upload, download}
-// 	}()
-//
-// 	var wg sync.WaitGroup
-// 	for {
-//
-// 		select {
-// 		case <-ctx.Done():
-// 			glog.V(5).Infof("handle %s read requet will be done\n", reqAddr)
-// 			wg.Wait()
-// 			return
-// 		case result := <-pipeResult:
-// 			lock(tcpSrv.dataMutex)
-// 			tcpSrv.uploadTraffic += result.uploadTraffic
-// 			tcpSrv.downloadTraffic += result.downloadTraffic
-// 			unlock(tcpSrv.dataMutex)
-//
-// 			remote.Close()
-// 			lock(tcpSrv.mapMutex)
-// 			delete(connHelper.serverConn, host)
-// 			unlock(tcpSrv.mapMutex)
-// 			glog.Infof("handle %s read requet will be done with result %+v\n", reqAddr, result)
-// 			return
-// 		}
-// 	}
-//
-// }
 
 //Run start a tcp listen for user
 func (tcpSrv *TCPServer) Run() {

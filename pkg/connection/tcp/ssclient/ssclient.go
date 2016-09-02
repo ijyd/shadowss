@@ -10,21 +10,25 @@ import (
 	"shadowsocks-go/pkg/crypto"
 	"shadowsocks-go/pkg/protocol"
 	"shadowsocks-go/pkg/util"
+	bytesPool "shadowsocks-go/pkg/util/pool/bytes"
 
 	"github.com/golang/glog"
 )
 
 type Client struct {
 	net.Conn
-	cryp    *crypto.Crypto //every to remote request have diff iv
-	chunkId uint32
-	IV      []byte
+	cryp          *crypto.Crypto //every to remote request have diff iv
+	chunkId       uint32
+	IV            []byte
+	RequestBuffer *bytesPool.BytePool
 }
 
 func NewClient(c net.Conn, cipher *crypto.Crypto) *Client {
 	client := &Client{
-		Conn: c,
-		cryp: cipher,
+		Conn:          c,
+		cryp:          cipher,
+		chunkId:       0,
+		RequestBuffer: bytesPool.NewBytePool(1024*5, 1024*5),
 	}
 	return client
 }
@@ -154,35 +158,41 @@ func (c *Client) ParseTcpReq() (*protocol.SSProtocol, error) {
 	return ssProtocol, nil
 }
 
-func (c *Client) ParseReqData() ([]byte, error) {
+func (c *Client) ParseReqData(buf []byte) ([]byte, error) {
 	const (
 		dataLenLen  = 2
 		hmacSha1Len = 10
 		idxData0    = dataLenLen + hmacSha1Len
 	)
 
+	bufLen := len(buf)
 	headerLen := dataLenLen + hmacSha1Len
-	buf := make([]byte, headerLen)
-	if n, err := io.ReadFull(c, buf[:headerLen]); err != nil {
-		glog.Errorf("conn=%s  read header error n=%v: %v", c.RemoteAddr().String(), n, err)
+
+	if bufLen < headerLen {
+		buf = make([]byte, headerLen)
+	}
+
+	if _, err := io.ReadFull(c, buf[:headerLen]); err != nil {
 		return nil, err
 	}
 	dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])
 	expectedHmacSha1 := buf[dataLenLen:idxData0]
 
-	dataBuf := make([]byte, dataLen)
-	if n, err := io.ReadFull(c, dataBuf); err != nil {
-		glog.V(5).Infof("conn=%s #%v read data error n=%v: %v", c.RemoteAddr().String(), n, err)
+	dataEndIdx := int(dataLen) + headerLen
+	if bufLen < dataEndIdx {
+		buf = make([]byte, dataLen)
+	}
+
+	if _, err := io.ReadFull(c, buf[headerLen:dataEndIdx]); err != nil {
 		return nil, err
 	}
 
 	chunkIdBytes := make([]byte, 4)
 	chunkId := c.getAndIncrChunkId()
 	binary.BigEndian.PutUint32(chunkIdBytes, chunkId)
-	actualHmacSha1 := util.HmacSha1(append(c.IV, chunkIdBytes...), dataBuf)
+	actualHmacSha1 := util.HmacSha1(append(c.IV, chunkIdBytes...), buf[headerLen:dataEndIdx])
 	if !bytes.Equal(expectedHmacSha1, actualHmacSha1) {
-		glog.V(5).Infof("conn=%p #%v read data hmac-sha1 mismatch, iv=%v chunkId=%v src=%v dst=%v len=%v expeced=%v actual=%v", c, c.IV, chunkId, c.RemoteAddr(), dataLen, expectedHmacSha1, actualHmacSha1)
 		return nil, fmt.Errorf("Not auth data")
 	}
-	return dataBuf[0:dataLen], nil
+	return buf[headerLen:dataEndIdx], nil
 }

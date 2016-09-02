@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"io"
 	"net"
 	"time"
 
@@ -32,16 +31,19 @@ func PipeData(ctx context.Context, src *ssclient.Client, dst net.Conn, timeout t
 		for {
 			SetReadTimeout(src, timeout)
 
-			dataBuf, parseErr := src.ParseReqData()
+			buf := src.RequestBuffer.Get()
+			dataBuf, parseErr := src.ParseReqData(buf)
 			err = parseErr
-			if err != nil && err == io.EOF {
+			if err != nil {
+				src.RequestBuffer.Put(buf)
 				break
 			} else {
 				var writeLen int
 				if writeLen, err = dst.Write(dataBuf); err != nil {
-					glog.V(5).Infof("conn=%p  write data error n=%v: %v", dst, writeLen, err)
+					src.RequestBuffer.Put(buf)
 					break
 				} else {
+					src.RequestBuffer.Put(buf)
 					upload += int64(writeLen)
 				}
 			}
@@ -61,12 +63,11 @@ func PipeData(ctx context.Context, src *ssclient.Client, dst net.Conn, timeout t
 			readLen, err = dst.Read(buf)
 			if readLen > 0 {
 				if _, err = src.Write(buf[0:readLen]); err != nil {
-					glog.Errorf("write err:%v", err)
 					break
 				}
 				download += int64(readLen)
 			}
-			if err != nil && err == io.EOF {
+			if err != nil {
 				break
 			}
 		}
