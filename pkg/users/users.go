@@ -51,11 +51,12 @@ func (u *Users) CreateUsersSync(proxySrv *proxyserver.Servers) {
 			glog.Errorf("Create backend error:%v\r\n", err)
 			return
 		}
+		u.ProxyServer = proxySrv
+		go runSync(u)
+	} else {
+		glog.Warningf("have not any backend \r\n")
 	}
 
-	u.ProxyServer = proxySrv
-
-	go runSync(u)
 }
 
 func (u *Users) getUsers() ([]User, error) {
@@ -108,16 +109,20 @@ func runSync(users *Users) {
 				for _, v := range userList {
 					config := coverUserToConfig(&v)
 					exist, equal := users.ProxyServer.CheckServer(config)
-					users.refreshTraffic(config, &v)
 					if !exist {
 						//force add for new item
 						users.ProxyServer.StartWithConfig(config)
 					} else {
 						if !equal {
-							//re add modify server
 							users.ProxyServer.StopServer(config)
+							users.refreshTraffic(config, &v)
+							//release this server re add
+							users.ProxyServer.CleanUpServer(config)
+
 							time.Sleep(time.Duration(500) * time.Microsecond)
 							users.ProxyServer.StartWithConfig(config)
+						} else {
+							users.refreshTraffic(config, &v)
 						}
 					}
 				}

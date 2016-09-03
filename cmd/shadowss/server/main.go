@@ -30,20 +30,6 @@ func waitSignal() {
 	}
 }
 
-// func start(udp bool) {
-// 	for _, v := range config.ServerCfg.Clients {
-// 		glog.V(5).Infof("listen pair(%v:%v) with auth:%v", v.Port, v.Password, v.EnableOTA)
-// 		go shadowss.Run(v.Password, v.EncryptMethod, v.Port, v.EnableOTA, time.Duration(v.Timeout)*time.Second)
-// 		if udp {
-// 			go shadowss.RunUDP(v.Password, v.EncryptMethod, v.Port, time.Duration(v.Timeout)*time.Second)
-// 		}
-// 	}
-// 	//
-// 	// if udp {
-// 	// 	go shadowss.RunUDP(string("barfoo"), string("aes-128-cfb"), 53, time.Duration(200)*time.Second)
-// 	// }
-// }
-
 func main() {
 	serverRunOptions := shadowss.NewServerOption()
 	// Parse command line flags.
