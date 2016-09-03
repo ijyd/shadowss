@@ -37,19 +37,41 @@
  */
 ```
 
-- response
+#### tcp server response
+
+- first resp package
 
 ```
  /*
   *
-  *    +------+-----------+-------------+------+
-  *    | LEN  | HMAC-SHA1 |    DATA     |      ...
-  *    +------+-----------+-------------+------+
-  *    |  2   |    10     |  Variable   |      ...
-  *    +------+-----------+-------------+------+
+  *    +-------------+-----------+
+  *    |     IV      |    DATA   |
+  *    +------+------+-----------+
+  *    |  Variable   |  Variable |
+  *    +-------------+-----------+
   *
-  *    The key of HMAC-SHA1 is (IV + CHUNK ID)
-  *    The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
+  *    
+  *   
+  */
+
+```
+
+
+- follow resp package
+
+*复用第一个应答的iv进行解包，server部分采用第一个应答生成的IV对后续数据进行加密*
+
+```
+ /*
+  *
+  *    +-----------+
+  *    |    DATA   |
+  *    +-----------+
+  *    |  Variable |
+  *    +-----------+
+  *
+  *    
+  *   
   */
 
 ```

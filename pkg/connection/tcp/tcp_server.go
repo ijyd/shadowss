@@ -78,6 +78,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		client:     client,
 		serverConn: make(map[string]net.Conn),
 	}
+	defer connHelper.client.Close()
 
 	ssProtocol, err := connHelper.client.ParseTcpReq()
 	if err != nil {
@@ -99,6 +100,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		}
 		return
 	}
+	defer remote.Close()
 
 	type result struct {
 		uploadTraffic   int64
@@ -114,11 +116,6 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		wg.Done()
 	}()
 
-	defer func() {
-		connHelper.client.Close()
-		remote.Close()
-	}()
-
 	for {
 
 		select {
@@ -132,7 +129,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 			tcpSrv.downloadTraffic += result.downloadTraffic
 			unlock(tcpSrv.dataMutex)
 
-			glog.Infof("handle %s read requet will be done with result %+v\n", reqAddr, result)
+			glog.V(5).Infof("handle %s read requet will be done with result %+v\n", reqAddr, result)
 			return
 		default:
 			time.Sleep(1 * time.Second)

@@ -44,7 +44,7 @@ func (c *Client) getAndIncrChunkId() (chunkId uint32) {
 }
 
 func (c *Client) Read(b []byte) (n int, err error) {
-	if c.cryp.CheckDecryptStream() == false {
+	if c.cryp.CheckCryptoStream(false) == false {
 		iv := make([]byte, c.cryp.GetIVLen())
 		if _, err = io.ReadFull(c.Conn, iv); err != nil {
 			return
@@ -68,7 +68,7 @@ func (c *Client) Read(b []byte) (n int, err error) {
 
 func (c *Client) Write(b []byte) (n int, err error) {
 	var iv []byte
-	if c.cryp.CheckEncryptStream() == false {
+	if c.cryp.CheckCryptoStream(true) == false {
 		iv, err = c.cryp.UpdataCipherStream(nil, true)
 		if err != nil {
 			return

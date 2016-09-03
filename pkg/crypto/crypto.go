@@ -87,16 +87,15 @@ func (c *Crypto) UpdataCipherStream(iv []byte, encrypt bool) ([]byte, error) {
 }
 
 //GetIVLen Get iv len
-func (c *Crypto) CheckDecryptStream() bool {
-	if c.decStream == nil {
-		return false
-	}
-	return true
-}
-
-func (c *Crypto) CheckEncryptStream() bool {
-	if c.encStream == nil {
-		return false
+func (c *Crypto) CheckCryptoStream(encrypt bool) bool {
+	if encrypt {
+		if c.encStream == nil {
+			return false
+		}
+	} else {
+		if c.decStream == nil {
+			return false
+		}
 	}
 	return true
 }

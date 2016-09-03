@@ -79,7 +79,7 @@ func PipeData(ctx context.Context, src *ssclient.Client, dst net.Conn, timeout t
 			glog.V(5).Infof("handle %s<->%s data will be done\n", src.RemoteAddr().String(), dst.RemoteAddr().String())
 			return upload, download
 		case rst := <-result:
-			glog.Infof("handle %s<->%s data will be done by break %v\n", src.RemoteAddr().String(), dst.RemoteAddr().String(), rst)
+			glog.V(5).Infof("handle %s<->%s data will be done by break %v\n", src.RemoteAddr().String(), dst.RemoteAddr().String(), rst)
 			return upload, download
 		default:
 			time.Sleep(1 * time.Second)
