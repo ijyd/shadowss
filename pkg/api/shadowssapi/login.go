@@ -22,13 +22,14 @@ func NewToken(login *api.Login) error {
 		return fmt.Errorf("invalid request")
 	}
 
+	glog.V(5).Infof("Got Users by db")
 	user, err := Storage.GetUserByName(login.Spec.AuthName)
 	if err != nil {
 		return err
 	}
 	glog.V(5).Infof("Got Users %+v", user)
 
-	if login.Spec.Auth != user.Passwd {
+	if login.Spec.Auth != user.ManagePasswd {
 		return fmt.Errorf("auth failure")
 	}
 

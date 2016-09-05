@@ -3,6 +3,8 @@ package db
 import (
 	"fmt"
 	"shadowsocks-go/pkg/storage"
+
+	"github.com/golang/glog"
 )
 
 //User is a mysql users map
@@ -17,6 +19,7 @@ type User struct {
 	DownloadTraffic int64  `column:"d"`               //download traffic for per user
 	Name            string `column:"user_name"`
 	MacAddr         string `column:"macAddr"`
+	ManagePasswd    string `column:"pass" gorm:"column:pass"`
 }
 
 func GetServUsers(handle storage.Interface, startUserID, endUserID int64) ([]User, error) {
@@ -36,13 +39,14 @@ func GetUser(handle storage.Interface, key string) (*User, error) {
 	var users []User
 	ctx := createContextWithValue(userTableName)
 
-	fileds := []string{"id", "passwd", "port", "method", "enable", "user_name", "macAddr"}
+	fileds := []string{"id", "passwd", "port", "method", "enable", "user_name", "macAddr", "pass"}
 	query := string("user_name = ?")
 	queryArgs := []interface{}{key}
 	selection := NewSelection(fileds, query, queryArgs)
 
 	err := handle.GetToList(ctx, selection, &users)
 	if err != nil {
+		glog.Errorf("handle get to list %v\r\n", err)
 		return nil, err
 	}
 
@@ -58,7 +62,7 @@ func GetUserByID(handle storage.Interface, id int64) (*User, error) {
 	var users []User
 	ctx := createContextWithValue(userTableName)
 
-	fileds := []string{"id", "passwd", "port", "method", "enable", "email"}
+	fileds := []string{"id", "passwd", "port", "method", "enable", "user_name"}
 	query := string("id = ?")
 	queryArgs := []interface{}{id}
 	selection := NewSelection(fileds, query, queryArgs)

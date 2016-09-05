@@ -10,11 +10,11 @@ import (
 
 //User is a mysql users map
 type UserToken struct {
-	ID         int64  `column:"id"`
-	Token      string `column:"token"`
-	UserID     int64  `column:"user_id"`
-	CreateTime int    `column:"create_time"`
-	ExpireTime int    `column:"expire_time"`
+	ID         int64  `column:"id" gorm:"column:id"`
+	Token      string `column:"token" gorm:"column:token"`
+	UserID     int64  `column:"user_id" gorm:"column:user_id"`
+	CreateTime int64  `column:"create_time" gorm:"column:create_time"`
+	ExpireTime int64  `column:"expire_time" gorm:"column:expire_time"`
 	MacAddr    string `column:"macAddr" gorm:"column:macAddr"`
 }
 
@@ -48,8 +48,8 @@ func CreateToken(handle storage.Interface, token string, uid int64, macAddr stri
 		Token:      token,
 		UserID:     uid,
 		MacAddr:    macAddr,
-		CreateTime: int(time.Now().Unix()),
-		ExpireTime: int(time.Now().Add(time.Duration(1) * time.Hour).Unix()),
+		CreateTime: time.Now().Unix(),
+		ExpireTime: time.Now().Add(time.Duration(1) * time.Hour).Unix(),
 	}
 
 	err := handle.Create(ctx, token, userToken, userToken)

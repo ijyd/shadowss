@@ -69,8 +69,8 @@ func GetAPIServers(request *restful.Request, response *restful.Response) {
 
 	user, err := CheckToken(encoded)
 	if err != nil || user == nil {
-		glog.Errorln("Marshal router err", err)
-		newErr := apierr.NewUnauthorized("marshal router resource failure")
+		glog.Errorln("Unauth request ", err)
+		newErr := apierr.NewUnauthorized("invalid token")
 		internalErr, ok := newErr.(*apierr.StatusError)
 		if ok {
 			output = internalErr.ErrStatus.Encode()
