@@ -34,6 +34,17 @@ func New(client *dbmysql.DB) *store {
 	}
 }
 
+func (s *store) Create(ctx context.Context, key string, obj, out interface{}) error {
+
+	rst := s.client.Table(ctx.Value(ContextTableKey).(string)).Create(obj)
+
+	glog.V(5).Infof("add record line %+v result %v", obj, rst)
+	// if record == false {
+	// 	return fmt.Errorf("create record failure")
+	// }
+	return nil
+}
+
 //filedsToStructFieldsMap use input fields get struct field name
 func (s *store) filedsToStructFieldsMap(fiedls []string, typ reflect.Type) (map[string]string, error) {
 	formStructType := typ
@@ -139,7 +150,7 @@ func (s *store) GetToList(ctx context.Context, filter storage.Filter, result int
 	//rows, err := s.client.Table(ctx.Table).Model(elemType).Select(filter.ResultFields).Where("id BETWEEN ? AND ?", 50, 100).Rows()
 
 	if err != nil {
-		glog.Errorf("query row failure \r\n")
+		glog.Errorf("query row failure err %v\r\n", err)
 		return err
 	}
 	defer rows.Close()

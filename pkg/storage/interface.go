@@ -2,17 +2,6 @@ package storage
 
 import "golang.org/x/net/context"
 
-// type Filter struct {
-// 	ResultFields []string
-// 	//plain sql like as : ("name = ? AND age >= ?", "jinzhu", "22")
-// 	//Query := string("name = ? AND age >= ?")
-// 	Query interface{}
-// 	//QueryArgs := make([]interface{}, 2)
-// 	//QueryArgs[0] = string("jinzhu")
-// 	//QueryArgs[1] = string("22")
-// 	QueryArgs []interface{}
-// }
-
 type Filter interface {
 	Field() []string
 	Condition() (query interface{}, args []interface{})
@@ -35,6 +24,16 @@ func (e everything) Condition() (query interface{}, args []interface{}) {
 
 //Interface implement a storeage backend
 type Interface interface {
+
+	// Create adds a new object at a key unless it already exists. 'ttl' is time-to-live
+	// in seconds (0 means forever). If no error is returned and out is not nil, out will be
+	// set to the read value from database.
+	Create(ctx context.Context, key string, obj, out interface{}) error
+
+	// // Delete removes the specified key and returns the value that existed at that spot.
+	// // If key didn't exist, it will return NotFound storage error.
+	// Delete(ctx context.Context, key string, out runtime.Object, preconditions *Preconditions) error
+
 	GetToList(ctx context.Context, filter Filter, result interface{}) error
 	//keyField is index resource
 	//updateFields will be only update that fileds in obj if that is null update all
