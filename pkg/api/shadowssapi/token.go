@@ -26,12 +26,22 @@ func randBearerToken() (string, error) {
 func addToken(user *db.User) (string, error) {
 
 	token, err := randBearerToken()
-
-	err = Storage.AddUserToken(token, user.ID, user.MacAddr)
 	if err != nil {
-		glog.Errorf("store token failure %v", err)
+		glog.Errorf("generate token failure %v\r\n", err)
+		return string(""), nil
+	}
+
+	id, err := Storage.GetTokenIDByUID(user.ID)
+	if err != nil {
+
+		err = Storage.AddUserToken(token, user.ID, user.MacAddr)
+		if err != nil {
+			glog.Errorf("store token failure %v", err)
+		} else {
+			cache.Add(uint64(user.ID), user)
+		}
 	} else {
-		cache.Add(uint64(user.ID), user)
+		Storage.UpdateToken(token, id)
 	}
 
 	return token, err
@@ -51,6 +61,7 @@ func CheckToken(input string) (*db.User, error) {
 		return nil, err
 	}
 
+	glog.V(5).Infof("get user id %v\r\n", uid)
 	var user *db.User
 	obj, found := cache.Get(uint64(uid))
 	if !found {

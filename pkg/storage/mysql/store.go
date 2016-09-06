@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 
 	"shadowsocks-go/pkg/storage"
 
@@ -78,11 +79,30 @@ func (s *store) convertByteArry(kind reflect.Kind, buffer []byte) (interface{}, 
 	case reflect.String:
 		v = string(buffer)
 	default:
-		err = fmt.Errorf("not support field type %v", kind)
+		err = fmt.Errorf("not support byte type to %v", kind)
 	}
 
 	return v, err
 }
+
+// https://github.com/stretchr/testify/blob/master/assert/assertions.go
+// func ObjectsAreEqualValues(expected, actual interface{}) bool {
+// 	if ObjectsAreEqual(expected, actual) {
+// 		return true
+// 	}
+//
+// 	actualType := reflect.TypeOf(actual)
+// 	if actualType == nil {
+// 		return false
+// 	}
+// 	expectedValue := reflect.ValueOf(expected)
+// 	if expectedValue.IsValid() && expectedValue.Type().ConvertibleTo(actualType) {
+// 		// Attempt comparison after type conversion
+// 		return reflect.DeepEqual(expectedValue.Convert(actualType).Interface(), actual)
+// 	}
+//
+// 	return false
+// }
 
 func (s *store) convertToInterface(kind reflect.Kind, src interface{}) (interface{}, error) {
 	var v interface{}
@@ -92,8 +112,10 @@ func (s *store) convertToInterface(kind reflect.Kind, src interface{}) (interfac
 	//case reflect.Int8, reflect.Int16, reflect.Int, reflect.Int32, reflect.Int64:
 	case int, int8, int16, int32, int64:
 		v = reflect.ValueOf(t).Int()
+	case time.Time:
+		v = t
 	default:
-		err = fmt.Errorf("not support field type %v", kind)
+		err = fmt.Errorf("not support field type %v to %v", kind, t)
 	}
 
 	return v, err
@@ -147,7 +169,6 @@ func (s *store) GetToList(ctx context.Context, filter storage.Filter, result int
 	query, queryArgs := filter.Condition()
 
 	rows, err := s.client.Table(ctx.Value(ContextTableKey).(string)).Model(elemType).Select(filter.Field()).Where(query, queryArgs...).Rows()
-	//rows, err := s.client.Table(ctx.Table).Model(elemType).Select(filter.ResultFields).Where("id BETWEEN ? AND ?", 50, 100).Rows()
 
 	if err != nil {
 		glog.Errorf("query row failure err %v\r\n", err)
@@ -155,7 +176,6 @@ func (s *store) GetToList(ctx context.Context, filter storage.Filter, result int
 	}
 	defer rows.Close()
 
-	glog.Infof("scan....\r\n")
 	columns, _ := rows.Columns()
 	count := len(columns)
 	values := make([]interface{}, count)

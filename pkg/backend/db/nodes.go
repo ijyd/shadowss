@@ -23,7 +23,7 @@ type Node struct {
 func GetNodesByUserID(handle storage.Interface, uid int64) ([]Node, error) {
 
 	fileds := []string{"id", "name", "type", "server", "method", "status", "startUserID", "endUserID"}
-	query := string("startUserID >= ? AND endUserID <= ?")
+	query := string(" endUserID >= ? AND startUserID <= ?")
 	queryArgs := []interface{}{uid, uid}
 	selection := NewSelection(fileds, query, queryArgs)
 

@@ -34,10 +34,6 @@ func (u *Backend) GetUserByName(name string) (*db.User, error) {
 	return db.GetUser(u.StorageHandler, name)
 }
 
-func (u *Backend) GetUserIDByToken(token string) (int64, error) {
-	return db.CheckToken(u.StorageHandler, token)
-}
-
 func (u *Backend) GetUserByID(id int64) (*db.User, error) {
 	return db.GetUserByID(u.StorageHandler, id)
 }

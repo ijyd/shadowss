@@ -34,6 +34,11 @@ func installWebServuce(container *restful.Container) {
 		Doc("get api server").
 		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
 		Operation("GetAPIServers"))
+	wsApiServer.Route(wsApiServer.POST("").To(shadowssapi.PostAPIServer).
+		Doc("post api server").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
+		Param(ws.BodyParameter("body", "identifier of the login").DataType("api.APIServer")).
+		Operation("PostAPIServer"))
 
 	wsNode := new(restful.WebService)
 	wsNode.

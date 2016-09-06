@@ -85,3 +85,44 @@ func GetAPIServers(request *restful.Request, response *restful.Response) {
 	w.WriteHeader(statusCode)
 	w.Write(output)
 }
+
+func PostAPIServer(request *restful.Request, response *restful.Response) {
+	w := response.ResponseWriter
+	w.Header().Set("Content-Type", "application/json")
+	statusCode := 200
+
+	output := apierr.NewSuccess().Encode()
+
+	server := new(api.APIServer)
+	err := request.ReadEntity(server)
+	if err != nil {
+		glog.Errorf("invalid request body:%v", err)
+		newErr := apierr.NewBadRequestError("request body invalid")
+		internalErr, ok := newErr.(*apierr.StatusError)
+		if ok {
+			output = internalErr.ErrStatus.Encode()
+		} else {
+			glog.Errorln("status type error")
+		}
+		statusCode = 400
+	} else {
+		glog.Infof("Got Post api server:%+v\n", server)
+		err := Storage.CreateAPIServer(server.Spec.Server[0].Host, server.Spec.Server[0].Port, true)
+		if err != nil {
+			newErr := apierr.NewBadRequestError(err.Error())
+			badReq, ok := newErr.(*apierr.StatusError)
+			if ok {
+				output = badReq.ErrStatus.Encode()
+			} else {
+				glog.Errorln("status type error")
+			}
+			statusCode = 400
+		} else {
+			output, err = json.Marshal(server)
+			statusCode = 200
+		}
+	}
+
+	w.WriteHeader(statusCode)
+	w.Write(output)
+}

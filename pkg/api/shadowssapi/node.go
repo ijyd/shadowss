@@ -34,6 +34,7 @@ func getNodeInfo(user *db.User) ([]byte, int) {
 		}
 		nodeSrv = append(nodeSrv, server)
 	}
+	glog.V(5).Infof("Get nodes %v \r\n", nodeSrv)
 
 	ss := api.Node{
 		TypeMeta: api.TypeMeta{
