@@ -1,21 +1,27 @@
 package apiserver
 
 import (
+	"net/http"
+	"shadowsocks-go/pkg/api"
 	"shadowsocks-go/pkg/api/shadowssapi"
+	"strconv"
 
 	"github.com/emicklei/go-restful"
+	"github.com/emicklei/go-restful/swagger"
 )
 
-func installDeviceResource(container *restful.Container) {
+func installWebServuce(container *restful.Container) {
 
 	ws := new(restful.WebService)
 	ws.
 		Path("/api/v1/logins").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON) // you can specify this per route as well
-
+	container.Add(ws)
 	ws.Route(ws.POST("").To(shadowssapi.PostLogin).
 		Doc("get token").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.Login{}).
+		Param(ws.BodyParameter("body", "identifier of the login").DataType("api.Login")).
 		Operation("PostLogin"))
 
 	wsApiServer := new(restful.WebService)
@@ -23,30 +29,55 @@ func installDeviceResource(container *restful.Container) {
 		Path("/api/v1/apiservers").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON) // you can specify this per route as well
-
+	container.Add(wsApiServer)
 	wsApiServer.Route(wsApiServer.GET("").To(shadowssapi.GetAPIServers).
 		Doc("get api server").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
 		Operation("GetAPIServers"))
-
-	//container.Add(wsApiServer)
 
 	wsNode := new(restful.WebService)
 	wsNode.
 		Path("/api/v1/nodes").
 		Consumes(restful.MIME_JSON).
 		Produces(restful.MIME_JSON) // you can specify this per route as well
-
+	container.Add(wsNode)
 	wsNode.Route(wsNode.GET("").To(shadowssapi.GetNodes).
 		Doc("get nodes").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.Node{}).
 		Operation("GetNodes"))
 
-	container.Add(ws)
-	container.Add(wsApiServer)
-	container.Add(wsNode)
 }
 
-func install(container *restful.Container) error {
+func (apis *APIServer) installSwaggerAPI(container *restful.Container) {
+	hostAndPort := apis.Host + string(":") + strconv.Itoa(apis.Port)
+	//protocol := "https://"
+	protocol := "http://"
+	webServicesUrl := protocol + hostAndPort
 
-	installDeviceResource(container)
+	// Enable swagger UI and discovery API
+	swaggerConfig := swagger.Config{
+		WebServicesUrl:  webServicesUrl,
+		WebServices:     container.RegisteredWebServices(),
+		ApiPath:         "/swaggerapi/",
+		SwaggerPath:     "/swaggerui/",
+		SwaggerFilePath: apis.SwaggerPath,
+		SchemaFormatHandler: func(typeName string) string {
+			switch typeName {
+			case "unversioned.Time", "*unversioned.Time":
+				return "date-time"
+			}
+			return ""
+		},
+	}
+	swagger.RegisterSwaggerService(swaggerConfig, container)
+}
+
+func (apis *APIServer) install(container *restful.Container) error {
+
+	installWebServuce(container)
+	if len(apis.SwaggerPath) > 0 {
+		apis.installSwaggerAPI(container)
+	}
+
 	return nil
 }

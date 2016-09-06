@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Host          string
 	Port          int
+	SwaggerPath   string
 	StorageClient *backend.Backend
 }
 
@@ -20,6 +21,7 @@ type Config struct {
 type APIServer struct {
 	Host        string
 	Port        int
+	SwaggerPath string
 	wsContainer *restful.Container
 }
 
@@ -32,8 +34,9 @@ func NewApiServer(config Config) *APIServer {
 	}
 
 	return &APIServer{
-		Host: config.Host,
-		Port: config.Port,
+		Host:        config.Host,
+		Port:        config.Port,
+		SwaggerPath: config.SwaggerPath,
 	}
 }
 
@@ -41,7 +44,7 @@ func NewApiServer(config Config) *APIServer {
 func (apis *APIServer) Run() error {
 	apis.wsContainer = restful.NewContainer()
 	apis.wsContainer.Router(restful.CurlyRouter{})
-	install(apis.wsContainer)
+	apis.install(apis.wsContainer)
 
 	// Add container filter to enable CORS
 	cors := restful.CrossOriginResourceSharing{

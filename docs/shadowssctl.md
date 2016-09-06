@@ -5,7 +5,7 @@
 ## 调试
 
 ```
-./shadowssctl --alsologtostderr=true -v=6 --port=18088 --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel"
+./shadowssctl --alsologtostderr=true -v=6 --host=192.168.60.143 --port=18088 --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel" --swagger-path="../../third_party/swagger-ui"
 ```
 
 

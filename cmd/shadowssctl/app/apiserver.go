@@ -14,6 +14,7 @@ func Run(options *options.ServerOption, be *backend.Backend) error {
 		Host:          options.Host,
 		Port:          int(options.Port),
 		StorageClient: be,
+		SwaggerPath:   options.SwaggerPath,
 	}
 
 	serverHandler := apiserver.NewApiServer(config)
