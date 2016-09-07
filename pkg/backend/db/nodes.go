@@ -1,9 +1,8 @@
 package db
 
 import (
-	"errors"
-	"net"
 	"shadowsocks-go/pkg/storage"
+	"shadowsocks-go/pkg/util/network"
 
 	"github.com/golang/glog"
 )
@@ -39,7 +38,7 @@ func GetNodesByUserID(handle storage.Interface, uid int64) ([]Node, error) {
 }
 
 func Getnodes(handle storage.Interface) (*Node, error) {
-	host, err := externalIP()
+	host, err := network.ExternalIP()
 	glog.Infof("Got host ip is %v\r\n", host)
 
 	fileds := []string{"id", "name", "type", "server", "method", "status", "startUserID", "endUserID"}
@@ -56,46 +55,4 @@ func Getnodes(handle storage.Interface) (*Node, error) {
 	}
 
 	return &nodes[0], err
-}
-
-func externalIP() (string, error) {
-	ifaces, err := net.Interfaces()
-	if err != nil {
-		return "", err
-	}
-
-	for _, iface := range ifaces {
-		if iface.Flags&net.FlagUp == 0 {
-			continue // interface down
-		}
-		if iface.Flags&net.FlagLoopback != 0 {
-			continue // loopback interface
-		}
-
-		addrs, err := iface.Addrs()
-		if err != nil {
-			return "", err
-		}
-
-		for _, addr := range addrs {
-			var ip net.IP
-			switch v := addr.(type) {
-			case *net.IPNet:
-				ip = v.IP
-			case *net.IPAddr:
-				ip = v.IP
-			}
-
-			if ip == nil || ip.IsLoopback() {
-				continue
-			}
-
-			ip = ip.To4()
-			if ip == nil {
-				continue // not an ipv4 address
-			}
-			return ip.String(), nil
-		}
-	}
-	return "", errors.New("are you connected to the network?")
 }

@@ -62,6 +62,11 @@
 			"Rev": "103ce5cd2042f2fe629c1957abb64ab3e7f50235"
 		},
 		{
+			"ImportPath": "github.com/urfave/cli",
+			"Comment": "v1.18.0-58-gc723b19",
+			"Rev": "c723b19a84af34d905773672ffa1b8ead802e505"
+		},
+		{
 			"ImportPath": "golang.org/x/crypto/blowfish",
 			"Rev": "351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93"
 		},

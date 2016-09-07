@@ -6,6 +6,7 @@ type ServerOption struct {
 	Host        string
 	Port        int32
 	SwaggerPath string
+	LicenseFile string
 }
 
 func NewServerOption() *ServerOption {
@@ -25,4 +26,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 	fs.StringVar(&s.SwaggerPath, "swagger-path", s.SwaggerPath, ""+
 		"specific a path where found swagger index.html, if not will be disable swagger ui")
+
+	fs.StringVar(&s.LicenseFile, "license-file", s.LicenseFile, ""+
+		"specific a file that contains license")
 }
