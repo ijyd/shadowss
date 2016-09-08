@@ -18,7 +18,7 @@ func getServers(user *db.User) ([]byte, int) {
 	servers, err := Storage.GetAPIServer()
 	if err != nil {
 		glog.Errorf("Get apiserver failure %v \r\n", err)
-		newErr := apierr.NewInternalError("marshal router resource failure")
+		newErr := apierr.NewInternalError("search db failure")
 		internalErr, _ := newErr.(*apierr.StatusError)
 
 		output = internalErr.ErrStatus.Encode()

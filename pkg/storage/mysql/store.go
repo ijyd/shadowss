@@ -61,7 +61,7 @@ func (s *store) filedsToStructFieldsMap(fiedls []string, typ reflect.Type) (map[
 	for _, v := range fiedls {
 		v, ok := structFields[v]
 		if !ok {
-			return nil, fmt.Errorf("required export %s field", v)
+			return nil, fmt.Errorf("required export \"%v\" field", v)
 		}
 	}
 	return structFields, nil
@@ -265,12 +265,10 @@ func (s *store) GuaranteedUpdate(ctx context.Context, keyField string, updateFie
 	formStructValue := elem
 
 	cond := make(map[string]interface{})
-	//glog.V(5).Infof("condition %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
 	cond[keyField] = formStructValue.FieldByName(structFiledMap[keyField]).Interface()
 
 	update := make(map[string]interface{})
 	for _, v := range updateFields {
-		//glog.V(5).Infof("update %v:%v in  fieldname[%s]", v, formStructValue.FieldByName(structFiledMap[v]).Interface(), structFiledMap[v])
 		update[v] = formStructValue.FieldByName(structFiledMap[v]).Interface()
 	}
 

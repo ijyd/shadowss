@@ -13,13 +13,13 @@ type APIServers struct {
 	ID         int64     `column:"id"`
 	Host       string    `column:"host"`
 	Port       int64     `column:"port"`
-	Status     string    `colume:"status"`
-	CreateTime time.Time `column:"create_time" gorm:"column:created_time"`
+	Status     string    `column:"status"`
+	CreateTime time.Time `column:"created_time" gorm:"column:created_time"`
 }
 
 func GetApiServers(handle storage.Interface) ([]APIServers, error) {
 
-	fileds := []string{"id", "host", "port", "status", "create_time"}
+	fileds := []string{"id", "host", "port", "status", "created_time"}
 	query := string("status = ?")
 	queryArgs := []interface{}{string("Enable")}
 	selection := NewSelection(fileds, query, queryArgs)
