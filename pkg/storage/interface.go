@@ -32,7 +32,9 @@ type Interface interface {
 
 	// // Delete removes the specified key and returns the value that existed at that spot.
 	// // If key didn't exist, it will return NotFound storage error.
-	// Delete(ctx context.Context, key string, out runtime.Object, preconditions *Preconditions) error
+	//Delete(ctx context.Context, key string, out runtime.Object, preconditions *Preconditions) error
+	//Delete(ctx context.Context, key string, obj interface{}) error
+	Delete(ctx context.Context, filter Filter, out interface{}) error
 
 	GetToList(ctx context.Context, filter Filter, result interface{}) error
 	//keyField is index resource

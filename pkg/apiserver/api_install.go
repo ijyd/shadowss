@@ -2,9 +2,11 @@ package apiserver
 
 import (
 	"net/http"
-	"shadowsocks-go/pkg/api"
-	"shadowsocks-go/pkg/api/shadowssapi"
 	"strconv"
+
+	"shadowsocks-go/pkg/api"
+	apierr "shadowsocks-go/pkg/api/errors"
+	"shadowsocks-go/pkg/api/shadowssapi"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/swagger"
@@ -32,13 +34,18 @@ func installWebServuce(container *restful.Container) {
 	container.Add(wsApiServer)
 	wsApiServer.Route(wsApiServer.GET("").To(shadowssapi.GetAPIServers).
 		Doc("get api server").
-		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServerList{}).
 		Operation("GetAPIServers"))
 	wsApiServer.Route(wsApiServer.POST("").To(shadowssapi.PostAPIServer).
 		Doc("post api server").
 		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
 		Param(ws.BodyParameter("body", "identifier of the login").DataType("api.APIServer")).
 		Operation("PostAPIServer"))
+	wsApiServer.Route(wsApiServer.DELETE("{id}").To(shadowssapi.DeleteAPIServer).
+		Doc("delete api server by id").
+		Param(ws.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("DeleteAPIServer"))
 
 	wsNode := new(restful.WebService)
 	wsNode.
@@ -48,9 +55,8 @@ func installWebServuce(container *restful.Container) {
 	container.Add(wsNode)
 	wsNode.Route(wsNode.GET("").To(shadowssapi.GetNodes).
 		Doc("get nodes").
-		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.Node{}).
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.NodeList{}).
 		Operation("GetNodes"))
-
 }
 
 func (apis *APIServer) installSwaggerAPI(container *restful.Container) {

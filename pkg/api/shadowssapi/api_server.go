@@ -2,6 +2,8 @@ package shadowssapi
 
 import (
 	"encoding/json"
+	"strconv"
+
 	"shadowsocks-go/pkg/api"
 	apierr "shadowsocks-go/pkg/api/errors"
 	"shadowsocks-go/pkg/backend/db"
@@ -15,39 +17,68 @@ func getServers(user *db.User) ([]byte, int) {
 	var output []byte
 	var err error
 
+	var apisrvList api.APIServerList
 	servers, err := Storage.GetAPIServer()
 	if err != nil {
-		glog.Errorf("Get apiserver failure %v \r\n", err)
-		newErr := apierr.NewInternalError("search db failure")
-		internalErr, _ := newErr.(*apierr.StatusError)
+		if err.Error() == "not found" {
+			apisrvList = api.APIServerList{
+				TypeMeta: api.TypeMeta{
+					Kind:       "APIServerList",
+					APIVersion: "v1",
+				},
+				ListMeta: api.ListMeta{
+					SelfLink: "/api/v1/apiservers",
+				},
+			}
+		} else {
+			glog.Errorf("Get apiserver failure %v \r\n", err)
+			newErr := apierr.NewInternalError(err.Error())
+			internalErr, _ := newErr.(*apierr.StatusError)
 
-		output = internalErr.ErrStatus.Encode()
-		return output, statusCode
-	}
-
-	var apiserver []api.APIServerInfor
-	for _, v := range servers {
-		apisrvInfo := api.APIServerInfor{
-			Host: v.Host,
-			Port: v.Port,
+			output = internalErr.ErrStatus.Encode()
+			return output, statusCode
 		}
-		apiserver = append(apiserver, apisrvInfo)
+
+	} else {
+
+		var apiservers []api.APIServer
+		for _, v := range servers {
+			item := api.APIServer{
+				TypeMeta: api.TypeMeta{
+					Kind:       "APIServer",
+					APIVersion: "v1",
+				},
+				ObjectMeta: api.ObjectMeta{
+					Name: v.Name,
+				},
+				Spec: api.APIServerSpec{
+					Server: api.APIServerInfor{
+						ID:   v.ID,
+						Host: v.Host,
+						Port: v.Port,
+					},
+				},
+			}
+			apiservers = append(apiservers, item)
+		}
+
+		apisrvList = api.APIServerList{
+			TypeMeta: api.TypeMeta{
+				Kind:       "APIServerList",
+				APIVersion: "v1",
+			},
+			ListMeta: api.ListMeta{
+				SelfLink: "/api/v1/apiservers",
+			},
+			Items: apiservers,
+		}
+
 	}
 
-	apiServers := api.APIServer{
-		TypeMeta: api.TypeMeta{
-			Kind:       "ShadowAPIServer",
-			APIVersion: "v1",
-		},
-		Spec: api.APIServerSpec{
-			Server: apiserver,
-		},
-	}
-
-	output, err = json.Marshal(apiServers)
+	output, err = json.Marshal(apisrvList)
 	if err != nil {
 		glog.Errorln("Marshal router err", err)
-		newErr := apierr.NewInternalError("marshal router resource failure")
+		newErr := apierr.NewInternalError("marshal apiserver list resource failure")
 		internalErr, _ := newErr.(*apierr.StatusError)
 
 		output = internalErr.ErrStatus.Encode()
@@ -107,7 +138,7 @@ func PostAPIServer(request *restful.Request, response *restful.Response) {
 		statusCode = 400
 	} else {
 		glog.Infof("Got Post api server:%+v\n", server)
-		err := Storage.CreateAPIServer(server.Spec.Server[0].Host, server.Spec.Server[0].Port, true)
+		err := Storage.CreateAPIServer(server.ObjectMeta.Name, server.Spec.Server.Host, server.Spec.Server.Port, true)
 		if err != nil {
 			newErr := apierr.NewBadRequestError(err.Error())
 			badReq, ok := newErr.(*apierr.StatusError)
@@ -121,6 +152,36 @@ func PostAPIServer(request *restful.Request, response *restful.Response) {
 			output, err = json.Marshal(server)
 			statusCode = 200
 		}
+	}
+
+	w.WriteHeader(statusCode)
+	w.Write(output)
+}
+
+func DeleteAPIServer(request *restful.Request, response *restful.Response) {
+	idStr := request.PathParameter("id")
+
+	w := response.ResponseWriter
+	w.Header().Set("Content-Type", "application/json")
+	statusCode := 200
+	var output []byte
+
+	id, err := strconv.Atoi(idStr)
+	glog.V(5).Infoln("Get api server:", id)
+
+	err = Storage.DeleteAPIServerByID(int64(id))
+	if err == nil {
+		output = apierr.NewSuccess().Encode()
+		statusCode = 200
+	} else {
+		newErr := apierr.NewNotFound("invalid request name", idStr)
+		internalErr, ok := newErr.(*apierr.StatusError)
+		if ok {
+			output = internalErr.ErrStatus.Encode()
+		} else {
+			glog.Errorln("status type error")
+		}
+		statusCode = 404
 	}
 
 	w.WriteHeader(statusCode)

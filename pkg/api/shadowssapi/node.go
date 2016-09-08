@@ -16,42 +16,63 @@ func getNodeInfo(user *db.User) ([]byte, int) {
 	var output []byte
 	var err error
 
+	var nodeList api.NodeList
 	nodes, err := Storage.GetNodesByUID(user.ID)
 	if err != nil {
-		glog.Errorf("Get nodes by id %v failure %v \r\n", user.ID, err)
-		newErr := apierr.NewInternalError("marshal router resource failure")
-		internalErr, _ := newErr.(*apierr.StatusError)
+		if err.Error() == "not found" {
+			nodeList = api.NodeList{
+				TypeMeta: api.TypeMeta{
+					Kind:       "NodeList",
+					APIVersion: "v1",
+				},
+				ListMeta: api.ListMeta{
+					SelfLink: "/api/v1/nodes",
+				},
+			}
+		} else {
+			glog.Errorf("Get nodes by id %v failure %v \r\n", user.ID, err)
+			newErr := apierr.NewInternalError("marshal nodes resource failure")
+			internalErr, _ := newErr.(*apierr.StatusError)
 
-		output = internalErr.ErrStatus.Encode()
-		return output, statusCode
-	}
-
-	var nodeSrv []api.NodeServer
-	for _, v := range nodes {
-		server := api.NodeServer{
-			Host:   v.Host,
-			Status: (v.Status) == string("Enable"),
+			output = internalErr.ErrStatus.Encode()
+			return output, statusCode
 		}
-		nodeSrv = append(nodeSrv, server)
-	}
-	glog.V(5).Infof("Get nodes %v \r\n", nodeSrv)
+	} else {
+		var items []api.Node
+		for _, v := range nodes {
+			item := api.Node{
+				TypeMeta: api.TypeMeta{
+					Kind:       "Node",
+					APIVersion: "v1",
+				},
+				Spec: api.NodeSpec{
+					Server: api.NodeServer{
+						Host:   v.Host,
+						Status: (v.Status) == string("Enable"),
+					},
+					Account: api.NodeAccout{
+						ID:     user.ID,
+						Port:   user.Port,
+						Method: user.Method,
+					},
+				},
+			}
+			items = append(items, item)
+		}
 
-	ss := api.Node{
-		TypeMeta: api.TypeMeta{
-			Kind:       "Node",
-			APIVersion: "v1",
-		},
-		Spec: api.NodeSpec{
-			Server: nodeSrv,
-			Account: api.NodeAccout{
-				ID:     user.ID,
-				Port:   user.Port,
-				Method: user.Method,
+		nodeList = api.NodeList{
+			TypeMeta: api.TypeMeta{
+				Kind:       "NodeList",
+				APIVersion: "v1",
 			},
-		},
+			ListMeta: api.ListMeta{
+				SelfLink: "/api/v1/nodes",
+			},
+			Items: items,
+		}
 	}
 
-	output, err = json.Marshal(ss)
+	output, err = json.Marshal(nodeList)
 	if err != nil {
 		glog.Errorln("Marshal router err", err)
 		newErr := apierr.NewInternalError("marshal router resource failure")

@@ -11,6 +11,7 @@ import (
 //User is a mysql users map
 type APIServers struct {
 	ID         int64     `column:"id"`
+	Name       string    `column:"name"`
 	Host       string    `column:"host"`
 	Port       int64     `column:"port"`
 	Status     string    `column:"status"`
@@ -19,7 +20,7 @@ type APIServers struct {
 
 func GetApiServers(handle storage.Interface) ([]APIServers, error) {
 
-	fileds := []string{"id", "host", "port", "status", "created_time"}
+	fileds := []string{"id", "name", "host", "port", "status", "created_time"}
 	query := string("status = ?")
 	queryArgs := []interface{}{string("Enable")}
 	selection := NewSelection(fileds, query, queryArgs)
@@ -40,7 +41,7 @@ func GetApiServers(handle storage.Interface) ([]APIServers, error) {
 
 }
 
-func CreateAPIServer(handle storage.Interface, host string, port int64, isEnable bool) error {
+func CreateAPIServer(handle storage.Interface, name string, host string, port int64, isEnable bool) error {
 
 	ctx := createContextWithValue(apiServerTableName)
 
@@ -52,6 +53,7 @@ func CreateAPIServer(handle storage.Interface, host string, port int64, isEnable
 	}
 
 	server := &APIServers{
+		Name:       name,
 		Host:       host,
 		Port:       port,
 		Status:     status,
@@ -61,6 +63,22 @@ func CreateAPIServer(handle storage.Interface, host string, port int64, isEnable
 	err := handle.Create(ctx, host, server, server)
 	if err != nil {
 		glog.Errorf("create a server record failure %v\r\n", err)
+	}
+	return err
+}
+
+func DeleteAPIServerByID(handle storage.Interface, id int64) error {
+
+	ctx := createContextWithValue(apiServerTableName)
+
+	var server APIServers
+	query := string("id = ?")
+	queryArgs := []interface{}{id}
+	selection := NewSelection(nil, query, queryArgs)
+
+	err := handle.Delete(ctx, selection, &server)
+	if err != nil {
+		glog.Errorf("delete a server record failure %v\r\n", err)
 	}
 	return err
 }

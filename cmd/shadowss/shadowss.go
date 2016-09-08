@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"runtime/debug"
 	"syscall"
 
 	shadowss "shadowsocks-go/cmd/shadowss/app"
@@ -54,4 +55,10 @@ func main() {
 
 	be.CreateUsersSync(pxy)
 	waitSignal()
+
+	defer func() {
+		if err := recover(); err != nil {
+			debug.PrintStack()
+		}
+	}()
 }

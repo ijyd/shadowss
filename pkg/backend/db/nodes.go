@@ -1,6 +1,7 @@
 package db
 
 import (
+	"fmt"
 	"shadowsocks-go/pkg/storage"
 	"shadowsocks-go/pkg/util/network"
 
@@ -34,7 +35,12 @@ func GetNodesByUserID(handle storage.Interface, uid int64) ([]Node, error) {
 		return nil, err
 	}
 
-	return nodes, err
+	if len(nodes) > 0 {
+		return nodes, nil
+	} else {
+		return nil, fmt.Errorf("not found")
+	}
+
 }
 
 func Getnodes(handle storage.Interface) (*Node, error) {

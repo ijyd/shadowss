@@ -281,3 +281,41 @@ func (s *store) GuaranteedUpdate(ctx context.Context, keyField string, updateFie
 	return nil
 
 }
+
+func (s *store) Delete(ctx context.Context, filter storage.Filter, out interface{}) error {
+	if out == nil {
+		return fmt.Errorf("Cannot restore result to <nil>")
+	}
+
+	resultValue := reflect.ValueOf(out)
+	if resultValue.IsNil() {
+		return fmt.Errorf("Cantnot reflect on a nil pointer")
+	}
+
+	resultType := resultValue.Type()
+	resultKind := resultType.Kind()
+
+	if resultKind != reflect.Ptr {
+		return fmt.Errorf("Cannot reflect into non-poiner")
+	}
+
+	// if resultKind != reflect.Struct {
+	// 	return fmt.Errorf("Cannot reflect into non-struct")
+	// }
+
+	elemType := resultType.Elem()
+	if elemType.Kind() != reflect.Struct {
+		return fmt.Errorf("Cannot reflect into non-struct")
+	}
+
+	obj := reflect.Indirect(reflect.New(elemType))
+
+	query, queryArgs := filter.Condition()
+
+	err := s.client.Table(ctx.Value(ContextTableKey).(string)).Where(query, queryArgs).Delete(obj).Error
+	if err != nil {
+		glog.Errorf("delete err %v\r\n", err)
+		return err
+	}
+	return nil
+}
