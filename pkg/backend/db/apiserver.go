@@ -3,17 +3,18 @@ package db
 import (
 	"fmt"
 	"shadowsocks-go/pkg/storage"
+	"time"
 
 	"github.com/golang/glog"
 )
 
 //User is a mysql users map
 type APIServers struct {
-	ID         int64  `column:"id"`
-	Host       string `column:"host"`
-	Port       int64  `column:"port"`
-	Status     string `colume:"status"`
-	CreateTime int    `column:"create_time"`
+	ID         int64     `column:"id"`
+	Host       string    `column:"host"`
+	Port       int64     `column:"port"`
+	Status     string    `colume:"status"`
+	CreateTime time.Time `column:"create_time" gorm:"column:created_time"`
 }
 
 func GetApiServers(handle storage.Interface) ([]APIServers, error) {
@@ -41,7 +42,7 @@ func GetApiServers(handle storage.Interface) ([]APIServers, error) {
 
 func CreateAPIServer(handle storage.Interface, host string, port int64, isEnable bool) error {
 
-	ctx := createContextWithValue(userTokeTableName)
+	ctx := createContextWithValue(apiServerTableName)
 
 	var status string
 	if isEnable {
@@ -51,9 +52,10 @@ func CreateAPIServer(handle storage.Interface, host string, port int64, isEnable
 	}
 
 	server := &APIServers{
-		Host:   host,
-		Port:   port,
-		Status: status,
+		Host:       host,
+		Port:       port,
+		Status:     status,
+		CreateTime: time.Now(),
 	}
 
 	err := handle.Create(ctx, host, server, server)
