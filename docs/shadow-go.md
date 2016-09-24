@@ -136,7 +136,7 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 ## run server
 
 ```
-./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-type="mysql" --sync-user-interval=20 --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel"
+./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
 ```
 
 ## run client

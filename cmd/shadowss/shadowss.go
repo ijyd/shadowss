@@ -1,19 +1,17 @@
 package main
 
 import (
+	"fmt"
+	"golib/pkg/util/flag"
 	"log"
 	"os"
 	"os/signal"
-	"runtime"
 	"runtime/debug"
 	"syscall"
 
-	shadowss "shadowsocks-go/cmd/shadowss/app"
-	"shadowsocks-go/pkg/backend"
-	"shadowsocks-go/pkg/proxyserver"
-	"shadowsocks-go/pkg/util/flag"
+	"shadowsocks-go/cmd/shadowss/app"
+	"shadowsocks-go/cmd/shadowss/app/options"
 
-	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 )
 
@@ -32,28 +30,16 @@ func waitSignal() {
 }
 
 func main() {
-	serverRunOptions := shadowss.NewServerOption()
-	// Parse command line flags.
+	serverRunOptions := options.NewServerOption()
 	serverRunOptions.AddFlags(pflag.CommandLine)
-
-	be := backend.NewBackend()
-	be.AddFlags(pflag.CommandLine)
 
 	flag.InitFlags()
 
-	if serverRunOptions.CpuCoreNum > 0 {
-		runtime.GOMAXPROCS(serverRunOptions.CpuCoreNum)
+	if err := app.Run(serverRunOptions); err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(1)
 	}
 
-	err := serverRunOptions.LoadConfigFile()
-	if err != nil {
-		glog.Fatalln("load user configure error:\r\n", err)
-	}
-
-	pxy := proxyserver.NewServers(serverRunOptions.EnableUDPRelay)
-	pxy.Start()
-
-	be.CreateUsersSync(pxy)
 	waitSignal()
 
 	defer func() {
