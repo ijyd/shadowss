@@ -1,0 +1,62 @@
+package: shadowsocks-go
+import:
+- package: cloud-keeper
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
+  subpackages:
+  - pkg/api
+  - pkg/api/install
+  - pkg/etcdhelper
+
+- package: gofreezer
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
+  subpackages:
+    - pkg/api
+    - pkg/genericstoragecodec/options
+    - pkg/storage
+    - pkg/watch
+
+- package: golib
+  repo: ssh://git@192.168.60.116:10022/cloud/golib.git
+  subpackages:
+    - pkg/util/flag
+    - pkg/util/timewrap
+
+
+- package: github.com/codahale/chacha20
+- package: github.com/coreos/go-semver
+  version: ^0.2.0
+  subpackages:
+  - semver
+- package: github.com/emicklei/go-restful
+  version: ^1.2.0
+  subpackages:
+  - swagger
+- package: github.com/go-sql-driver/mysql
+  version: ^1.2.0
+- package: github.com/godbus/dbus
+  version: ^4.0.0
+- package: github.com/golang/glog
+- package: github.com/golang/groupcache
+  subpackages:
+  - lru
+- package: github.com/jinzhu/gorm
+  version: ^1.0.0
+- package: github.com/spf13/pflag
+
+- package: golang.org/x/crypto
+  subpackages:
+  - blowfish
+  - cast5
+  - salsa20/salsa
+- package: golang.org/x/net
+  subpackages:
+  - context
+
+
+- package: k8s.io/kubernetes
+  version: ^1.5.0-alpha.0
+  subpackages:
+  - pkg/util/dbus
+  - pkg/util/exec
+  - pkg/util/iptables
+  - pkg/util/sets
