@@ -54,9 +54,8 @@ type Conn struct {
 	closed bool
 	outLck sync.RWMutex
 
-	signals       []chan<- *Signal
-	signalsClosed bool
-	signalsLck    sync.Mutex
+	signals    []chan<- *Signal
+	signalsLck sync.Mutex
 
 	eavesdropped    chan<- *Message
 	eavesdroppedLck sync.Mutex
@@ -190,7 +189,6 @@ func (conn *Conn) Close() error {
 	conn.closed = true
 	conn.outLck.Unlock()
 	conn.signalsLck.Lock()
-	conn.signalsClosed = true
 	for _, ch := range conn.signals {
 		close(ch)
 	}
@@ -343,10 +341,6 @@ func (conn *Conn) inWorker() {
 					Body:   msg.Body,
 				}
 				conn.signalsLck.Lock()
-				if conn.signalsClosed {
-					conn.signalsLck.Unlock()
-					return
-				}
 				for _, ch := range conn.signals {
 					ch <- signal
 				}

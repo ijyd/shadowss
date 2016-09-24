@@ -1,0 +1,48 @@
+package: cloud-keeper
+import:
+- package: github.com/digitalocean/godo
+  version: ^0.9.0
+- package: github.com/emicklei/go-restful
+  version: ^1.2.0
+  subpackages:
+  - swagger
+- package: github.com/golang/glog
+- package: github.com/juju/ratelimit
+- package: github.com/spf13/pflag
+
+- package: gofreezer
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
+  subpackages:
+  - pkg/api
+  - pkg/conversion
+  - pkg/fields
+  - pkg/labels
+  - pkg/runtime
+  - pkg/storage
+  - pkg/types
+  - pkg/watch/versioned
+  - pkg/genericstoragecodec
+  - pkg/genericstoragecodec/options
+
+- package: golib
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
+  subpackages:
+    - pkg/permissions
+    - pkg/storage/storagebackend
+    - pkg/storage/storagebackend/factory
+    - pkg/util/cache
+    - pkg/util/exec
+    - pkg/util/flag
+    - pkg/util/network
+    - pkg/util/timewrap
+
+- package: golang.org/x/net
+  subpackages:
+  - context
+- package: golang.org/x/oauth2
+
+testImport:
+- package: github.com/stretchr/testify
+  version: ^1.1.3
+  subpackages:
+  - assert
