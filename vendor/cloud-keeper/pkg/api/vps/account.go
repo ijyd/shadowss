@@ -8,6 +8,7 @@ import (
 
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
+	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/pagination"
 
 	"github.com/golang/glog"
@@ -23,7 +24,7 @@ func getAccount(page pagination.Pager) ([]byte, int) {
 	var acclist api.AccountList
 	accdetails, err := Storage.GetAccounts(page)
 	if err != nil {
-		if isNotfoundErr(err) == true {
+		if IsNotfoundErr(err) == true {
 			acclist = api.AccountList{
 				TypeMeta: unversioned.TypeMeta{
 					Kind:       "AccountList",
@@ -36,7 +37,7 @@ func getAccount(page pagination.Pager) ([]byte, int) {
 		} else {
 			glog.Errorf("Get account failure %v \r\n", err)
 			newErr := apierr.NewInternalError(err.Error())
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			return output, statusCode
 		}
 
@@ -85,7 +86,7 @@ func getAccount(page pagination.Pager) ([]byte, int) {
 	if err != nil {
 		glog.Errorln("Marshal router err", err)
 		newErr := apierr.NewInternalError("marshal apiserver list resource failure")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 
 	} else {
 		statusCode = 200
@@ -111,7 +112,7 @@ func GetAccounts(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 		return
 	}
@@ -120,7 +121,7 @@ func GetAccounts(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewBadRequestError("invalid pagination")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -145,7 +146,7 @@ func PostAccount(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorf("invalid request body:%v", err)
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 	} else {
 		glog.Infof("Got Post account: %+v\n", acc)
@@ -183,7 +184,7 @@ func DeleteAccount(request *restful.Request, response *restful.Response) {
 		statusCode = 200
 	} else {
 		newErr := apierr.NewNotFound("invalid request name", name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 	}
 

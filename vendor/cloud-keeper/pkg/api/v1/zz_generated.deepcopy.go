@@ -28,6 +28,7 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeUser, InType: reflect.TypeOf(&NodeUser{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_APIServer, InType: reflect.TypeOf(&APIServer{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserService, InType: reflect.TypeOf(&UserService{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Node, InType: reflect.TypeOf(&Node{})},
 	)
 }
 
@@ -341,6 +342,32 @@ func DeepCopy_v1_UserService(in interface{}, out interface{}, c *conversion.Clon
 			return err
 		}
 		if err := DeepCopy_v1_UserServiceSpec(&in.Spec, &out.Spec, c); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1_NodeSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*NodeSpec)
+		out := out.(*NodeSpec)
+
+		out.Server = in.Server
+
+		return nil
+	}
+}
+
+func DeepCopy_v1_Node(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*Node)
+		out := out.(*Node)
+		out.TypeMeta = in.TypeMeta
+		if err := DeepCopy_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
+			return err
+		}
+		if err := DeepCopy_v1_NodeSpec(&in.Spec, &out.Spec, c); err != nil {
 			return err
 		}
 		return nil

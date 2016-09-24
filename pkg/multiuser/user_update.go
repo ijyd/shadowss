@@ -25,7 +25,8 @@ import (
 func RefreshUser(user *api.NodeUser, del bool) {
 	if !del {
 		//need update noe user port
-		err := nodectl.UpdateNodeUsersRefer(schedule.etcdHandle, user.Spec.User)
+		glog.V(5).Infof("update node user %+v", *user)
+		err := nodectl.UpdateNodeUsersRefer(schedule.etcdHandle, user.Spec)
 		if err != nil {
 			glog.Errorf("update node user err %v \r\n", err)
 		}

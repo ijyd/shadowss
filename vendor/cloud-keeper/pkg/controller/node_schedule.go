@@ -80,6 +80,8 @@ func (ns *NodeSchedule) NewNodeUser(user *api.NodeUser) {
 
 	userSrv.Spec.NodeUserReference[user.Spec.NodeName] = user.Spec.User
 
+	glog.Infof("***********new node user %+v\r\n", userSrv.Spec.NodeUserReference)
+
 	if notfound {
 		err = userctl.AddUserServiceHelper(ns.helper, user.Name, userSrv.Spec.NodeUserReference)
 	} else {
@@ -90,12 +92,12 @@ func (ns *NodeSchedule) NewNodeUser(user *api.NodeUser) {
 
 func (ns *NodeSchedule) UpdateNode(node *api.Node) {
 
-	glog.V(5).Infof("udpate node %v\r\n", node)
+	glog.V(5).Infof("udpate node %+v\r\n", node)
 
-	_, err := nodectl.UpdateNode(ns.be, nil, node, false, true)
-	if err != nil {
-		glog.Errorf("update node %+v error %v\r\n", node, err)
-	}
+	// _, err := nodectl.UpdateNode(ns.be, nil, node, false, true)
+	// if err != nil {
+	// 	glog.Errorf("update node %+v error %v\r\n", node, err)
+	// }
 }
 
 func (ns *NodeSchedule) UpdateNodeUser(user *api.NodeUser) {
@@ -111,6 +113,8 @@ func (ns *NodeSchedule) UpdateNodeUser(user *api.NodeUser) {
 		glog.Errorf("not found any user by name %v\r\n", user.Name)
 		return
 	}
+
+	glog.V(5).Infof("update user  %+v to %+v\r\n", *userSrv, *user)
 
 	userSrv.Spec.NodeUserReference[user.Spec.NodeName] = user.Spec.User
 

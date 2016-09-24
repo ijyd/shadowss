@@ -8,6 +8,7 @@ import (
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/validation"
+	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/controller"
 	"cloud-keeper/pkg/pagination"
 
@@ -23,7 +24,7 @@ func getUsers(page pagination.Pager) ([]byte, int) {
 	var userList api.UserList
 	userInfoArray, err := Storage.GetUserList(page)
 	if err != nil {
-		if isNotfoundErr(err) == true {
+		if IsNotfoundErr(err) == true {
 			userList = api.UserList{
 				TypeMeta: unversioned.TypeMeta{
 					Kind:       "UserList",
@@ -36,7 +37,7 @@ func getUsers(page pagination.Pager) ([]byte, int) {
 		} else {
 			glog.Errorf("Get user failure %v \r\n", err)
 			newErr := apierr.NewInternalError(err.Error())
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 
 			return output, statusCode
 		}
@@ -93,7 +94,7 @@ func getUsers(page pagination.Pager) ([]byte, int) {
 		if err != nil {
 			glog.Errorln("Marshal router err", err)
 			newErr := apierr.NewInternalError("marshal user list resource failure")
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			statusCode = 500
 
 		} else {
@@ -123,7 +124,7 @@ func GetUsers(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 		return
 	}
@@ -132,7 +133,7 @@ func GetUsers(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewBadRequestError("invalid pagination")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -159,7 +160,7 @@ func PostUser(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorf("invalid request body:%v", err)
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -167,7 +168,7 @@ func PostUser(request *restful.Request, response *restful.Response) {
 	err = validation.ValidateUser(*user)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -176,7 +177,7 @@ func PostUser(request *restful.Request, response *restful.Response) {
 	err = Storage.CreateUser(user.Spec.DetailInfo)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 	} else {
 		output, err = json.Marshal(user)
@@ -205,7 +206,7 @@ func DeleteUser(request *restful.Request, response *restful.Response) {
 		statusCode = 200
 	} else {
 		newErr := apierr.NewNotFound("invalid request name", name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 	}
 

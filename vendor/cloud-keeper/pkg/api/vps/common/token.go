@@ -1,4 +1,4 @@
-package vps
+package common
 
 import (
 	"crypto/rand"
@@ -9,6 +9,10 @@ import (
 	cacheutil "golib/pkg/util/cache"
 
 	"github.com/golang/glog"
+)
+
+const (
+	maxLoginCacheSize = 32 * 4
 )
 
 var cache = cacheutil.NewCache(maxLoginCacheSize)
@@ -24,7 +28,7 @@ func randBearerToken() (string, error) {
 	return fmt.Sprintf("%x", token), err
 }
 
-func addToken(user *api.UserInfo) (string, error) {
+func AddToken(user *api.UserInfo) (string, error) {
 
 	token, err := randBearerToken()
 	if err != nil {

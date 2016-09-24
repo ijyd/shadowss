@@ -1,4 +1,4 @@
-package vps
+package common
 
 import (
 	apierr "cloud-keeper/pkg/api/errors"
@@ -6,7 +6,7 @@ import (
 	"github.com/golang/glog"
 )
 
-func encodeError(status interface{}) []byte {
+func EncodeError(status interface{}) []byte {
 	var output []byte
 	internalErr, ok := status.(*apierr.StatusError)
 	if ok {
@@ -18,11 +18,11 @@ func encodeError(status interface{}) []byte {
 	return output
 }
 
-func EncodeError(status interface{}) []byte {
-	return encodeError(status)
-}
+// func EncodeError(status interface{}) []byte {
+// 	return EncodeError(status)
+// }
 
-func isNotfoundErr(err error) bool {
+func IsNotfoundErr(err error) bool {
 	if err.Error() == string("not found") {
 		return true
 	}

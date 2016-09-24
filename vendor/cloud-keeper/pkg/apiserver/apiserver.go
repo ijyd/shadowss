@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"cloud-keeper/pkg/api/vps"
+	comm "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/backend"
 	"cloud-keeper/pkg/controller"
 	"cloud-keeper/pkg/etcdhelper"
@@ -33,15 +33,15 @@ type APIServer struct {
 
 //New ...new a apiserver
 func NewApiServer(config Config) *APIServer {
-	vps.Storage = config.StorageClient
+	comm.Storage = config.StorageClient
 
-	err := vps.Storage.CreateStorage()
+	err := comm.Storage.CreateStorage()
 	if err != nil {
 		return nil
 	}
 
-	vps.EtcdStorage = etcdhelper.NewEtcdHelper(config.EtcdStorageOptions)
-	if vps.EtcdStorage == nil {
+	comm.EtcdStorage = etcdhelper.NewEtcdHelper(config.EtcdStorageOptions)
+	if comm.EtcdStorage == nil {
 		return nil
 	}
 
@@ -71,7 +71,7 @@ func (apis *APIServer) Run() error {
 	addr := apis.Host + ":" + fmt.Sprintf("%d", apis.Port)
 	server := &http.Server{Addr: addr, Handler: apis.wsContainer}
 
-	controller.ControllerStart(vps.EtcdStorage, vps.Storage, apis.Host, apis.Port)
+	controller.ControllerStart(comm.EtcdStorage, comm.Storage, apis.Host, apis.Port)
 
 	return server.ListenAndServe()
 }

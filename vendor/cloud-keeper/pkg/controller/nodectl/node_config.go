@@ -53,6 +53,8 @@ func AddNodeUserHelper(helper *etcdhelper.EtcdHelper, nodeName string, userRefer
 		},
 	}
 
+	glog.V(5).Infof("app node user %+v refer:%v\r\n", *nodeUser, userRefer)
+
 	return AddNodeUser(helper, nodeUser)
 }
 
@@ -63,9 +65,9 @@ func AddNodeUser(helper *etcdhelper.EtcdHelper, user *api.NodeUser) error {
 	outItem := new(api.NodeUser)
 
 	key := PrefixNode + "/" + user.Spec.NodeName + PrefixNodeUser + "/" + user.Name
+
 	err := helper.StorageCodec.Storage.Create(ctx, key, user, outItem, 0)
 	if err != nil {
-		glog.Errorf("Create node config err %v items %v\r\n", err, outItem)
 		return err
 	}
 
@@ -115,11 +117,7 @@ func GetNodeAllUsers(helper *etcdhelper.EtcdHelper, nodeName string) (runtime.Ob
 	return outItem, err
 }
 
-func UpdateNodeUsersRefer(helper *etcdhelper.EtcdHelper, nodeName string, user api.UserReferences) error {
-	spec := api.NodeUserSpec{
-		NodeName: nodeName,
-		User:     user,
-	}
+func UpdateNodeUsersRefer(helper *etcdhelper.EtcdHelper, spec api.NodeUserSpec) error {
 
 	return updateNodeUsers(helper, spec)
 }
@@ -141,13 +139,12 @@ func updateNodeUsers(helper *etcdhelper.EtcdHelper, spec api.NodeUserSpec) error
 	outItem := new(api.NodeUser)
 
 	err = helper.StorageCodec.Storage.GuaranteedUpdate(ctx, key, outItem, false, nil, func(existing runtime.Object, res storage.ResponseMeta) (runtime.Object, *uint64, error) {
-		glog.Infof("existing obj %+v", existing)
 
 		nodeUser.Spec = spec
 		return nodeUser, nil, nil
 	})
+
 	if err != nil {
-		glog.Errorf("update failure %v\r\n", err)
 		return err
 	}
 
@@ -192,6 +189,7 @@ func AddNodeToEtcdHelper(helper *etcdhelper.EtcdHelper, nodehelper *NodeHelper) 
 		},
 		Spec: spec,
 	}
+	glog.V(5).Infof("add node %v\r\v", node)
 
 	return AddNode(nil, helper, &node, nodehelper.TTL, true, false)
 }
@@ -323,9 +321,10 @@ func GetAllNodes(helper *etcdhelper.EtcdHelper) (runtime.Object, error) {
 	outItem := new(api.NodeList)
 
 	options := &prototype.ListOptions{ResourceVersion: "0"}
-	prefix := PrefixNode
+	prefix := PrefixNode + "/"
 
-	err := helper.StorageCodec.Storage.List(ctx, prefix, options.ResourceVersion, storage.Everything, outItem)
+	filter := NodeFilter{}
+	err := helper.StorageCodec.Storage.List(ctx, prefix, options.ResourceVersion, filter, outItem)
 
 	return outItem, err
 

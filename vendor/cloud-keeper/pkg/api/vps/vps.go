@@ -4,11 +4,10 @@ import (
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/validation"
-	"cloud-keeper/pkg/backend"
+	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/collector"
 	"cloud-keeper/pkg/collector/collectorbackend"
 	"cloud-keeper/pkg/collector/collectorbackend/factory"
-	"cloud-keeper/pkg/etcdhelper"
 	"fmt"
 	"strconv"
 
@@ -16,9 +15,6 @@ import (
 
 	"github.com/golang/glog"
 )
-
-var Storage *backend.Backend
-var EtcdStorage *etcdhelper.EtcdHelper
 
 var accountCollector = make(map[string]collector.Collector, 2)
 
@@ -68,7 +64,7 @@ func GetAccountInfo(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 	} else {
 		collectorHandle, err := getCollector(name)
@@ -76,12 +72,12 @@ func GetAccountInfo(request *restful.Request, response *restful.Response) {
 			output, err = collectorHandle.GetAccount()
 			if err != nil {
 				newErr := apierr.NewInternalError(err.Error())
-				output = encodeError(newErr)
+				output = EncodeError(newErr)
 				statusCode = 401
 			}
 		} else {
 			newErr := apierr.NewNotFound("not support vps", name)
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			statusCode = 404
 		}
 
@@ -109,7 +105,7 @@ func GetAccServers(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 		return
 	}
@@ -117,7 +113,7 @@ func GetAccServers(request *restful.Request, response *restful.Response) {
 	page, err := api.PageParse(request)
 	if err != nil {
 		newErr := apierr.NewBadRequestError("invalid pagination")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -127,12 +123,12 @@ func GetAccServers(request *restful.Request, response *restful.Response) {
 		output, err = collectorHandle.GetServers(page)
 		if err != nil {
 			newErr := apierr.NewInternalError(err.Error())
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			statusCode = 500
 		}
 	} else {
 		newErr := apierr.NewNotFound("not support vps", name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 	}
 
@@ -160,7 +156,7 @@ func PostAccServer(request *restful.Request, response *restful.Response) {
 
 	if err != nil {
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -169,7 +165,7 @@ func PostAccServer(request *restful.Request, response *restful.Response) {
 	err = validation.ValidateAccServer(*acc)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -177,7 +173,7 @@ func PostAccServer(request *restful.Request, response *restful.Response) {
 	collectorHandle, err := getCollector(name)
 	if err != nil {
 		newErr := apierr.NewNotFound(err.Error(), name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 		return
 	}
@@ -185,7 +181,7 @@ func PostAccServer(request *restful.Request, response *restful.Response) {
 	err = collectorHandle.CreateServer(acc)
 	if err != nil {
 		newErr := apierr.NewInternalError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 	} else {
 		output = apierr.NewSuccess().Encode()
@@ -207,7 +203,7 @@ func DeleteAccServer(request *restful.Request, response *restful.Response) {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		newErr := apierr.NewInternalError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 500
 	} else {
 
@@ -216,7 +212,7 @@ func DeleteAccServer(request *restful.Request, response *restful.Response) {
 			err := collectorHandle.DeleteServer(int64(id))
 			if err != nil {
 				newErr := apierr.NewInternalError(err.Error())
-				output = encodeError(newErr)
+				output = EncodeError(newErr)
 				statusCode = 500
 			} else {
 				output = apierr.NewSuccess().Encode()
@@ -224,7 +220,7 @@ func DeleteAccServer(request *restful.Request, response *restful.Response) {
 			}
 		} else {
 			newErr := apierr.NewNotFound("not support vps", name)
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			statusCode = 404
 		}
 	}
@@ -251,7 +247,7 @@ func PostAccServerExec(request *restful.Request, response *restful.Response) {
 
 	if err != nil {
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -259,7 +255,7 @@ func PostAccServerExec(request *restful.Request, response *restful.Response) {
 	collectorHandle, err := getCollector(name)
 	if err != nil {
 		newErr := apierr.NewNotFound(err.Error(), name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 		return
 	}
@@ -267,7 +263,7 @@ func PostAccServerExec(request *restful.Request, response *restful.Response) {
 	err = collectorHandle.Exec(command)
 	if err != nil {
 		newErr := apierr.NewInternalError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 500
 	} else {
 		output = apierr.NewSuccess().Encode()
@@ -295,7 +291,7 @@ func GetAccServersSSHkey(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 		return
 	}
@@ -305,12 +301,12 @@ func GetAccServersSSHkey(request *restful.Request, response *restful.Response) {
 		output, err = collectorHandle.GetSSHKey()
 		if err != nil {
 			newErr := apierr.NewInternalError(err.Error())
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 			statusCode = 500
 		}
 	} else {
 		newErr := apierr.NewNotFound("not support vps", name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 	}
 

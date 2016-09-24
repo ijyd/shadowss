@@ -13,7 +13,7 @@ import (
 )
 
 var nodeFileds = []string{"id", "name", "enableota",
-	"server", "method", "status", "traffic_rate", "descryption",
+	"server", "method", "status", "traffic_rate", "description",
 	"traffic_limit", "upload", "download", "location", "vps_server_id", "vps_server_name"}
 
 func GetNodesByUserID(handle storage.Interface, uid int64) ([]api.NodeServer, error) {

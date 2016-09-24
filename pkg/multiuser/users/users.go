@@ -5,6 +5,7 @@ import (
 	"gofreezer/pkg/runtime"
 	"shadowsocks-go/pkg/config"
 	"shadowsocks-go/pkg/proxyserver"
+	"time"
 
 	"github.com/golang/glog"
 )
@@ -59,6 +60,7 @@ func (u *Users) AddObj(obj runtime.Object) {
 	glog.V(5).Infof("add user %v \r\n", config)
 	u.proxyHandle.StartWithConfig(config)
 
+	time.Sleep(1 * time.Second)
 	port, err := u.proxyHandle.GetListenPort(config)
 	if err != nil {
 		glog.Errorf("Get listen port failure %v\r\n", err)

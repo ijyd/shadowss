@@ -7,6 +7,7 @@ import (
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/vps"
+	"cloud-keeper/pkg/api/vps/etcdrest"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/swagger"
@@ -59,6 +60,11 @@ func installUserSrv(container *restful.Container) {
 		Operation("DeleteUser")
 	ws.Route(route)
 
+	route = ws.GET("{name}/bindingnodes").To(etcdrest.GetBindingNodes).
+		Doc("get user binding nodes").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.UserServiceList{}).
+		Operation("GetBindingNodes")
+	ws.Route(route)
 }
 
 func installNodeSrv(container *restful.Container) {
@@ -73,6 +79,26 @@ func installNodeSrv(container *restful.Container) {
 		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.NodeList{}).
 		Operation("GetNodes")
 	wsNode.Route(route)
+
+	route = wsNode.POST("").To(vps.PostNode).
+		Doc("post api server").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.Node{}).
+		Param(wsNode.BodyParameter("body", "identifier of the login").DataType("api.Node")).
+		Operation("PostNode")
+	wsNode.Route(route)
+	route = wsNode.DELETE("{name}").To(vps.DeleteNode).
+		Doc("delete api server by name").
+		Param(wsNode.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("DeleteNode")
+	wsNode.Route(route)
+
+	route = wsNode.GET("{name}/bindingusers").To(etcdrest.GetBindingUsers).
+		Doc("get nodes binding users").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.NodeUserList{}).
+		Operation("GetBindingUsers")
+	wsNode.Route(route)
+
 }
 
 func installAPIServerSrv(container *restful.Container) {
@@ -89,18 +115,18 @@ func installAPIServerSrv(container *restful.Container) {
 		Operation("GetAPIServers")
 	wsApiServer.Route(route)
 
-	route = wsApiServer.POST("").To(vps.PostAPIServer).
-		Doc("post api server").
-		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
-		Param(wsApiServer.BodyParameter("body", "identifier of the login").DataType("api.APIServer")).
-		Operation("PostAPIServer")
-	wsApiServer.Route(route)
-	route = wsApiServer.DELETE("{name}").To(vps.DeleteAPIServer).
-		Doc("delete api server by name").
-		Param(wsApiServer.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
-		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
-		Operation("DeleteAPIServer")
-	wsApiServer.Route(route)
+	// route = wsApiServer.POST("").To(vps.PostAPIServer).
+	// 	Doc("post api server").
+	// 	Returns(http.StatusOK, http.StatusText(http.StatusOK), api.APIServer{}).
+	// 	Param(wsApiServer.BodyParameter("body", "identifier of the login").DataType("api.APIServer")).
+	// 	Operation("PostAPIServer")
+	// wsApiServer.Route(route)
+	// route = wsApiServer.DELETE("{name}").To(vps.DeleteAPIServer).
+	// 	Doc("delete api server by name").
+	// 	Param(wsApiServer.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
+	// 	Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+	// 	Operation("DeleteAPIServer")
+	// wsApiServer.Route(route)
 }
 
 func installLoginSrv(container *restful.Container) {

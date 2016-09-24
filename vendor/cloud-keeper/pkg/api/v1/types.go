@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"gofreezer/pkg/api/prototype"
 	"gofreezer/pkg/api/unversioned"
 	"time"
 )
@@ -10,6 +9,7 @@ type UserReferences struct {
 	ID              int64  `json:"id,omitempty"`
 	Port            int64  `json:"port,omitempty"`
 	Method          string `json:"method,omitempty"`
+	Name            string `json:"name,omitempty"`
 	Password        string `json:"password,omitempty"`
 	EnableOTA       bool   `json:"enableOTA, omitempty"`
 	UploadTraffic   int64  `json:"uploadTraffic,omitempty"`   //upload traffic for per user
@@ -47,7 +47,7 @@ type NodeServer struct {
 	Location      string `json:"location,omitempty" column:"location" gorm:"column:location"`
 	AccServerID   int64  `json:"accServerID,omitempty" column:"vps_server_id" gorm:"column:vps_server_id"`
 	AccServerName string `json:"accServerName,omitempty" column:"vps_server_name" gorm:"column:vps_server_name"`
-	Descryption   string `json:"descryption,omitempty" column:"descryption" gorm:"column:descryption"`
+	Description   string `json:"description,omitempty" column:"description" gorm:"column:description"`
 	TrafficLimit  int64  `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"`
 	Upload        int64  `json:"upload,omitempty" column:"upload" gorm:"column:upload"`
 	Download      int64  `json:"download,omitempty" column:"download" gorm:"column:download"`
@@ -60,7 +60,7 @@ type NodeSpec struct {
 
 type Node struct {
 	unversioned.TypeMeta `json:",inline"`
-	prototype.ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta           `json:"metadata,omitempty"`
 
 	Spec NodeSpec `json:"spec,omitempty"`
 }

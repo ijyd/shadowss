@@ -8,13 +8,16 @@ func addDefaultingFuncs(scheme *runtime.Scheme) error {
 }
 
 func SetDefaults_NodeUser(obj *NodeUser) {
-	obj.Spec.User.Port = 0
 }
 
 func SetDefaults_APIServer(obj *APIServer) {
-	obj.Spec.Server.Port = 0
 }
 
 func SetDefaults_UserService(obj *UserService) {
-	obj.Spec.NodeCnt = 0
+}
+
+func SetDefaults_Node(obj *Node) {
+	if len(obj.Spec.Server.Method) == 0 {
+		obj.Spec.Server.Method = "aes-256-cfb"
+	}
 }

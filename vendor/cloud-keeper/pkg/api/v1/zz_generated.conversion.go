@@ -3,6 +3,8 @@ package v1
 import (
 	"cloud-keeper/pkg/api"
 
+	"github.com/golang/glog"
+
 	"gofreezer/pkg/api/prototype"
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/runtime"
@@ -150,28 +152,18 @@ func autoConvert_v1_NodeUser_To_api_NodeUser(in *NodeUser, out *api.NodeUser, s 
 
 func autoConvert_v1_NodeUserSpec_To_api_NodeUserSpec(in *NodeUserSpec, out *api.NodeUserSpec, s conversion.Scope) error {
 
-	out.User.ID = in.User.ID
-	out.User.Method = in.User.Method
-	out.User.DownloadTraffic = in.User.DownloadTraffic
-	out.User.UploadTraffic = in.User.UploadTraffic
-	out.User.EnableOTA = in.User.EnableOTA
-	out.User.Password = in.User.Password
-	out.User.Port = in.User.Port
+	autoConvert_v1_UserReferences_To_api_UserReferences(&in.User, &out.User, s)
 	out.NodeName = in.NodeName
 
 	return nil
 }
 
 func autoConvert_api_NodeUserSpec_To_v1_NodeUserSpec(in *api.NodeUserSpec, out *NodeUserSpec, s conversion.Scope) error {
-	//out.User = NodeUserSpec(in.User)
-	out.User.ID = in.User.ID
-	out.User.Method = in.User.Method
-	out.User.DownloadTraffic = in.User.DownloadTraffic
-	out.User.UploadTraffic = in.User.UploadTraffic
-	out.User.EnableOTA = in.User.EnableOTA
-	out.User.Password = in.User.Password
-	out.User.Port = in.User.Port
+	autoConvert_api_UserReferences_To_v1_UserReferences(&in.User, &out.User, s)
+
 	out.NodeName = in.NodeName
+
+	glog.V(5).Infof("convert %+v to %+v", *in, *out)
 	return nil
 }
 
@@ -203,21 +195,15 @@ func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, 
 	if in.NodeUserReference != nil {
 		out.NodeUserReference = make(map[string]api.UserReferences)
 		for k, v := range in.NodeUserReference {
-			outVal := api.UserReferences{
-				ID:              v.ID,
-				Port:            v.Port,
-				Method:          v.Method,
-				Password:        v.Password,
-				EnableOTA:       v.EnableOTA,
-				UploadTraffic:   v.UploadTraffic,
-				DownloadTraffic: v.DownloadTraffic,
-			}
+			var outVal api.UserReferences
+			autoConvert_v1_UserReferences_To_api_UserReferences(&v, &outVal, s)
 			out.NodeUserReference[k] = outVal
 		}
 	} else {
 		out.NodeUserReference = nil
 	}
 
+	glog.V(5).Infof("in user %v out %v", *in, *out)
 	return nil
 }
 
@@ -226,20 +212,98 @@ func autoConvert_api_UserServiceSpec_To_v1_UserServiceSpec(in *api.UserServiceSp
 	if in.NodeUserReference != nil {
 		out.NodeUserReference = make(map[string]UserReferences)
 		for k, v := range in.NodeUserReference {
-			outVal := UserReferences{
-				ID:              v.ID,
-				Port:            v.Port,
-				Method:          v.Method,
-				Password:        v.Password,
-				EnableOTA:       v.EnableOTA,
-				UploadTraffic:   v.UploadTraffic,
-				DownloadTraffic: v.DownloadTraffic,
-			}
+			var outVal UserReferences
+			autoConvert_api_UserReferences_To_v1_UserReferences(&v, &outVal, s)
 			out.NodeUserReference[k] = outVal
 		}
 	} else {
 		out.NodeUserReference = nil
 	}
 
+	glog.V(5).Infof("in user %v out %v", *in, *out)
+
+	return nil
+}
+
+func autoConvert_v1_NodeSpec_To_api_NodeSpec(in *NodeSpec, out *api.NodeSpec, s conversion.Scope) error {
+
+	glog.Infof("convert v1 node spec to api nodespec")
+	out.Server = api.NodeServer{
+		ID:            in.Server.ID,
+		Name:          in.Server.Name,
+		EnableOTA:     in.Server.EnableOTA,
+		Host:          in.Server.Host,
+		Method:        in.Server.Method,
+		Status:        in.Server.Status,
+		Location:      in.Server.Location,
+		AccServerID:   in.Server.AccServerID,
+		AccServerName: in.Server.AccServerName,
+		Description:   in.Server.Description,
+		TrafficLimit:  in.Server.TrafficLimit,
+		Upload:        in.Server.Upload,
+		Download:      in.Server.Download,
+		TrafficRate:   in.Server.TrafficRate,
+	}
+
+	return nil
+}
+
+func autoConvert_api_NodeSpec_To_v1_NodeSpec(in *api.NodeSpec, out *NodeSpec, s conversion.Scope) error {
+
+	glog.Infof("convert ai node spec to v1 nodespec")
+	out.Server = NodeServer{
+		ID:            in.Server.ID,
+		Name:          in.Server.Name,
+		EnableOTA:     in.Server.EnableOTA,
+		Host:          in.Server.Host,
+		Method:        in.Server.Method,
+		Status:        in.Server.Status,
+		Location:      in.Server.Location,
+		AccServerID:   in.Server.AccServerID,
+		AccServerName: in.Server.AccServerName,
+		Description:   in.Server.Description,
+		TrafficLimit:  in.Server.TrafficLimit,
+		Upload:        in.Server.Upload,
+		Download:      in.Server.Download,
+		TrafficRate:   in.Server.TrafficRate,
+	}
+
+	return nil
+}
+
+func autoConvert_api_UserReferences_To_v1_UserReferences(in *api.UserReferences, out *UserReferences, s conversion.Scope) error {
+
+	if in != nil {
+		*out = UserReferences{
+			ID:              in.ID,
+			Port:            in.Port,
+			Method:          in.Method,
+			Password:        in.Password,
+			Name:            in.Name,
+			EnableOTA:       in.EnableOTA,
+			UploadTraffic:   in.UploadTraffic,
+			DownloadTraffic: in.DownloadTraffic,
+		}
+	} else {
+		out = nil
+	}
+	return nil
+}
+
+func autoConvert_v1_UserReferences_To_api_UserReferences(in *UserReferences, out *api.UserReferences, s conversion.Scope) error {
+	if in != nil {
+		*out = api.UserReferences{
+			ID:              in.ID,
+			Port:            in.Port,
+			Method:          in.Method,
+			Password:        in.Password,
+			Name:            in.Name,
+			EnableOTA:       in.EnableOTA,
+			UploadTraffic:   in.UploadTraffic,
+			DownloadTraffic: in.DownloadTraffic,
+		}
+	} else {
+		out = nil
+	}
 	return nil
 }

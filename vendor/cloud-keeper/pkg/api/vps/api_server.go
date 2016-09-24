@@ -8,6 +8,7 @@ import (
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/validation"
+	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/pagination"
 
 	"github.com/golang/glog"
@@ -24,7 +25,7 @@ func getServers(page pagination.Pager) ([]byte, int) {
 	servers, err := Storage.GetAPIServer(page)
 	glog.V(5).Infof("Get servers %v \r\n", servers)
 	if err != nil {
-		if isNotfoundErr(err) == true {
+		if IsNotfoundErr(err) == true {
 			apisrvList = api.APIServerList{
 				TypeMeta: unversioned.TypeMeta{
 					Kind:       "APIServerList",
@@ -37,7 +38,7 @@ func getServers(page pagination.Pager) ([]byte, int) {
 		} else {
 			glog.Errorf("Get apiserver failure %v \r\n", err)
 			newErr := apierr.NewInternalError(err.Error())
-			output = encodeError(newErr)
+			output = EncodeError(newErr)
 
 			return output, statusCode
 		}
@@ -56,10 +57,12 @@ func getServers(page pagination.Pager) ([]byte, int) {
 				},
 				Spec: api.APIServerSpec{
 					Server: api.APIServerInfor{
-						ID:     v.ID,
-						Host:   v.Host,
-						Port:   v.Port,
-						Status: v.Status,
+						ID:         v.ID,
+						Host:       v.Host,
+						Port:       v.Port,
+						Status:     v.Status,
+						CreateTime: v.CreateTime,
+						Name:       v.Name,
 					},
 				},
 			}
@@ -83,7 +86,7 @@ func getServers(page pagination.Pager) ([]byte, int) {
 	if err != nil {
 		glog.Errorln("Marshal router err", err)
 		newErr := apierr.NewInternalError("marshal apiserver list resource failure")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 500
 
 	} else {
@@ -110,7 +113,7 @@ func GetAPIServers(request *restful.Request, response *restful.Response) {
 	if err != nil || user == nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewUnauthorized("invalid token")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 401
 		return
 	}
@@ -119,7 +122,7 @@ func GetAPIServers(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorln("Unauth request ", err)
 		newErr := apierr.NewBadRequestError("invalid pagination")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -147,7 +150,7 @@ func PostAPIServer(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorf("invalid request body:%v", err)
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -155,7 +158,7 @@ func PostAPIServer(request *restful.Request, response *restful.Response) {
 	err = validation.ValidateAPIServer(*server)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -164,7 +167,7 @@ func PostAPIServer(request *restful.Request, response *restful.Response) {
 	err = Storage.CreateAPIServer(server.Spec.Server)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 	} else {
 		output, err = json.Marshal(server)
@@ -188,7 +191,7 @@ func DeleteAPIServer(request *restful.Request, response *restful.Response) {
 		statusCode = 200
 	} else {
 		newErr := apierr.NewNotFound("invalid request name", name)
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 404
 	}
 

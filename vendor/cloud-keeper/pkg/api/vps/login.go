@@ -8,14 +8,11 @@ import (
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/validation"
+	. "cloud-keeper/pkg/api/vps/common"
 
 	restful "github.com/emicklei/go-restful"
 
 	"github.com/golang/glog"
-)
-
-const (
-	maxLoginCacheSize = 32 * 4
 )
 
 func NewToken(login *api.Login) error {
@@ -35,7 +32,7 @@ func NewToken(login *api.Login) error {
 		return fmt.Errorf("auth failure")
 	}
 
-	token, err := addToken(user)
+	token, err := AddToken(user)
 	login.Spec.Token = token
 	login.Spec.AuthID = strconv.FormatInt(user.ID, 10)
 	//empty user password
@@ -61,7 +58,7 @@ func PostLogin(request *restful.Request, response *restful.Response) {
 	if err != nil {
 		glog.Errorf("invalid request body:%v", err)
 		newErr := apierr.NewBadRequestError("request body invalid")
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -69,7 +66,7 @@ func PostLogin(request *restful.Request, response *restful.Response) {
 	err = validation.ValidateLogin(*login)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 		return
 	}
@@ -78,7 +75,7 @@ func PostLogin(request *restful.Request, response *restful.Response) {
 	err = NewToken(login)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
-		output = encodeError(newErr)
+		output = EncodeError(newErr)
 		statusCode = 400
 	} else {
 		glog.V(5).Infof("Got login len %+v", len(login.Spec.Auth))

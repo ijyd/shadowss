@@ -81,7 +81,7 @@ func KeepHealth(nodeName string) {
 			Location:    location,
 			AccsrvID:    int64(accsrvid),
 			AccsrvName:  accsrvname,
-			Annotations: map[string]string{nodect.NodeAnnotationUserCnt: "0"},
+			Annotations: map[string]string{nodectl.NodeAnnotationUserCnt: "0"},
 			//Labels:      map[string]string{nodect.NodeLablesDefault: "false"},
 		}
 		obj, err := nodectl.AddNodeToEtcdHelper(schedule.etcdHandle, nodeHelper)
