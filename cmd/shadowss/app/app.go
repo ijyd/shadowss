@@ -17,13 +17,13 @@ func Run(options *options.ServerOption) error {
 		runtime.GOMAXPROCS(options.CpuCoreNum)
 	}
 
+	pxy := proxyserver.NewServers(options.EnableUDPRelay)
 	err := options.LoadConfigFile()
 	if err != nil {
-		glog.Fatalln("load user configure error:\r\n", err)
+		glog.Warning("load user configure error:\r\n", err)
+	} else {
+		pxy.Start()
 	}
-
-	pxy := proxyserver.NewServers(options.EnableUDPRelay)
-	pxy.Start()
 
 	//multiuser config
 	multiuser.InitSchedule(options.EtcdStorageConfig, pxy)

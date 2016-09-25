@@ -2,6 +2,7 @@ package multiuser
 
 import (
 	"golib/pkg/util/network"
+	"shadowsocks-go/pkg/multiuser/apiserverproxy"
 	"shadowsocks-go/pkg/multiuser/users"
 	"shadowsocks-go/pkg/proxyserver"
 
@@ -21,7 +22,6 @@ type MultiUser struct {
 }
 
 var schedule *MultiUser
-var apiServerList []api.APIServerInfor
 
 func InitSchedule(options *options.StorageOptions, proxySrv *proxyserver.Servers) {
 	schedule = NewMultiUser(options, proxySrv)
@@ -32,6 +32,7 @@ func InitSchedule(options *options.StorageOptions, proxySrv *proxyserver.Servers
 		return
 	}
 	apiSrv := obj.(*api.APIServerList)
+	var apiServerList []api.APIServerInfor
 	for _, v := range apiSrv.Items {
 		apiServerList = append(apiServerList, v.Spec.Server)
 	}
@@ -40,6 +41,7 @@ func InitSchedule(options *options.StorageOptions, proxySrv *proxyserver.Servers
 		return
 	}
 	glog.V(5).Infof("Got apiserver %+v\r\n", apiServerList)
+	apiserverproxy.InitAPIServer(apiServerList)
 
 	nodeName, err := network.ExternalMAC()
 	if err != nil {

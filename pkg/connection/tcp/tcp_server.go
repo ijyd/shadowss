@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"shadowsocks-go/pkg/config"
+	"shadowsocks-go/pkg/multiuser/apiserverproxy"
 
 	"shadowsocks-go/pkg/connection/tcp/ssclient"
 	"shadowsocks-go/pkg/crypto"
@@ -89,7 +90,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		IP:   ssProtocol.DstAddr.IP,
 		Port: ssProtocol.DstAddr.Port,
 	}
-	host := remoteAddr.String()
+	host := apiserverproxy.FilterRequest(remoteAddr)
 
 	remote, err := net.Dial("tcp", host)
 	if err != nil {

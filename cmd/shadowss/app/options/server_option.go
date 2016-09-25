@@ -30,7 +30,7 @@ func (s *ServerOption) LoadConfigFile() error {
 	glog.V(5).Infof("Parse %s file\r\n", s.ConfigFile)
 	err := config.ServerCfg.Parse(s.ConfigFile)
 	if err != nil {
-		glog.Fatalf("error reading %s: %v\n", s.ConfigFile, err)
+		glog.Errorf("error reading %s: %v\n", s.ConfigFile, err)
 		return err
 	}
 
