@@ -84,6 +84,42 @@ func GetUserService(helper *etcdhelper.EtcdHelper, name string) (runtime.Object,
 }
 
 //UpdateNodeUsers update node user
+func UpdateUserAnnotations(helper *etcdhelper.EtcdHelper, name string, annotation map[string]string) (runtime.Object, error) {
+
+	obj, err := GetUserService(helper, name)
+	if err != nil {
+		glog.Errorf("Get resource error %v\r\n", err)
+		return nil, err
+	}
+
+	oldobj := obj.(*api.UserService)
+	if oldobj.Name == "" {
+		errStr := "Get resource error not found this user"
+		glog.Errorf("%s\r\n", errStr)
+		return nil, fmt.Errorf("%s", errStr)
+	}
+
+	ctx := prototype.NewContext()
+	outItem := new(api.UserService)
+	newres := oldobj
+
+	key := PrefixUserService + "/" + oldobj.Name
+	err = helper.StorageCodec.Storage.GuaranteedUpdate(ctx, key, outItem, false, nil, func(existing runtime.Object, res storage.ResponseMeta) (runtime.Object, *uint64, error) {
+		glog.Infof("existing obj %+v", existing)
+
+		newres.Annotations = annotation
+
+		return newres, nil, nil
+	})
+	if err != nil {
+		glog.Errorf("update failure %v\r\n", err)
+		return nil, err
+	}
+
+	return newres, nil
+}
+
+//UpdateNodeUsers update node user
 func UpdateUserService(helper *etcdhelper.EtcdHelper, userSrv *api.UserService) error {
 
 	obj, err := GetUserService(helper, userSrv.Name)

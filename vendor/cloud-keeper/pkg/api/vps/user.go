@@ -10,6 +10,7 @@ import (
 	"cloud-keeper/pkg/api/validation"
 	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/controller"
+	"cloud-keeper/pkg/controller/userctl"
 	"cloud-keeper/pkg/pagination"
 
 	restful "github.com/emicklei/go-restful"
@@ -146,6 +147,7 @@ func GetUsers(request *restful.Request, response *restful.Response) {
 func PostUser(request *restful.Request, response *restful.Response) {
 	w := response.ResponseWriter
 	w.Header().Set("Content-Type", "application/json")
+	encoded := request.Request.Header.Get("Authorization")
 
 	statusCode := 200
 	output := apierr.NewSuccess().Encode()
@@ -155,8 +157,17 @@ func PostUser(request *restful.Request, response *restful.Response) {
 		w.Write(output)
 	}()
 
+	tokenUser, err := CheckToken(encoded)
+	if err != nil || tokenUser == nil {
+		glog.Errorln("Unauth request ", err)
+		newErr := apierr.NewUnauthorized("invalid token")
+		output = EncodeError(newErr)
+		statusCode = 401
+		return
+	}
+
 	user := new(api.User)
-	err := request.ReadEntity(user)
+	err = request.ReadEntity(user)
 	if err != nil {
 		glog.Errorf("invalid request body:%v", err)
 		newErr := apierr.NewBadRequestError("request body invalid")
@@ -179,15 +190,30 @@ func PostUser(request *restful.Request, response *restful.Response) {
 		newErr := apierr.NewBadRequestError(err.Error())
 		output = EncodeError(newErr)
 		statusCode = 400
-	} else {
-		output, err = json.Marshal(user)
-		statusCode = 200
+		return
 	}
 
-	err = controller.AllocNode(user)
+	userReferMap := make(map[string]api.UserReferences)
+	err = userctl.AddUserServiceHelper(EtcdStorage, user.Name, userReferMap)
 	if err != nil {
-		glog.Warningf("alloc node to user failure %v\r\n", err)
+		glog.Errorf("create user service error %v\r\n", err)
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+		return
 	}
+
+	err = controller.AllocDefaultNodeForUser(user.Name)
+	if err != nil {
+		glog.Errorf("alloc user default node error %v\r\n", err)
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+		return
+	}
+
+	output, err = json.Marshal(user)
+	statusCode = 200
 
 	return
 }
@@ -199,17 +225,35 @@ func DeleteUser(request *restful.Request, response *restful.Response) {
 	w.Header().Set("Content-Type", "application/json")
 	statusCode := 200
 	var output []byte
+	encoded := request.Request.Header.Get("Authorization")
 
-	err := Storage.DeleteUserByName(name)
-	if err == nil {
-		output = apierr.NewSuccess().Encode()
-		statusCode = 200
-	} else {
+	defer func() {
+		w.WriteHeader(statusCode)
+		w.Write(output)
+	}()
+
+	user, err := CheckToken(encoded)
+	if err != nil || user == nil {
+		glog.Errorln("Unauth request ", err)
+		newErr := apierr.NewUnauthorized("invalid token")
+		output = EncodeError(newErr)
+		statusCode = 401
+		return
+	}
+
+	err = Storage.DeleteUserByName(name)
+	if err != nil {
 		newErr := apierr.NewNotFound("invalid request name", name)
 		output = EncodeError(newErr)
 		statusCode = 404
 	}
 
-	w.WriteHeader(statusCode)
-	w.Write(output)
+	err = controller.DeleteUserAllNode(name)
+	if err != nil {
+		glog.Errorf("delete user all nodes error %v\r\n", err)
+	}
+
+	output = apierr.NewSuccess().Encode()
+	statusCode = 200
+
 }

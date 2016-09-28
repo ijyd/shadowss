@@ -35,8 +35,31 @@ type AccServer struct {
 	Information map[string]interface{} `json:"info,omitempty"`
 }
 
+const (
+	CNISPCMCC    = "cnISPCMCC"
+	CNISPUNICOM  = "cnISPUnicom"
+	CNISPASPCTCC = "cnISPCTCC"
+	CNISPOther   = "cnISPOther"
+)
+
+const (
+	NodeUserSpaceDefault = "default"
+	NodeUserSpaceAPI     = "api"
+	NodeUserSpaceDev     = "develop"
+)
+
+const (
+	NodeLablesChinaISP    = "cnISP"
+	NodeLablesUserSpace   = "userSpace"
+	NodeLablesVPSLocation = "vpsLocation"
+	NodeLablesVPSOP       = "vpsOperator"
+	NodeLablesVPSName     = "vpsName"
+	NodeLablesVPSIP       = "vpsIP"
+)
+
 type AccServerDeploySS struct {
-	HostList []string `json:"hostList,omitempty"`
+	HostList  []string          `json:"hostList,omitempty"`
+	Attribute map[string]string `json:"attr,omitempty"`
 }
 
 type AccServerCommand struct {

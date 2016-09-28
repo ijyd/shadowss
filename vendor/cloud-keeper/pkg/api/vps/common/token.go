@@ -52,8 +52,7 @@ func AddToken(user *api.UserInfo) (string, error) {
 	return token, err
 }
 
-func CheckToken(input string) (*api.UserInfo, error) {
-
+func token(input string) (*api.UserInfo, error) {
 	parts := strings.Split(input, " ")
 	if len(parts) < 2 || strings.ToLower(parts[0]) != "bearer" {
 		return nil, fmt.Errorf("invalid token")
@@ -80,4 +79,16 @@ func CheckToken(input string) (*api.UserInfo, error) {
 	}
 
 	return user, err
+}
+
+func CheckToken(input string) (*api.UserInfo, error) {
+	user, err := token(input)
+	if err == nil && user.IsAdmin != 1 {
+		return nil, fmt.Errorf("not allow")
+	}
+	return user, err
+}
+
+func CheckUserLevelToken(input string) (*api.UserInfo, error) {
+	return token(input)
 }

@@ -21,12 +21,6 @@ const (
 )
 
 const (
-	NodeLablesDefault = "default"
-	NodeLablesDev     = "develop"
-	NodeLablesChinaOP = "cnop"
-)
-
-const (
 	NodeAnnotationUserCnt = "userCount"
 )
 

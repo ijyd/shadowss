@@ -8,6 +8,7 @@ const (
 	deployVPSPlayBook = "create-node.yml"
 	deleteVPSPlayBook = "delete-node.yml"
 	restartSSPlayBook = deploySSPlayBook
+	attrFile          = "attr.json"
 
 	ansibleDGOCDir               = "ansible/digitalocean/deploy"
 	ansibleDGOCVarFile           = ansibleDGOCDir + "/" + varFile
@@ -16,6 +17,7 @@ const (
 	ansibleDGOCDeploySSPlayBook  = ansibleDGOCDir + "/" + deploySSPlayBook
 	ansibleDGOCDeployVPSPlayBook = ansibleDGOCDir + "/" + deployVPSPlayBook
 	ansibleDGOCDeleteVPSPlayBook = ansibleDGOCDir + "/" + deleteVPSPlayBook
+	ansibleDGOCAttrFile          = ansibleDGOCDir + "/" + attrFile
 
 	ansibleDGOCRestartSSPlayBook = ansibleDGOCDir + "/" + restartSSPlayBook
 	ansibleVulDir                = "ansible/vultr/deploy"
@@ -26,6 +28,7 @@ const (
 	ansibleVulDeployVPSPlayBook  = ansibleVulDir + "/" + deployVPSPlayBook
 	ansibleVulDeleteVPSPlayBook  = ansibleVulDir + "/" + deleteVPSPlayBook
 	ansibleVulRestartSSPlayBook  = ansibleVulDir + "/" + restartSSPlayBook
+	ansibleVulAttrFile           = ansibleVulDir + "/" + attrFile
 )
 
 var privateKey = `-----BEGIN RSA PRIVATE KEY-----

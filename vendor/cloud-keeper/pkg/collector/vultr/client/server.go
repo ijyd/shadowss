@@ -132,7 +132,7 @@ func (c *Client) Exec(param interface{}) error {
 	switch execParam.Command {
 	case "deployss":
 		glog.V(5).Infof("Got request %+v\r\n", execParam.Deploy.HostList)
-		return ansible.DeployShadowss(api.OperatorVultr, execParam.Deploy.HostList, sshkey)
+		return ansible.DeployShadowss(api.OperatorVultr, execParam.Deploy.HostList, sshkey, execParam.Deploy.Attribute)
 	case "restartSS":
 		return ansible.RestartShadowss(api.OperatorVultr, execParam.Deploy.HostList, sshkey)
 	default:

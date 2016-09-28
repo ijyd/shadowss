@@ -124,12 +124,28 @@ func DeleteNode(handle storage.Interface, name string) error {
 	return err
 }
 
+func UpdateNodeTraffic(handle storage.Interface, userID int64, upload, download int64) error {
+
+	node := &api.NodeServer{
+		ID:       userID,
+		Upload:   upload,
+		Download: download,
+	}
+
+	conditionFields := string("id")
+	updateFields := []string{"upload", "download"}
+
+	ctx := createContextWithValue(nodeTableName)
+	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, node)
+	return err
+}
+
 func UpdateNode(handle storage.Interface, detail api.NodeServer) error {
 
 	conditionFields := string("id")
 	updateFields := nodeFileds
 
-	ctx := createContextWithValue(userTokeTableName)
+	ctx := createContextWithValue(nodeTableName)
 	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, detail)
 	return err
 }

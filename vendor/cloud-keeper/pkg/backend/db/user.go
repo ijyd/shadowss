@@ -13,7 +13,7 @@ import (
 
 var fileds = []string{"id", "passwd", "email", "enable_ota",
 	"traffic_limit", "upload", "download", "user_name", "manage_pass",
-	"expire_time", "reg_ip", "reg_date", "description"}
+	"expire_time", "reg_ip", "reg_date", "description", "is_admin"}
 
 func GetUserByID(handle storage.Interface, id int64) (*api.UserInfo, error) {
 	var users []api.UserInfo
@@ -135,7 +135,7 @@ func UpdateUserTraffic(handle storage.Interface, userID int64, upload, download 
 	}
 
 	conditionFields := string("id")
-	updateFields := []string{"u", "d"}
+	updateFields := []string{"upload", "download"}
 
 	ctx := createContextWithValue(userTableName)
 	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, user)

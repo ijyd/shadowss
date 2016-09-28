@@ -1,6 +1,7 @@
 package ansible
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -43,5 +44,15 @@ func WriteDeplossConfigFile(hosts []string, sshkey, hostpath, sshkeypath string)
 	ioutil.WriteFile(hostpath, []byte(hostList), os.FileMode(0644))
 	ioutil.WriteFile(sshkeypath, []byte(sshkey), os.FileMode(0600))
 
+	return nil
+}
+
+func WriteSSAttrFile(attrPath string, attr map[string]string) error {
+	attrList, err := json.Marshal(attr)
+	if err != nil {
+		return err
+	}
+
+	ioutil.WriteFile(attrPath, attrList, os.FileMode(0600))
 	return nil
 }

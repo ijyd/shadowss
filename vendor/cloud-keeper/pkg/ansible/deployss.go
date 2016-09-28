@@ -4,21 +4,30 @@ import (
 	"cloud-keeper/pkg/api"
 	"fmt"
 	"golib/pkg/util/exec"
+
 	"github.com/golang/glog"
 )
 
-func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string) error {
+func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr map[string]string) error {
 
-	var hostpath, sshkeypath, playbook string
+	var hostpath, sshkeypath, playbook, attrpath string
 	switch typ {
 	case api.OperatorVultr:
 		hostpath = ansibleVulHostFile
 		sshkeypath = ansibleVulSSHKeyFile
 		playbook = ansibleVulDeploySSPlayBook
+		attrpath = ansibleVulAttrFile
 	case api.OperatorDigitalOcean:
 		hostpath = ansibleDGOCHostFile
 		sshkeypath = ansibleDGOCSSHKeyFile
+		attrpath = ansibleDGOCAttrFile
 		playbook = ansibleDGOCDeploySSPlayBook
+	}
+
+	err := WriteSSAttrFile(attrpath, attr)
+	if err != nil {
+		glog.Errorf("Unexpected error write attr to file %v", err)
+		return err
 	}
 
 	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath)

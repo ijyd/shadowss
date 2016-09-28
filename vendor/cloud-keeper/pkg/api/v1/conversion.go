@@ -94,6 +94,7 @@ func Convert_api_UserService_To_v1_UserService(in *api.UserService, out *UserSer
 }
 
 func Convert_v1_UserService_To_api_UserService(in *UserService, out *api.UserService, s conversion.Scope) error {
+	SetDefaults_UserService(in)
 	if err := prototype.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
 		return err
 	}

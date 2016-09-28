@@ -3,7 +3,11 @@
 ## simple run
 
 ```
-sudo ./vpskeeper --alsologtostderr=true -v=6 --host=192.168.60.107 --port=18088 --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel" --swagger-path="../../third_party/swagger-ui" --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
+sudo ./vpskeeper --alsologtostderr=true -v=6  --insecure-port=18088  --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel" --swagger-path="../../third_party/swagger-ui" --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
+```
+
+```
+sudo ./vpskeeper --alsologtostderr=true -v=6  --secure-port=18088 --tls-cert-file="../../keys/server.crt" --tls-private-key-file="../../keys/server.key" --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel" --swagger-path="../../third_party/swagger-ui" --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
 ```
 
 

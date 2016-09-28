@@ -18,10 +18,6 @@ func EncodeError(status interface{}) []byte {
 	return output
 }
 
-// func EncodeError(status interface{}) []byte {
-// 	return EncodeError(status)
-// }
-
 func IsNotfoundErr(err error) bool {
 	if err.Error() == string("not found") {
 		return true

@@ -65,6 +65,28 @@ func installUserSrv(container *restful.Container) {
 		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.UserServiceList{}).
 		Operation("GetBindingNodes")
 	ws.Route(route)
+
+	route = ws.PUT("{name}/properties").To(etcdrest.PutProperties).
+		Doc("put user's properties").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Param(ws.BodyParameter("body", "identifier of the login").DataType("api.UserService.Annotations")).
+		Operation("PutProperties")
+	ws.Route(route)
+
+	route = ws.PUT("{name}/bindnodes").To(etcdrest.PutUserToNode).
+		Doc("put user into nodes").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Param(ws.BodyParameter("body", "identifier of the login").DataType("api.UserService.Spec.NodeUserReference")).
+		Operation("PutUserToNode")
+	ws.Route(route)
+
+	route = ws.DELETE("{name}/delnode/{nodename}").To(etcdrest.DeleteUserNode).
+		Doc("delete user from node").
+		Param(ws.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("DeleteUserNode")
+	ws.Route(route)
+
 }
 
 func installNodeSrv(container *restful.Container) {
@@ -86,12 +108,13 @@ func installNodeSrv(container *restful.Container) {
 		Param(wsNode.BodyParameter("body", "identifier of the login").DataType("api.Node")).
 		Operation("PostNode")
 	wsNode.Route(route)
-	route = wsNode.DELETE("{name}").To(vps.DeleteNode).
-		Doc("delete api server by name").
-		Param(wsNode.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
-		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
-		Operation("DeleteNode")
-	wsNode.Route(route)
+
+	// route = wsNode.DELETE("{name}").To(vps.DeleteNode).
+	// 	Doc("delete api server by name").
+	// 	Param(wsNode.QueryParameter("pretty", "If 'true', then the output is pretty printed.")).
+	// 	Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+	// 	Operation("DeleteNode")
+	// wsNode.Route(route)
 
 	route = wsNode.GET("{name}/bindingusers").To(etcdrest.GetBindingUsers).
 		Doc("get nodes binding users").
@@ -217,10 +240,15 @@ func installAccountResource(container *restful.Container) {
 
 }
 
-func (apis *APIServer) installSwaggerAPI(container *restful.Container) {
-	hostAndPort := apis.Host + string(":") + strconv.Itoa(apis.Port)
+func (apis *APIServer) installSwaggerAPI(container *restful.Container, secure bool, port int) {
+	//hostAndPort := apis.Host + string(":") + strconv.Itoa(apis.Port)
+	hostAndPort := string(":") + strconv.Itoa(port)
 	//protocol := "https://"
 	protocol := "http://"
+	if secure {
+		protocol = "https://"
+	}
+
 	webServicesUrl := protocol + hostAndPort
 
 	// Enable swagger UI and discovery API
@@ -230,13 +258,6 @@ func (apis *APIServer) installSwaggerAPI(container *restful.Container) {
 		ApiPath:         "/swaggerapi/",
 		SwaggerPath:     "/swaggerui/",
 		SwaggerFilePath: apis.SwaggerPath,
-		// SchemaFormatHandler: func(typeName string) string {
-		// 	switch typeName {
-		// 	case "unversioned.Time", "*unversioned.Time":
-		// 		return "date-time"
-		// 	}
-		// 	return ""
-		// },
 	}
 	swagger.RegisterSwaggerService(swaggerConfig, container)
 }
@@ -249,10 +270,6 @@ func (apis *APIServer) install(container *restful.Container) error {
 	installLoginSrv(container)
 	installNodeSrv(container)
 	installUserSrv(container)
-
-	if len(apis.SwaggerPath) > 0 {
-		apis.installSwaggerAPI(container)
-	}
 
 	return nil
 }

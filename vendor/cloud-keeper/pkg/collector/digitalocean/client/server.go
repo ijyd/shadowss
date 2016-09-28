@@ -12,10 +12,58 @@ import (
 	"github.com/digitalocean/godo"
 )
 
+// func pageForURL(urlText string) (int, error) {
+// 	u, err := url.ParseRequestURI(urlText)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+//
+// 	pageStr := u.Query().Get("page")
+// 	page, err := strconv.Atoi(pageStr)
+// 	if err != nil {
+// 		return 0, err
+// 	}
+//
+// 	return page, nil
+// }
+//
+// func getItemsCount(p *godo.Pages, requirePerPage, actualPageNum int) (int, error) {
+//
+// 	if p != nil {
+// 		firstPage, err := pageForURL(p.First)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+//
+// 		LastPage, err := pageForURL(p.Last)
+// 		if err != nil {
+// 			return 0, err
+// 		}
+//
+// 		if firstPage == LastPage {
+//
+// 		} else {
+// 			pages := LastPage - firstPage
+// 			return pages * requirePerPage, nil
+// 		}
+//
+// 		return firstPage + 1, nil
+// 	}
+//
+// 	return 1 * actualPageNum, nil
+// }
+
 //GetServers get account server information
 func (c *Client) GetServers(page pagination.Pager) ([]byte, error) {
+
+	//first get all
 	list := []godo.Droplet{}
 	opt := &godo.ListOptions{}
+	droplets, _, err := c.client.Droplets.List(opt)
+	if err != nil {
+		return nil, err
+	}
+	dropletsSize := len(droplets)
 
 	var notPage bool
 	if page == nil {
@@ -24,14 +72,17 @@ func (c *Client) GetServers(page pagination.Pager) ([]byte, error) {
 		notPage = page.Empty()
 	}
 
+	pagenum, perPage := page.RequirePage()
 	if !notPage {
-		page, perPage := page.RequirePage()
-		opt.Page = int(page)
+		opt.Page = int(pagenum)
 		opt.PerPage = int(perPage)
 	}
 
+	var response *godo.Response
+
 	for {
 		droplets, resp, err := c.client.Droplets.List(opt)
+		response = resp
 		if err != nil {
 			return nil, err
 		}
@@ -42,17 +93,22 @@ func (c *Client) GetServers(page pagination.Pager) ([]byte, error) {
 		}
 
 		// if we are at the last page, break out the for loop
-		if resp.Links == nil || resp.Links.IsLastPage() {
+		if response.Links == nil || response.Links.IsLastPage() {
 			break
 		}
 
-		page, err := resp.Links.CurrentPage()
+		page, err := response.Links.CurrentPage()
 		if err != nil {
 			return nil, err
 		}
 
 		// set the page we want for the next request
 		opt.Page = page + 1
+	}
+
+	//need to update our list total
+	if !notPage {
+		page.SetItemTotal(uint64(dropletsSize))
 	}
 
 	srvList := api.AccServerList{
@@ -101,7 +157,7 @@ func (c *Client) Exec(param interface{}) error {
 	var sshkey string
 	switch execParam.Command {
 	case "deployss":
-		return ansible.DeployShadowss(api.OperatorDigitalOcean, execParam.Deploy.HostList, sshkey)
+		return ansible.DeployShadowss(api.OperatorDigitalOcean, execParam.Deploy.HostList, sshkey, execParam.Deploy.Attribute)
 	case "restartSS":
 		return ansible.RestartShadowss(api.OperatorDigitalOcean, execParam.Deploy.HostList, sshkey)
 	default:

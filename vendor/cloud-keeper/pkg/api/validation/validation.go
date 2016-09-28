@@ -149,3 +149,23 @@ func ValidateUser(user api.User) error {
 
 	return nil
 }
+
+func ValidateUserReference(refer api.UserReferences) error {
+	if !(len(refer.Name) > 0) {
+		return fmt.Errorf("invalid name")
+	}
+
+	if refer.ID == 0 {
+		return fmt.Errorf("invalid user id")
+	}
+
+	if !(len(refer.Password) > 0) {
+		return fmt.Errorf("invalid passwd")
+	}
+
+	if !(len(refer.Method) > 0) {
+		return fmt.Errorf("invalid method")
+	}
+
+	return nil
+}

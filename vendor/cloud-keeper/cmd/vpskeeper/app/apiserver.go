@@ -33,10 +33,12 @@ func Run(options *options.ServerOption) error {
 	be := backend.NewBackend(options.Storage.Type, options.Storage.ServerList)
 
 	config := apiserver.Config{
-		Host:               options.Host,
-		Port:               int(options.Port),
+		InsecurePort:       options.InsecurePort,
+		SecurePort:         options.SecurePort,
 		StorageClient:      be,
 		SwaggerPath:        options.SwaggerPath,
+		TLSCertFile:        options.TLSCertFile,
+		TLSPrivateKeyFile:  options.TLSPrivateKeyFile,
 		EtcdStorageOptions: options.EtcdStorageConfig,
 	}
 

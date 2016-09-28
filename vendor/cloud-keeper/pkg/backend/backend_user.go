@@ -37,3 +37,7 @@ func (u *Backend) UpdateUserNode(userID int64, nodes string) error {
 func (u *Backend) UpdateUserPort(userID int64, port int64) error {
 	return db.UpdateUserPort(u.StorageHandler, userID, port)
 }
+
+func (u *Backend) UpdateUserTraffic(userID int64, upload, download int64) error {
+	return db.UpdateUserTraffic(u.StorageHandler, userID, upload, download)
+}

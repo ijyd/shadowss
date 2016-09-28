@@ -12,23 +12,28 @@ import (
 	storageoptions "gofreezer/pkg/genericstoragecodec/options"
 
 	"github.com/emicklei/go-restful"
+	"github.com/golang/glog"
 )
 
 //Config ...http server configure
 type Config struct {
-	Host               string
-	Port               int
+	SecurePort         int
+	InsecurePort       int
 	SwaggerPath        string
+	TLSCertFile        string
+	TLSPrivateKeyFile  string
 	StorageClient      *backend.Backend
 	EtcdStorageOptions *storageoptions.StorageOptions
 }
 
 //APIServer ... http server configure
 type APIServer struct {
-	Host        string
-	Port        int
-	SwaggerPath string
-	wsContainer *restful.Container
+	SecurePort        int
+	InsecurePort      int
+	SwaggerPath       string
+	TLSCertFile       string
+	TLSPrivateKeyFile string
+	wsContainer       *restful.Container
 }
 
 //New ...new a apiserver
@@ -46,9 +51,11 @@ func NewApiServer(config Config) *APIServer {
 	}
 
 	return &APIServer{
-		Host:        config.Host,
-		Port:        config.Port,
-		SwaggerPath: config.SwaggerPath,
+		SecurePort:        config.SecurePort,
+		InsecurePort:      config.InsecurePort,
+		SwaggerPath:       config.SwaggerPath,
+		TLSCertFile:       config.TLSCertFile,
+		TLSPrivateKeyFile: config.TLSPrivateKeyFile,
 	}
 }
 
@@ -68,10 +75,35 @@ func (apis *APIServer) Run() error {
 		Container:      apis.wsContainer}
 	apis.wsContainer.Filter(cors.Filter)
 
-	addr := apis.Host + ":" + fmt.Sprintf("%d", apis.Port)
+	port := apis.InsecurePort
+	var tls bool
+	if apis.SecurePort != 0 {
+		tls = true
+		port = apis.SecurePort
+		if apis.TLSCertFile == "" || apis.TLSPrivateKeyFile == "" {
+			return fmt.Errorf("must give cert and private key file")
+		}
+	}
+
+	addr := ":" + fmt.Sprintf("%d", port)
+	glog.V(5).Infof("server on (%v %v)", apis.InsecurePort, apis.SecurePort)
 	server := &http.Server{Addr: addr, Handler: apis.wsContainer}
 
-	controller.ControllerStart(comm.EtcdStorage, comm.Storage, apis.Host, apis.Port)
+	err := controller.ControllerStart(comm.EtcdStorage, comm.Storage, port)
+	if err != nil {
+		return err
+	}
 
-	return server.ListenAndServe()
+	if tls {
+		if len(apis.SwaggerPath) > 0 {
+			apis.installSwaggerAPI(apis.wsContainer, true, port)
+		}
+		return server.ListenAndServeTLS(apis.TLSCertFile, apis.TLSPrivateKeyFile)
+	} else {
+		if len(apis.SwaggerPath) > 0 {
+			apis.installSwaggerAPI(apis.wsContainer, false, port)
+		}
+		return server.ListenAndServe()
+	}
+
 }

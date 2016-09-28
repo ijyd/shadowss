@@ -161,7 +161,6 @@ func PostAccServer(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	glog.V(5).Infof("check request ")
 	err = validation.ValidateAccServer(*acc)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())

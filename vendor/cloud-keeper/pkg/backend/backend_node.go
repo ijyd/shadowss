@@ -29,3 +29,7 @@ func (u *Backend) DeleteNode(name string) error {
 func (u *Backend) UpdateNode(detail api.NodeServer) error {
 	return db.UpdateNode(u.StorageHandler, detail)
 }
+
+func (u *Backend) UpdateNodeTraffic(userID int64, upload, download int64) error {
+	return db.UpdateNodeTraffic(u.StorageHandler, userID, upload, download)
+}
