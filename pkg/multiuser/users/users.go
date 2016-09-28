@@ -22,10 +22,9 @@ func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser) *Users {
 		proxyHandle: proxyserver,
 		refresh:     refresh,
 	}
-
 }
 
-func coverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
+func (u *Users) CoverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
 	return &config.ConnectionInfo{
 		ID:            int64(user.Spec.User.ID),
 		Host:          string("0.0.0.0"),
@@ -37,7 +36,7 @@ func coverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
 	}
 }
 
-func (u *Users) updateTraffic(config *config.ConnectionInfo, user *api.NodeUser) error {
+func (u *Users) UpdateTraffic(config *config.ConnectionInfo, user *api.NodeUser) error {
 	//update users traffic
 	upload, download, err := u.proxyHandle.GetTraffic(config)
 	if err != nil {
@@ -56,7 +55,7 @@ func (u *Users) updateTraffic(config *config.ConnectionInfo, user *api.NodeUser)
 func (u *Users) AddObj(obj runtime.Object) {
 	nodeUser := obj.(*api.NodeUser)
 
-	config := coverUserToConfig(nodeUser)
+	config := u.CoverUserToConfig(nodeUser)
 	glog.V(5).Infof("add user %v \r\n", config)
 	u.proxyHandle.StartWithConfig(config)
 
@@ -96,10 +95,10 @@ func (u *Users) ModifyObj(obj runtime.Object) {
 
 func (u *Users) DelObj(obj runtime.Object) {
 	nodeUser := obj.(*api.NodeUser)
-	config := coverUserToConfig(nodeUser)
+	config := u.CoverUserToConfig(nodeUser)
 	u.proxyHandle.StopServer(config)
 
-	u.updateTraffic(config, nodeUser)
+	u.UpdateTraffic(config, nodeUser)
 
 	u.proxyHandle.CleanUpServer(config)
 
