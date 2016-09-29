@@ -35,7 +35,7 @@ func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.Conne
 	}
 }
 
-//CheckServer create new server for users
+//CheckServer Compare configure if exist
 func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 
 	var equal bool

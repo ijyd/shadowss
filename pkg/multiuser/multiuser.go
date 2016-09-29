@@ -136,12 +136,18 @@ func (mu *MultiUser) StartUp() error {
 	glog.V(5).Infof("Got apiserver %+v\r\n", apiServerList)
 	apiserverproxy.InitAPIServer(apiServerList)
 
-	prifixKey := nodectl.PrefixNode + "/" + mu.nodeName + nodectl.PrefixNodeUser
 	go mu.KeepHealth()
 
 	userMgr := users.NewUsers(mu.proxyHandle, RefreshUser)
 	mu.userHandle = userMgr
 
+	//when node start sync user first
+	err = mu.SyncAllUserFromEtcd()
+	if err != nil {
+		return fmt.Errorf("sync user failure %v", err)
+	}
+
+	prifixKey := nodectl.BuildNodeUserPrefix(mu.nodeName, string(""))
 	go watcher.WatchNodeUsersLoop(prifixKey, mu.etcdHandle, userMgr)
 
 	return nil
@@ -234,6 +240,21 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 	}
 
 	return upload, download, nil
+}
+
+func (mu *MultiUser) SyncAllUserFromEtcd() error {
+	obj, err := nodectl.GetNodeAllUsers(schedule.etcdHandle, mu.nodeName)
+	if err != nil {
+		return err
+	}
+	nodeUserList := obj.(*api.NodeUserList)
+
+	for _, nodeUser := range nodeUserList.Items {
+		config := mu.userHandle.CoverUserToConfig(&nodeUser)
+		mu.userHandle.StartUserSrv(config, &nodeUser)
+	}
+
+	return nil
 }
 
 func RefreshUser(user *api.NodeUser, del bool) {

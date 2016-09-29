@@ -36,6 +36,19 @@ func (u *Users) CoverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
 	}
 }
 
+func (u *Users) StartUserSrv(config *config.ConnectionInfo, nodeUser *api.NodeUser) {
+	u.proxyHandle.StartWithConfig(config)
+
+	time.Sleep(1 * time.Second)
+	port, err := u.proxyHandle.GetListenPort(config)
+	if err != nil {
+		glog.Errorf("Get listen port failure %v\r\n", err)
+	} else {
+		nodeUser.Spec.User.Port = int64(port)
+		u.refresh(nodeUser, false)
+	}
+}
+
 func (u *Users) UpdateTraffic(config *config.ConnectionInfo, user *api.NodeUser) error {
 	//update users traffic
 	upload, download, err := u.proxyHandle.GetTraffic(config)
@@ -57,16 +70,21 @@ func (u *Users) AddObj(obj runtime.Object) {
 
 	config := u.CoverUserToConfig(nodeUser)
 	glog.V(5).Infof("add user %v \r\n", config)
-	u.proxyHandle.StartWithConfig(config)
 
-	time.Sleep(1 * time.Second)
-	port, err := u.proxyHandle.GetListenPort(config)
-	if err != nil {
-		glog.Errorf("Get listen port failure %v\r\n", err)
+	exist, equal := u.proxyHandle.CheckServer(config)
+	if exist {
+		if !equal {
+			u.proxyHandle.StopServer(config)
+			u.UpdateTraffic(config, nodeUser)
+			u.proxyHandle.CleanUpServer(config)
+			u.StartUserSrv(config, nodeUser)
+		}
+
 	} else {
-		nodeUser.Spec.User.Port = int64(port)
-		u.refresh(nodeUser, false)
+		u.StartUserSrv(config, nodeUser)
 	}
+
+	return
 }
 
 func (u *Users) ModifyObj(obj runtime.Object) {
@@ -103,4 +121,8 @@ func (u *Users) DelObj(obj runtime.Object) {
 	u.proxyHandle.CleanUpServer(config)
 
 	u.refresh(nodeUser, true)
+}
+
+func (u *Users) Error(obj runtime.Object) {
+
 }
