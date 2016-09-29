@@ -15,7 +15,7 @@ func SetDefaults_APIServer(obj *APIServer) {
 
 func SetDefaults_UserService(obj *UserService) {
 	if obj.Spec.NodeUserReference == nil {
-		obj.Spec.NodeUserReference = make(map[string]UserReferences)
+		obj.Spec.NodeUserReference = make(map[string]NodeReferences)
 	}
 }
 

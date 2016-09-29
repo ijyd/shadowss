@@ -7,4 +7,5 @@ type Interface interface {
 	AddObj(runtime.Object)
 	ModifyObj(runtime.Object)
 	DelObj(runtime.Object)
+	Error(runtime.Object)
 }

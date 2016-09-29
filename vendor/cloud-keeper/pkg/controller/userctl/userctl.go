@@ -17,7 +17,7 @@ const (
 	PrefixUserService = "/" + "UserService"
 )
 
-func AddUserServiceHelper(helper *etcdhelper.EtcdHelper, username string, nodeUserRefer map[string]api.UserReferences) error {
+func AddUserServiceHelper(helper *etcdhelper.EtcdHelper, username string, nodeUserRefer map[string]api.NodeReferences) error {
 
 	spec := api.UserServiceSpec{
 		NodeUserReference: nodeUserRefer,

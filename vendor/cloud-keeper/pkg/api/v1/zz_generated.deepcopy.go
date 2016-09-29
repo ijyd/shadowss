@@ -321,7 +321,7 @@ func DeepCopy_v1_UserServiceSpec(in interface{}, out interface{}, c *conversion.
 
 		if in.NodeUserReference != nil {
 			in, out := &in.NodeUserReference, &out.NodeUserReference
-			*out = make(map[string]UserReferences)
+			*out = make(map[string]NodeReferences)
 			for key, val := range *in {
 				(*out)[key] = val
 			}

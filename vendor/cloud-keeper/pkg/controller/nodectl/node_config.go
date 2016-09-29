@@ -24,6 +24,20 @@ const (
 	NodeAnnotationUserCnt = "userCount"
 )
 
+func BuildNodeUserPrefix(nodeName, userName string) string {
+	//key := PrefixNode + "/" + user.Spec.NodeName + PrefixNodeUser + "/" + user.Name
+	if len(nodeName) == 0 {
+		return string("")
+	}
+	key := PrefixNode + "/" + nodeName
+
+	if len(userName) != 0 {
+		key = key + PrefixNodeUser + "/" + userName
+	}
+
+	return key
+}
+
 func AddNodeUserHelper(helper *etcdhelper.EtcdHelper, nodeName string, userRefer api.UserReferences) error {
 	if nodeName == "" {
 		return fmt.Errorf("invalid node name")
@@ -58,7 +72,7 @@ func AddNodeUser(helper *etcdhelper.EtcdHelper, user *api.NodeUser) error {
 	ctx := prototype.NewContext()
 	outItem := new(api.NodeUser)
 
-	key := PrefixNode + "/" + user.Spec.NodeName + PrefixNodeUser + "/" + user.Name
+	key := BuildNodeUserPrefix(user.Spec.NodeName, user.Name)
 
 	err := helper.StorageCodec.Storage.Create(ctx, key, user, outItem, 0)
 	if err != nil {
@@ -75,7 +89,7 @@ func DelNodeUsers(nodeName string, helper *etcdhelper.EtcdHelper, name string) e
 	outItem := new(api.NodeUser)
 	//it is a strik we use node name for key
 
-	key := PrefixNode + "/" + nodeName + PrefixNodeUser + "/" + name
+	key := BuildNodeUserPrefix(nodeName, name)
 	err := helper.StorageCodec.Storage.Delete(ctx, key, outItem, nil)
 	if err != nil {
 		glog.Errorf("Create node config err %v items %v\r\n", err, outItem)
@@ -89,7 +103,7 @@ func GetNodeUser(helper *etcdhelper.EtcdHelper, nodeName string, name string) (r
 	ctx := prototype.NewContext()
 	outItem := new(api.NodeUser)
 
-	key := PrefixNode + "/" + nodeName + PrefixNodeUser + "/" + name
+	key := BuildNodeUserPrefix(nodeName, name)
 
 	err := helper.StorageCodec.Storage.Get(ctx, key, outItem, true)
 	if err != nil {
@@ -105,7 +119,7 @@ func GetNodeAllUsers(helper *etcdhelper.EtcdHelper, nodeName string) (runtime.Ob
 	outItem := new(api.NodeUserList)
 
 	options := &prototype.ListOptions{ResourceVersion: "0"}
-	prefix := PrefixNode + "/" + nodeName + PrefixNodeUser
+	prefix := BuildNodeUserPrefix(nodeName, string(""))
 	err := helper.StorageCodec.Storage.List(ctx, prefix, options.ResourceVersion, storage.Everything, outItem)
 
 	return outItem, err
@@ -120,7 +134,8 @@ func UpdateNodeUsersRefer(helper *etcdhelper.EtcdHelper, spec api.NodeUserSpec) 
 func updateNodeUsers(helper *etcdhelper.EtcdHelper, spec api.NodeUserSpec) error {
 
 	nodeName := spec.NodeName
-	key := PrefixNode + "/" + nodeName + PrefixNodeUser + "/" + spec.User.Name
+
+	key := BuildNodeUserPrefix(nodeName, spec.User.Name)
 
 	oldObj, err := GetNodeUser(helper, nodeName, spec.User.Name)
 	if err != nil {

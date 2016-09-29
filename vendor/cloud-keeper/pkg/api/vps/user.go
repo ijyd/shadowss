@@ -193,8 +193,8 @@ func PostUser(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	userReferMap := make(map[string]api.UserReferences)
-	err = userctl.AddUserServiceHelper(EtcdStorage, user.Name, userReferMap)
+	nodeRefer := make(map[string]api.NodeReferences)
+	err = userctl.AddUserServiceHelper(EtcdStorage, user.Name, nodeRefer)
 	if err != nil {
 		glog.Errorf("create user service error %v\r\n", err)
 		newErr := apierr.NewInternalError(err.Error())

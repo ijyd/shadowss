@@ -193,11 +193,15 @@ func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, 
 
 	out.NodeCnt = in.NodeCnt
 	if in.NodeUserReference != nil {
-		out.NodeUserReference = make(map[string]api.UserReferences)
+		out.NodeUserReference = make(map[string]api.NodeReferences)
 		for k, v := range in.NodeUserReference {
 			var outVal api.UserReferences
-			autoConvert_v1_UserReferences_To_api_UserReferences(&v, &outVal, s)
-			out.NodeUserReference[k] = outVal
+			autoConvert_v1_UserReferences_To_api_UserReferences(&v.User, &outVal, s)
+			nodeRefer := api.NodeReferences{
+				User: outVal,
+				Host: v.Host,
+			}
+			out.NodeUserReference[k] = nodeRefer
 		}
 	} else {
 		out.NodeUserReference = nil
@@ -210,11 +214,15 @@ func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, 
 func autoConvert_api_UserServiceSpec_To_v1_UserServiceSpec(in *api.UserServiceSpec, out *UserServiceSpec, s conversion.Scope) error {
 	out.NodeCnt = in.NodeCnt
 	if in.NodeUserReference != nil {
-		out.NodeUserReference = make(map[string]UserReferences)
+		out.NodeUserReference = make(map[string]NodeReferences)
 		for k, v := range in.NodeUserReference {
 			var outVal UserReferences
-			autoConvert_api_UserReferences_To_v1_UserReferences(&v, &outVal, s)
-			out.NodeUserReference[k] = outVal
+			autoConvert_api_UserReferences_To_v1_UserReferences(&v.User, &outVal, s)
+			nodeRefer := NodeReferences{
+				User: outVal,
+				Host: v.Host,
+			}
+			out.NodeUserReference[k] = nodeRefer
 		}
 	} else {
 		out.NodeUserReference = nil

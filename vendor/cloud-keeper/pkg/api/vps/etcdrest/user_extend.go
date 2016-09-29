@@ -1,8 +1,6 @@
 package etcdrest
 
 import (
-	"encoding/json"
-
 	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	"cloud-keeper/pkg/api/validation"
@@ -63,7 +61,7 @@ func GetBindingNodes(request *restful.Request, response *restful.Response) {
 	// api.SetPageLink(baseLink, response, page)
 }
 
-//GetRouters ... get router list
+//PutProperties ... update user properties
 func PutProperties(request *restful.Request, response *restful.Response) {
 	name := request.PathParameter("name")
 
@@ -123,6 +121,9 @@ func PutProperties(request *restful.Request, response *restful.Response) {
 		return
 	}
 
+	output = apierr.NewSuccess().Encode()
+	statusCode = 200
+
 }
 
 func PutUserToNode(request *restful.Request, response *restful.Response) {
@@ -175,7 +176,7 @@ func PutUserToNode(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	output, err = json.Marshal(user)
+	output = apierr.NewSuccess().Encode()
 	statusCode = 200
 
 	return

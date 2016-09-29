@@ -14,7 +14,7 @@ import (
 func WatchNodeUsersLoop(key string, helper *etcdhelper.EtcdHelper, callback Interface) {
 	//watchKey := "/" + "NodeConfig" + "/test"
 	ctx := prototype.NewContext()
-	resourceVer := string("")
+	resourceVer := string("0")
 
 	glog.V(5).Infof("watch at %v with resource %v", key, resourceVer)
 	//watcher, err := helper.StorageCodec.Storage.Watch(ctx, key, resourceVer, storage.Everything)
@@ -50,6 +50,7 @@ func WatchNodeUsersLoop(key string, helper *etcdhelper.EtcdHelper, callback Inte
 				callback.DelObj(gotObject)
 			case watch.Error:
 				glog.Errorf("Got Error  got: %#v", event.Object)
+				callback.Error(event.Object)
 				return
 			default:
 				//gotObject := event.Object.(*api.NodeConfig)

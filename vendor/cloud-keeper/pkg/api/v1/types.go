@@ -99,8 +99,13 @@ type APIServerList struct {
 	Items []APIServer `json:"items"`
 }
 
+type NodeReferences struct {
+	Host string         `json:"host,omitempty"`
+	User UserReferences `json:"user,omitempty"`
+}
+
 type UserServiceSpec struct {
-	NodeUserReference map[string]UserReferences `json:"nodeUserReference,omitempty"`
+	NodeUserReference map[string]NodeReferences `json:"nodeUserReference,omitempty"`
 	NodeCnt           uint                      `json:"nodecnt,omitempty"`
 }
 

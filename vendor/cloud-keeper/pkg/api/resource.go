@@ -3,7 +3,6 @@ package api
 import (
 	"gofreezer/pkg/api/prototype"
 	"gofreezer/pkg/api/unversioned"
-	"gofreezer/pkg/types"
 	"golib/pkg/util/timewrap"
 	"time"
 )
@@ -224,8 +223,13 @@ type APIServerList struct {
 	Items []APIServer `json:"items"`
 }
 
+type NodeReferences struct {
+	Host string         `json:"host,omitempty"`
+	User UserReferences `json:"user,omitempty"`
+}
+
 type UserServiceSpec struct {
-	NodeUserReference map[string]UserReferences `json:"nodeUserReference,omitempty"`
+	NodeUserReference map[string]NodeReferences `json:"nodeUserReference,omitempty"`
 	NodeCnt           uint                      `json:"nodecnt,omitempty"`
 }
 
@@ -241,13 +245,6 @@ type UserServiceList struct {
 	unversioned.ListMeta `json:"metadata,omitempty"`
 
 	Items []UserService `json:"spec,omitempty"`
-}
-
-type NodeReferences struct {
-	UUID   types.UID `json:"uuid,omitempty"`
-	Name   string    `json:"name,omitempty"`
-	Host   string    `json:"host,omitempty"`
-	Status bool      `json:"status,omitempty"`
 }
 
 //User is a mysql users map

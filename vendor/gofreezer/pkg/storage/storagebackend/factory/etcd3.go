@@ -45,8 +45,9 @@ func newETCD3Storage(c storagebackend.Config) (storage.Interface, DestroyFunc, e
 	if err != nil {
 		return nil, nil, err
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	etcd3.StartCompactor(ctx, client)
+	_, cancel := context.WithCancel(context.Background())
+	// ctx, cancel := context.WithCancel(context.Background())
+	// etcd3.StartCompactor(ctx, client)
 	destroyFunc := func() {
 		cancel()
 		client.Close()

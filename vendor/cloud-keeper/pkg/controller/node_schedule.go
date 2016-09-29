@@ -67,6 +67,14 @@ func (ns *NodeSchedule) NewNodeUser(user *api.NodeUser) {
 		return
 	}
 
+	nodeObj, err := nodectl.GetNode(ns.helper, user.Spec.NodeName)
+	if err != nil {
+		glog.Errorf("get node  error %v\r\n", err)
+		return
+	}
+
+	node := nodeObj.(*api.Node)
+
 	obj, err := userctl.GetUserService(ns.helper, user.Name)
 	if err != nil {
 		glog.Errorf("get user service error %v\r\n", err)
@@ -85,7 +93,10 @@ func (ns *NodeSchedule) NewNodeUser(user *api.NodeUser) {
 		return
 	}
 
-	userSrv.Spec.NodeUserReference[user.Spec.NodeName] = user.Spec.User
+	userSrv.Spec.NodeUserReference[user.Spec.NodeName] = api.NodeReferences{
+		User: user.Spec.User,
+		Host: node.Spec.Server.Host,
+	}
 
 	glog.V(5).Infof("add new user %+v for node %v\r\n", userSrv.Spec.NodeUserReference, user.Spec.NodeName)
 
@@ -98,7 +109,7 @@ func (ns *NodeSchedule) NewNodeUser(user *api.NodeUser) {
 
 func (ns *NodeSchedule) UpdateNode(node *api.Node) {
 
-	glog.V(5).Infof("udpate node %+v\r\n", node)
+	glog.V(5).Infof("udpate node %+v\r\n", *node)
 
 	err := ns.UpdateNodeTraffic(node)
 	if err != nil {
@@ -116,15 +127,17 @@ func (ns *NodeSchedule) UpdateNodeUser(user *api.NodeUser) {
 
 	userSrv := obj.(*api.UserService)
 
-	userRefer, ok := userSrv.Spec.NodeUserReference[user.Name]
+	nodeName := user.Spec.NodeName
+	nodeRefer, ok := userSrv.Spec.NodeUserReference[nodeName]
 	if ok {
-		err = ns.UpdateUserTraffic(userRefer)
+		err = ns.UpdateUserTraffic(nodeRefer.User)
 		if err != nil {
 			glog.Warningf("collected user(%v) traffic failure", user.Name)
 		}
 
 		glog.V(5).Infof("update user  %+v to %+v\r\n", *userSrv, *user)
-		userSrv.Spec.NodeUserReference[user.Spec.NodeName] = user.Spec.User
+		nodeRefer.User = user.Spec.User
+		userSrv.Spec.NodeUserReference[nodeName] = nodeRefer
 	} else {
 		glog.Errorf("not found any user by name %v\r\n", user.Name)
 		return
@@ -146,9 +159,10 @@ func (ns *NodeSchedule) DelNodeUser(user *api.NodeUser) {
 
 	userSrv := obj.(*api.UserService)
 
-	userRefer, ok := userSrv.Spec.NodeUserReference[user.Name]
+	nodeName := user.Spec.NodeName
+	nodeRefer, ok := userSrv.Spec.NodeUserReference[nodeName]
 	if ok {
-		err = ns.UpdateUserTraffic(userRefer)
+		err = ns.UpdateUserTraffic(nodeRefer.User)
 		if err != nil {
 			glog.Warningf("collected user(%v) traffic failure", user.Name)
 		}
@@ -157,7 +171,7 @@ func (ns *NodeSchedule) DelNodeUser(user *api.NodeUser) {
 		return
 	}
 
-	delete(userSrv.Spec.NodeUserReference, user.Name)
+	delete(userSrv.Spec.NodeUserReference, nodeName)
 	err = userctl.UpdateUserService(ns.helper, userSrv)
 	if err != nil {
 		glog.Errorf("update %+v error %v\r\n", userSrv, err)
@@ -191,11 +205,11 @@ func (ns *NodeSchedule) CleanNodeUser(name string) error {
 		return fmt.Errorf("not have any node for this user")
 	}
 
-	for nodeName, userRefer := range userSrv.Spec.NodeUserReference {
+	for nodeName, nodeRefer := range userSrv.Spec.NodeUserReference {
 
-		err := ns.DelUserFromNode(nodeName, userRefer.Name)
+		err := ns.DelUserFromNode(nodeName, nodeRefer.User.Name)
 		if err != nil {
-			glog.Errorf("del user %+v from node %+v error %v", userRefer.Name, nodeName, err)
+			glog.Errorf("del user %+v from node %+v error %v", nodeRefer.User.Name, nodeName, err)
 		}
 	}
 
@@ -307,7 +321,7 @@ func (ns *NodeSchedule) findAPINode(userName string) []string {
 		if ok && userSpace == api.NodeUserSpaceAPI {
 			nodeName = append(nodeName, v.Name)
 		} else {
-			glog.Warningf("not got Annotations with node %v \r\n", v)
+			glog.Warningf("node  has not the API value in userSpace %v \r\n", v)
 		}
 	}
 
@@ -366,7 +380,7 @@ func (ns *NodeSchedule) UpdateNodeTraffic(node *api.Node) error {
 func manageNode(helper *etcdhelper.EtcdHelper) {
 	watchKey := nodectl.PrefixNode
 	ctx := prototype.NewContext()
-	resourceVer := string("")
+	resourceVer := string("0")
 
 	glog.V(5).Infof("watch at %v with resource %v", watchKey, resourceVer)
 	watcher, err := helper.StorageCodec.Storage.WatchList(ctx, watchKey, resourceVer, storage.Everything)
@@ -384,7 +398,6 @@ func manageNode(helper *etcdhelper.EtcdHelper) {
 				return
 			}
 
-			glog.V(5).Infof("Got event  %#v", event.Type)
 			switch event.Type {
 			case watch.Added:
 				glog.V(5).Infof("Got Add  got: %#v", event.Object)
