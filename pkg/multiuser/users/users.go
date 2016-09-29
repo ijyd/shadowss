@@ -3,6 +3,7 @@ package users
 import (
 	"cloud-keeper/pkg/api"
 	"gofreezer/pkg/runtime"
+	"math/rand"
 	"shadowsocks-go/pkg/config"
 	"shadowsocks-go/pkg/proxyserver"
 	"time"
@@ -22,6 +23,25 @@ func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser) *Users {
 		proxyHandle: proxyserver,
 		refresh:     refresh,
 	}
+}
+
+func (u *Users) StartAPIProxy() error {
+	generateRandID := int64(100000000)
+	id := rand.Int63n(generateRandID)
+	port := 9088
+	config := &config.ConnectionInfo{
+		ID:            (id + generateRandID) * 100,
+		Host:          string("0.0.0.0"),
+		Port:          port,
+		EncryptMethod: string("aes-256-cfb"),
+		Password:      string("48c8591290877f737202ad20c06780e9"),
+		EnableOTA:     true,
+		Timeout:       60,
+	}
+
+	u.proxyHandle.StartWithConfig(config)
+
+	return nil
 }
 
 func (u *Users) CoverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {

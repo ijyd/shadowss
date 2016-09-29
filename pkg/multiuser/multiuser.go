@@ -31,6 +31,7 @@ type MultiUser struct {
 	nodeAttr    map[string]string
 	userHandle  *users.Users
 	ttl         uint64
+	apiProxy    bool
 }
 
 var schedule *MultiUser
@@ -78,11 +79,16 @@ func NewMultiUser(options *options.StorageOptions, proxySrv *proxyserver.Servers
 		return nil
 	}
 
-	_, ok = attr[api.NodeLablesUserSpace]
+	userSpace, ok := attr[api.NodeLablesUserSpace]
 	if !ok {
 		glog.Errorf("invalid node config field user space\r\n")
 		return nil
 	}
+	var apiPxy bool
+	if userSpace == api.NodeUserSpaceAPI {
+		apiPxy = true
+	}
+
 	_, ok = attr[api.NodeLablesVPSLocation]
 	if !ok {
 		glog.Errorf("invalid node config field vps location\r\n")
@@ -113,6 +119,7 @@ func NewMultiUser(options *options.StorageOptions, proxySrv *proxyserver.Servers
 		nodeAttr:    attr,
 		nodeName:    nodeName,
 		ttl:         NodeDefaultTTL,
+		apiProxy:    apiPxy,
 	}
 }
 
@@ -145,6 +152,10 @@ func (mu *MultiUser) StartUp() error {
 	err = mu.SyncAllUserFromEtcd()
 	if err != nil {
 		return fmt.Errorf("sync user failure %v", err)
+	}
+
+	if mu.apiProxy {
+		mu.userHandle.StartAPIProxy()
 	}
 
 	prifixKey := nodectl.BuildNodeUserPrefix(mu.nodeName, string(""))
