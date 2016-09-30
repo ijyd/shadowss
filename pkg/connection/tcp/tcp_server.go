@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/multiuser/apiserverproxy"
 
 	"shadowsocks-go/pkg/connection/tcp/ssclient"
 	"shadowsocks-go/pkg/crypto"
@@ -90,7 +89,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		IP:   ssProtocol.DstAddr.IP,
 		Port: ssProtocol.DstAddr.Port,
 	}
-	host := apiserverproxy.FilterRequest(remoteAddr)
+	host := remoteAddr.String()
 
 	remote, err := net.Dial("tcp", host)
 	if err != nil {
@@ -150,9 +149,6 @@ func (tcpSrv *TCPServer) Run() {
 	}
 	defer ln.Close()
 
-	//update user port if input config port equal 0
-	tcpSrv.Config.Port = ln.Addr().(*net.TCPAddr).Port
-
 	var ctx context.Context
 	ctx, cancel := context.WithCancel(context.TODO())
 
@@ -169,7 +165,7 @@ func (tcpSrv *TCPServer) Run() {
 	for {
 		c := make(chan accepted, 1)
 		go func() {
-			glog.V(5).Infof("wait for accept on %v\r\n", port)
+			glog.V(5).Infoln("wait for accept on %v\r\n", port)
 			var conn net.Conn
 			conn, err = ln.Accept()
 			c <- accepted{conn: conn, err: err}
@@ -198,10 +194,6 @@ func (tcpSrv *TCPServer) Run() {
 
 func (tcpSrv *TCPServer) Compare(client *config.ConnectionInfo) bool {
 	return reflect.DeepEqual(*tcpSrv.Config, *client)
-}
-
-func (tcpSrv *TCPServer) GetListenPort() int {
-	return tcpSrv.Config.Port
 }
 
 func lock(mutex *sync.Mutex) {

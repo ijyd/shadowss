@@ -61,10 +61,19 @@ func BindUserToNode(nodeReference map[string]api.UserReferences) error {
 }
 
 func AllocDefaultNodeForUser(name string) error {
-	return AutoSchedule.AllocDefaultNode(name)
+	err := AutoSchedule.AllocDefaultNode(name)
+	if err != nil {
+		glog.Errorf("alloc default api node for user error %v\r\n", err)
+	}
+	return err
 }
 
 func ReallocUserNodeByProperties(name string, properties map[string]string) error {
 	AutoSchedule.CleanNodeUser(name)
-	return AutoSchedule.AllocNodeByUserProperties(name, properties)
+	err := AutoSchedule.AllocNodeByUserProperties(name, properties)
+	if err != nil {
+		glog.Errorf("alloc user by properties error %v\r\n", err)
+	}
+
+	return err
 }

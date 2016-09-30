@@ -203,14 +203,15 @@ func PostUser(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	err = controller.AllocDefaultNodeForUser(user.Name)
-	if err != nil {
-		glog.Errorf("alloc user default node error %v\r\n", err)
-		newErr := apierr.NewInternalError(err.Error())
-		output = EncodeError(newErr)
-		statusCode = 500
-		return
-	}
+	go controller.AllocDefaultNodeForUser(user.Name)
+	// err = controller.AllocDefaultNodeForUser(user.Name)
+	// if err != nil {
+	// 	glog.Errorf("alloc user default node error %v\r\n", err)
+	// 	newErr := apierr.NewInternalError(err.Error())
+	// 	output = EncodeError(newErr)
+	// 	statusCode = 500
+	// 	return
+	// }
 
 	output, err = json.Marshal(user)
 	statusCode = 200

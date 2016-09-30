@@ -135,14 +135,8 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 
 ## run server
 
-### configure your attr
-
 ```
-{"cnISP":"cnISPCMCC","userSpace":"default","vpsIP":"45.76.66.102","vpsLocation":"LosAngeles","vpsName":"node-4","vpsOperator":"vultr"}
-```
-
-```
-./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
+./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-type="mysql" --sync-user-interval=20 --server-list="sspanel:sspanel@tcp(localhost:13306)/sspanel"
 ```
 
 ## run client

@@ -1,0 +1,106 @@
+{
+	"ImportPath": "shadowsocks-go",
+	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/codahale/chacha20",
+			"Rev": "ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953"
+		},
+		{
+			"ImportPath": "github.com/coreos/go-semver/semver",
+			"Comment": "v0.2.0",
+			"Rev": "8ab6407b697782a06568d4b7f1db25550ec2e4c6"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful",
+			"Comment": "v1.2-79-g89ef8af",
+			"Rev": "89ef8af493ab468a45a42bb0d89a06fccdd2fb22"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful/log",
+			"Comment": "v1.2-79-g89ef8af",
+			"Rev": "89ef8af493ab468a45a42bb0d89a06fccdd2fb22"
+		},
+		{
+			"ImportPath": "github.com/emicklei/go-restful/swagger",
+			"Comment": "v1.2-79-g89ef8af",
+			"Rev": "89ef8af493ab468a45a42bb0d89a06fccdd2fb22"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-198-g0b58b37",
+			"Rev": "0b58b37b664c21f3010e836f1b931e1d0b0b0685"
+		},
+		{
+			"ImportPath": "github.com/godbus/dbus",
+			"Comment": "v4.0.0-8-g58b0385",
+			"Rev": "58b0385796c5b97c6934388174215143cbd111bf"
+		},
+		{
+			"ImportPath": "github.com/golang/glog",
+			"Rev": "23def4e6c14b4da8ac2ed8007337bc5eb5007998"
+		},
+		{
+			"ImportPath": "github.com/golang/groupcache/lru",
+			"Rev": "a6b377e3400b08991b80d6805d627f347f983866"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/gorm",
+			"Comment": "v1.0-64-gf26fa24",
+			"Rev": "f26fa242cc1bf884f9a4f98849f70fb8e73f441f"
+		},
+		{
+			"ImportPath": "github.com/jinzhu/inflection",
+			"Rev": "74387dc39a75e970e7a3ae6a3386b5bd2e5c5cff"
+		},
+		{
+			"ImportPath": "github.com/spf13/pflag",
+			"Rev": "103ce5cd2042f2fe629c1957abb64ab3e7f50235"
+		},
+		{
+			"ImportPath": "github.com/urfave/cli",
+			"Comment": "v1.18.0-58-gc723b19",
+			"Rev": "c723b19a84af34d905773672ffa1b8ead802e505"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/blowfish",
+			"Rev": "351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/cast5",
+			"Rev": "351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93"
+		},
+		{
+			"ImportPath": "golang.org/x/crypto/salsa20/salsa",
+			"Rev": "351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "6c89f9617983ee917132513a791d8b5850fe90c5"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/dbus",
+			"Comment": "v1.4.0-alpha.2-58-gf0fa9e5",
+			"Rev": "f0fa9e588f477aaae41899b8743d93f34efecc47"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/exec",
+			"Comment": "v1.4.0-alpha.2-58-gf0fa9e5",
+			"Rev": "f0fa9e588f477aaae41899b8743d93f34efecc47"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/iptables",
+			"Comment": "v1.4.0-alpha.2-58-gf0fa9e5",
+			"Rev": "f0fa9e588f477aaae41899b8743d93f34efecc47"
+		},
+		{
+			"ImportPath": "k8s.io/kubernetes/pkg/util/sets",
+			"Comment": "v1.4.0-alpha.2-58-gf0fa9e5",
+			"Rev": "f0fa9e588f477aaae41899b8743d93f34efecc47"
+		}
+	]
+}

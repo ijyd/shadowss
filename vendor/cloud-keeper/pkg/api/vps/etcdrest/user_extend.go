@@ -104,14 +104,15 @@ func PutProperties(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	err = controller.ReallocUserNodeByProperties(name, *annotations)
-	if err != nil {
-		glog.Errorf("update user node by properties failure %v\r\n", err)
-		newErr := apierr.NewInternalError(err.Error())
-		output = EncodeError(newErr)
-		statusCode = 500
-		return
-	}
+	go controller.ReallocUserNodeByProperties(name, *annotations)
+	// err = controller.ReallocUserNodeByProperties(name, *annotations)
+	// if err != nil {
+	// 	glog.Errorf("update user node by properties failure %v\r\n", err)
+	// 	newErr := apierr.NewInternalError(err.Error())
+	// 	output = EncodeError(newErr)
+	// 	statusCode = 500
+	// 	return
+	// }
 
 	output, err = runtime.Encode(EtcdStorage.StorageCodec.Codecs, obj)
 	if err != nil {
