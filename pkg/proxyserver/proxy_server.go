@@ -1,6 +1,7 @@
 package proxyserver
 
 import (
+	"fmt"
 	"shadowsocks-go/pkg/config"
 	"shadowsocks-go/pkg/connection/tcp"
 	"shadowsocks-go/pkg/connection/udp"
@@ -34,7 +35,7 @@ func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.Conne
 	}
 }
 
-//CheckServer create new server for users
+//CheckServer Compare configure if exist
 func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 
 	var equal bool
@@ -44,6 +45,15 @@ func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 	}
 
 	return exist, equal
+}
+
+func (srv *Servers) GetListenPort(client *config.ConnectionInfo) (int, error) {
+	tcpSrv, exist := srv.tcpSrvMap[client.ID]
+	if exist {
+		return tcpSrv.GetListenPort(), nil
+	}
+
+	return 0, fmt.Errorf("not found this service")
 }
 
 //GetTraffic collection traffic for user,return upload traffic and download traffic
