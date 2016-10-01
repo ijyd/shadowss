@@ -291,7 +291,20 @@ func DeepCopy_v1_APIServerSpec(in interface{}, out interface{}, c *conversion.Cl
 		in := in.(*APIServerSpec)
 		out := out.(*APIServerSpec)
 
-		out.Server = in.Server
+		if in.HostList != nil {
+			in, out := &in.HostList, &out.HostList
+			*out = make([]string, len(*in))
+			for i := range *in {
+				(*out)[i] = (*in)[i]
+			}
+		}
+
+		out.Server.CreateTime = in.Server.CreateTime
+		out.Server.ID = in.Server.ID
+		out.Server.Name = in.Server.Name
+		out.Server.Port = in.Server.Port
+		out.Server.Status = in.Server.Status
+		out.Server.Host = in.Server.Host
 
 		return nil
 	}

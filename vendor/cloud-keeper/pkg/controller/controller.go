@@ -6,6 +6,7 @@ import (
 	"cloud-keeper/pkg/controller/apiserverctl"
 	"cloud-keeper/pkg/etcdhelper"
 	"golib/pkg/util/network"
+	"strings"
 
 	"github.com/golang/glog"
 )
@@ -23,11 +24,21 @@ func ControllerStart(helper *etcdhelper.EtcdHelper, be *backend.Backend, port in
 	has := apiserverctl.CheckLocalAPIServer(helper)
 	glog.V(5).Infof("has local server %v", has)
 	if !has {
-		host, err := network.ExternalIP()
+		var hostList []string
+		localExternalHost, err := network.ExternalIP()
 		if err != nil {
 			return err
 		}
-		_, err = apiserverctl.AddLocalAPIServer(be, helper, host, port, uint64(0), true, true)
+		hostList = append(hostList, localExternalHost)
+
+		internetIP, err := network.ExternalInternetIP()
+		if err != nil {
+			return err
+		}
+		internetIP = strings.Replace(internetIP, "\n", "", -1)
+		hostList = append(hostList, internetIP)
+
+		_, err = apiserverctl.AddLocalAPIServer(be, helper, localExternalHost, hostList, port, uint64(0), true, true)
 		if err != nil {
 			return err
 		}

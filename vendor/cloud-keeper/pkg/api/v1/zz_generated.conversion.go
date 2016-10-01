@@ -171,10 +171,19 @@ func autoConvert_v1_APIServerSpec_To_api_APIServerSpec(in *APIServerSpec, out *a
 
 	out.Server.ID = in.Server.ID
 	out.Server.Name = in.Server.Name
-	out.Server.Host = in.Server.Host
+
 	out.Server.Port = in.Server.Port
 	out.Server.Status = in.Server.Status
 	out.Server.CreateTime = in.Server.CreateTime
+	out.Server.Host = in.Server.Host
+
+	if in.HostList != nil {
+		in, out := &in.HostList, &out.HostList
+		*out = make([]string, len(*in))
+		for i := range *in {
+			(*out)[i] = (*in)[i]
+		}
+	}
 
 	return nil
 }
@@ -182,10 +191,18 @@ func autoConvert_v1_APIServerSpec_To_api_APIServerSpec(in *APIServerSpec, out *a
 func autoConvert_api_APIServerSpec_To_v1_APIServerSpec(in *api.APIServerSpec, out *APIServerSpec, s conversion.Scope) error {
 	out.Server.ID = in.Server.ID
 	out.Server.Name = in.Server.Name
-	out.Server.Host = in.Server.Host
 	out.Server.Port = in.Server.Port
 	out.Server.Status = in.Server.Status
 	out.Server.CreateTime = in.Server.CreateTime
+	out.Server.Host = in.Server.Host
+
+	if in.HostList != nil {
+		in, out := &in.HostList, &out.HostList
+		*out = make([]string, len(*in))
+		for i := range *in {
+			(*out)[i] = (*in)[i]
+		}
+	}
 	return nil
 }
 

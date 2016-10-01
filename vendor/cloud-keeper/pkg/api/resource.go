@@ -206,7 +206,8 @@ type APIServerInfor struct {
 }
 
 type APIServerSpec struct {
-	Server APIServerInfor `json:"server, omitempty"`
+	Server   APIServerInfor `json:"server, omitempty"`
+	HostList []string       `json:"hosts, omitempty"`
 }
 
 type APIServer struct {

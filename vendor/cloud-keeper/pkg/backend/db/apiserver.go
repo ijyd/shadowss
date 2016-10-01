@@ -12,46 +12,6 @@ import (
 	"github.com/golang/glog"
 )
 
-// func buildListSelecttion(ctx context.Context, handle storage.Interface, page pagination.Pager) (storage.RetrieveFilter, error) {
-// 	var selection storage.RetrieveFilter
-//
-// 	var notPage bool
-// 	if page == nil {
-// 		notPage = true
-// 	} else {
-// 		notPage = page.Empty()
-// 	}
-//
-// 	if notPage {
-// 		//query all records from db
-// 		//query := string(" = ?")
-// 		//queryArgs := []interface{}{string("Enable")}
-// 		selection = NewSelection(fileds, nil, nil)
-// 	} else {
-// 		var count uint64
-// 		err := handle.GetCount(ctx, nil, &count)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		glog.V(5).Infof("Got Total count %v \r\n", count)
-// 		hasPage, perPage, skip := api.PagerToCondition(page, count)
-// 		glog.V(5).Infof("Got page has %v  perpage %v skip %v\r\n", hasPage, perPage, skip)
-// 		if hasPage {
-// 			query := string("id > ?")
-// 			queryArgs := []interface{}{0}
-// 			skipVal := skip
-// 			sortVal := string("id")
-// 			limitVal := perPage
-// 			selection = NewPageSelection(fileds, query, queryArgs, sortVal, limitVal, skipVal)
-// 		} else {
-// 			query := string("id > ?")
-// 			queryArgs := []interface{}{0}
-// 			selection = NewSelection(fileds, query, queryArgs)
-// 		}
-// 	}
-// 	return selection, nil
-// }
-
 func GetApiServers(handle storage.Interface, page pagination.Pager) ([]api.APIServerInfor, error) {
 
 	ctx := createContextWithValue(apiServerTableName)
@@ -88,7 +48,7 @@ func CreateAPIServer(handle storage.Interface, info api.APIServerInfor) error {
 		CreateTime: time.Now(),
 	}
 
-	err := handle.Create(ctx, info.Host, server, server)
+	err := handle.Create(ctx, info.Name, server, server)
 	if err != nil {
 		glog.Errorf("create a server record failure %v\r\n", err)
 	}

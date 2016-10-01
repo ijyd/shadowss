@@ -18,7 +18,7 @@ const (
 	PrefixAPIServer = "/" + "APIServer"
 )
 
-func AddLocalAPIServer(db *backend.Backend, helper *etcdhelper.EtcdHelper, host string, port int, ttl uint64, etcd bool, mysql bool) (runtime.Object, error) {
+func AddLocalAPIServer(db *backend.Backend, helper *etcdhelper.EtcdHelper, localhost string, host []string, port int, ttl uint64, etcd bool, mysql bool) (runtime.Object, error) {
 
 	APIName, err := network.ExternalMAC()
 	if err != nil {
@@ -28,11 +28,12 @@ func AddLocalAPIServer(db *backend.Backend, helper *etcdhelper.EtcdHelper, host 
 	spec := api.APIServerSpec{
 		Server: api.APIServerInfor{
 			Name:       APIName,
-			Host:       host,
+			Host:       localhost,
 			Status:     true,
 			Port:       int64(port),
 			CreateTime: time.Now(),
 		},
+		HostList: host,
 	}
 
 	apisrv := &api.APIServer{

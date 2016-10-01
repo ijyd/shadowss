@@ -3,8 +3,9 @@ package db
 import (
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/pagination"
-	"context"
 	"golib/pkg/storage"
+
+	"golang.org/x/net/context"
 
 	"github.com/golang/glog"
 )

@@ -2,7 +2,13 @@ package network
 
 import (
 	"errors"
+	"io/ioutil"
 	"net"
+	"net/http"
+)
+
+const (
+	internetIPRequestURL = "http://myexternalip.com/raw"
 )
 
 func checkExternalIPV4(iface net.Interface) (external bool, ipv4 string) {
@@ -71,4 +77,22 @@ func ExternalMAC() (string, error) {
 		}
 	}
 	return "", errors.New("are you connected to the network?")
+}
+
+func ExternalInternetIP() (string, error) {
+	internetIP := string("")
+
+	resp, err := http.Get(internetIPRequestURL)
+	if err != nil {
+		return internetIP, err
+	}
+	defer resp.Body.Close()
+
+	var respByte []byte
+	respByte, err = ioutil.ReadAll(resp.Body)
+	if err == nil {
+		internetIP = string(respByte)
+	}
+
+	return internetIP, err
 }
