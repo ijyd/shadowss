@@ -145,6 +145,14 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 ./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
 ```
 
+./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://47.89.189.237:2379"
+
+use logdir
+
+```
+./shadowss --log-dir="/var/log/shadowss" --config-file="./server-multi-port.json" --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://192.168.60.100:2379"
+```
+
 ## run client
 
 
@@ -170,7 +178,6 @@ curl --socks5-hostname 127.0.0.1:1080 http://192.168.60.128:18088/swaggerapi/
 
 dig @192.168.1.1 www.google.com
 
-./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay
 
 "host":"0.0.0.0",
 "port":38387,

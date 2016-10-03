@@ -131,9 +131,9 @@ func (mu *MultiUser) StartUp() error {
 	}
 
 	apiSrv := obj.(*api.APIServerList)
-	var apiServerList []api.APIServerInfor
+	var apiServerList []api.APIServerSpec
 	for _, v := range apiSrv.Items {
-		apiServerList = append(apiServerList, v.Spec.Server)
+		apiServerList = append(apiServerList, v.Spec)
 	}
 	if len(apiServerList) == 0 {
 		glog.Errorf("not found any api server %v in this cluster\r\n", apiSrv)

@@ -2,6 +2,7 @@ package apiserverproxy
 
 import (
 	"cloud-keeper/pkg/api"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -45,13 +46,14 @@ func init() {
 }
 
 func InitAPIServer(srv []api.APIServerSpec) {
-	//apiServerList = srv
 
-	for k, spec := range srv {
+	glog.V(5).Infof("got a  api server %v \r\n", srv)
+	for _, spec := range srv {
 		port := spec.Server.Port
 		for _, host := range spec.HostList {
-			requestURL := "http://" + host + ":" + spec.Server.Port
-			resp, err := http.Get("")
+			requestInsecureURL := fmt.Sprintf("http://%s:%d", host, spec.Server.Port)
+			requestSecureURL := fmt.Sprintf("https://%s:%d", host, spec.Server.Port)
+			resp, err := http.Get(requestInsecureURL)
 			if err == nil {
 				api := APIServerPair{
 					Host: host,
@@ -59,9 +61,31 @@ func InitAPIServer(srv []api.APIServerSpec) {
 				}
 				glog.V(5).Infof("got a active api server %v \r\n", api)
 				apiServerList = append(apiServerList, api)
+				defer resp.Body.Close()
 			}
-			defer resp.Body.Close()
+
+			tr := &http.Transport{
+				TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+				DisableCompression: true,
+			}
+			client := &http.Client{Transport: tr}
+
+			resp, err = client.Get(requestSecureURL)
+			if err == nil {
+				api := APIServerPair{
+					Host: host,
+					Port: port,
+				}
+				glog.V(5).Infof("got a active api server %v \r\n", api)
+				apiServerList = append(apiServerList, api)
+				defer resp.Body.Close()
+			}
+
 		}
+	}
+
+	if len(apiServerList) == 0 {
+		glog.Fatalf("not found any api server, shutdown node\r\n")
 	}
 
 }

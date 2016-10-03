@@ -1,21 +1,24 @@
-hash: 5bf25b2c8cb4fd244193bea918e83f7701288c9cb144279650fc74cc4088bf94
-updated: 2016-09-20T15:25:01.646694726+08:00
+hash: 75f75ee9c416c4714b54af5b53511c86ce1b724eb1b5a25330d05016023598bc
+updated: 2016-10-01T16:08:22.059883327+08:00
 imports:
 - name: cloud-keeper
-  version: 50b4fc826b8c38b611aee2d598109f709f4b1a4e
+  version: 1d424d52e5499d44d6134d52c75da67a2bdc4795
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
   - pkg/api/install
   - pkg/api/v1
+  - pkg/backend
+  - pkg/backend/db
+  - pkg/controller/apiserverctl
+  - pkg/controller/nodectl
   - pkg/etcdhelper
   - pkg/pagination
-- name: github.com/cloudfoundry-incubator/candiedyaml
-  version: 99c3df83b51532e3615f851d8c2dbb638f5313bf
+  - pkg/watcher
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
 - name: github.com/coreos/etcd
-  version: b5860608125655b6ffa7d271f45a11fb08e72825
+  version: c349e089b168e28629d0db6ac2819000abbaf6a7
   subpackages:
   - auth/authpb
   - clientv3
@@ -30,34 +33,43 @@ imports:
   subpackages:
   - semver
 - name: github.com/coreos/go-systemd
-  version: 2f344660b11f7285b0af86195c4456e92970f640
+  version: 4484981625c1a6a2ecb40a390fcb6a9bcfee76e3
   subpackages:
+  - activation
+  - daemon
+  - dbus
   - journal
+  - unit
+  - util
 - name: github.com/coreos/pkg
-  version: 3ac0863d7acf3bc44daf49afef8919af12f704ef
+  version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
   subpackages:
   - capnslog
+  - dlopen
+  - health
+  - httputil
+  - timeutil
 - name: github.com/emicklei/go-restful
   version: 777bb3f19bcafe2575ffb2a3e46af92509ae9594
   subpackages:
   - log
   - swagger
 - name: github.com/ghodss/yaml
-  version: aa0c862057666179de291b67d9f093d12b5a8473
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
   version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
 - name: github.com/go-openapi/spec
-  version: 2433d2f0fc794728337e0c5d65716e79e163f04d
+  version: 6aced65f8501fe1217321abf0749d354824ba2ff
 - name: github.com/go-openapi/swag
-  version: 0e04f5e499b19bf51031c01a00f098f25067d8dc
+  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
 - name: github.com/go-sql-driver/mysql
   version: a732e14c62dde3285440047bba97581bc472ae18
 - name: github.com/godbus/dbus
   version: 5f6efc7ef2759c81b7ba876593971bfce311eab3
 - name: github.com/gogo/protobuf
-  version: a31fa025390fe54d2af14a04199ed08dea5dc2fd
+  version: e18d7aa8f8c624c915db340349aad4c49b10d173
   subpackages:
   - proto
   - sortkeys
@@ -68,14 +80,14 @@ imports:
   subpackages:
   - lru
 - name: github.com/golang/protobuf
-  version: 1f49d83d9aa00e6ce4fc8258c71cc7786aec968a
+  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
   - jsonpb
   - proto
 - name: github.com/google/gofuzz
-  version: fd52762d25a41827db7ef64c43756fd4b9f7e382
+  version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/grpc-ecosystem/grpc-gateway
-  version: acebe0f9ff5993e130b141ee60e83e592839ca22
+  version: f52d055dc48aec25854ed7d31862f78913cf17d1
   subpackages:
   - runtime
   - runtime/internal
@@ -85,11 +97,13 @@ imports:
 - name: github.com/jinzhu/inflection
   version: 74387dc39a75e970e7a3ae6a3386b5bd2e5c5cff
 - name: github.com/mailru/easyjson
-  version: e978125a7e335d8f4db746a9ac5b44643f27416b
+  version: d5b7844b561a7bc640052f1b935f7b800330d7e0
   subpackages:
   - buffer
   - jlexer
   - jwriter
+- name: github.com/pborman/uuid
+  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
 - name: github.com/PuerkitoBio/purell
   version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
 - name: github.com/PuerkitoBio/urlesc
@@ -97,11 +111,12 @@ imports:
 - name: github.com/spf13/pflag
   version: c7e63cf4530bcd3ba943729cee0efeff2ebea63f
 - name: github.com/ugorji/go
-  version: 98ef79d6c615fa258e892ed0b11c6e013712693e
+  version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
   subpackages:
   - codec
+  - codec/codecgen
 - name: gofreezer
-  version: 774dc77b05a4608575484dd3abc6e2288377b04c
+  version: ae3b36de2ca25aec79fc2331da6fa1771b526c26
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - cmd/libs/go2idl/openapi-gen/generators/common
@@ -141,6 +156,7 @@ imports:
   - pkg/util/net
   - pkg/util/runtime
   - pkg/util/sets
+  - pkg/util/uuid
   - pkg/util/validation
   - pkg/util/validation/field
   - pkg/util/wait
@@ -149,13 +165,13 @@ imports:
   - pkg/watch/versioned
   - third_party/forked/golang/reflect
 - name: golang.org/x/crypto
-  version: 81372b2fc2f10bef2a7f338da115c315a56b2726
+  version: 568507f56e5b05b3c219ffd7fba12655c07bcc86
   subpackages:
   - blowfish
   - cast5
   - salsa20/salsa
 - name: golang.org/x/net
-  version: 71a035914f99bb58fe82eac0f1289f10963d876c
+  version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
   - http2
@@ -165,7 +181,7 @@ imports:
   - lex/httplex
   - trace
 - name: golang.org/x/text
-  version: 04b8648d973c126ae60143b3e1473bc1576c7597
+  version: 2910a502d2bf9e43193af9d68ca516529614eed3
   subpackages:
   - cases
   - internal/tag
@@ -178,13 +194,18 @@ imports:
   - unicode/norm
   - width
 - name: golib
-  version: 7ec9cd6c606a8abc94e22e6d77298efdbb345e9b
+  version: da3c398c67cf66dd01601d4e6c6b8520c7e9022c
   repo: ssh://git@192.168.60.116:10022/cloud/golib.git
   subpackages:
+  - pkg/storage
+  - pkg/storage/mysql
+  - pkg/storage/storagebackend
+  - pkg/storage/storagebackend/factory
   - pkg/util/flag
+  - pkg/util/network
   - pkg/util/timewrap
 - name: google.golang.org/grpc
-  version: 71d2ea4f75286a63b606aca2422cd17ff37fd5b8
+  version: 02fca896ff5f50c6bbbee0860345a49344b37a03
   subpackages:
   - codes
   - credentials
@@ -194,6 +215,8 @@ imports:
   - naming
   - peer
   - transport
+- name: gopkg.in/yaml.v2
+  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/kubernetes
   version: ff3ca3d616518087dc20180f69bb4038379f1028
   subpackages:

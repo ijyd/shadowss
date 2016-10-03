@@ -2,6 +2,7 @@ package: shadowsocks-go
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
+  version: 1d424d52e5499d44d6134d52c75da67a2bdc4795
   subpackages:
   - pkg/api
   - pkg/api/install
@@ -9,6 +10,7 @@ import:
 
 - package: gofreezer
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
+  version: ae3b36de2ca25aec79fc2331da6fa1771b526c26
   subpackages:
     - pkg/api
     - pkg/genericstoragecodec/options
@@ -17,6 +19,7 @@ import:
 
 - package: golib
   repo: ssh://git@192.168.60.116:10022/cloud/golib.git
+  version: da3c398c67cf66dd01601d4e6c6b8520c7e9022c
   subpackages:
     - pkg/util/flag
     - pkg/util/timewrap
