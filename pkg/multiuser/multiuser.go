@@ -276,11 +276,34 @@ func (mu *MultiUser) SyncAllUserFromEtcd() error {
 	return nil
 }
 
+const (
+	nodeUserLease = 600
+)
+
+//UpdateNodeUserFromNode this is support only for node call
+func UpdateNodeUserFromNode(spec api.NodeUserSpec) error {
+
+	nodeName := spec.NodeName
+	userName := spec.User.Name
+	userRefer := spec.User
+
+	//delete this node user if exist
+	nodectl.DelNodeUsers(nodeName, schedule.etcdHandle, userName)
+
+	phase := api.NodeUserPhase(api.NodeUserPhaseUpdate)
+	err := nodectl.AddNodeUserHelper(schedule.etcdHandle, nodeName, userRefer, phase, nodeUserLease)
+	if err != nil {
+		return fmt.Errorf("add user %v to node %v err %v", userRefer, nodeName, err)
+	}
+
+	return err
+}
+
 func RefreshUser(user *api.NodeUser, del bool) {
 	if !del {
 		//need update noe user port
 		glog.V(5).Infof("update node user %+v", *user)
-		err := nodectl.UpdateNodeUsersRefer(schedule.etcdHandle, user.Spec)
+		err := UpdateNodeUserFromNode(user.Spec)
 		if err != nil {
 			glog.Errorf("update node user err %v \r\n", err)
 		}

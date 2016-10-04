@@ -1,8 +1,8 @@
-hash: d0870d8d6f0f7994ded8588976ed0d0c87629e04ede603bd23dc5fb1e40e7ccf
-updated: 2016-10-04T13:01:50.233164335+08:00
+hash: 50d342c710631329afe119c972cbca7726348e0b82045ea29734d6dbd9db56b9
+updated: 2016-10-04T14:54:55.980271775+08:00
 imports:
 - name: cloud-keeper
-  version: abb2fc4cf75af9da7fada8ea325db16bc13f39ea
+  version: 3a1a79a0d42cfe8a17b5487cc627b9859a670eb9
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api

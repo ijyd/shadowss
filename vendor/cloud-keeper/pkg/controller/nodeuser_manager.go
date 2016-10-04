@@ -17,9 +17,9 @@ const (
 func (ns *NodeSchedule) NewNodeUserEvent(user *api.NodeUser) {
 	switch user.Spec.Phase {
 	case api.NodeUserPhaseAdd:
-		glog.V(5).Infof("add new node user not need implement\r\n")
+		glog.V(5).Infof("add new node user %v not need implement\r\n", user)
 	case api.NodeUserPhaseDelete:
-		glog.V(5).Infof("delete node user not need implement")
+		glog.V(5).Infof("delete node user %v not need implement\r\n", user)
 	case api.NodeUserPhaseUpdate:
 		err := ns.UpdateUserDynamicDataByNodeUser(user)
 		if err != nil {
@@ -51,7 +51,6 @@ func (ns *NodeSchedule) DelUserFromNode(nodeName string, userRefer api.UserRefer
 	if err != nil {
 		return fmt.Errorf("delete user %v from node %v err %v", userRefer, nodeName, err)
 	}
-
 	return err
 }
 

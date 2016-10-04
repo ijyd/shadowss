@@ -85,8 +85,7 @@ func (u *Users) UpdateTraffic(config *config.ConnectionInfo, user *api.NodeUser)
 	return nil
 }
 
-func (u *Users) AddObj(obj runtime.Object) {
-	nodeUser := obj.(*api.NodeUser)
+func (u *Users) AddUsers(nodeUser *api.NodeUser) {
 
 	config := u.CoverUserToConfig(nodeUser)
 	glog.V(5).Infof("add user %v \r\n", config)
@@ -103,36 +102,9 @@ func (u *Users) AddObj(obj runtime.Object) {
 	} else {
 		u.StartUserSrv(config, nodeUser)
 	}
-
-	return
 }
 
-func (u *Users) ModifyObj(obj runtime.Object) {
-	// nodeUser := obj.(*api.NodeUser)
-	// config := coverUserToConfig(nodeUser)
-	//
-	// u.proxyHandle.StopServer(config)
-	//
-	// u.updateTraffic(config, nodeUser)
-	//
-	// //release this server re add
-	// u.proxyHandle.CleanUpServer(config)
-	//
-	// time.Sleep(time.Duration(500) * time.Microsecond)
-	// u.proxyHandle.StartWithConfig(config)
-	//
-	// port, err := u.proxyHandle.GetListenPort(config)
-	// if err != nil {
-	// 	glog.Errorf("Get listen port failure %v\r\n", err)
-	// } else {
-	// 	nodeUser.Spec.User.Port = int64(port)
-	// 	u.refresh(nodeUser, false)
-	// }
-	//not support this for node user.delete it then add
-}
-
-func (u *Users) DelObj(obj runtime.Object) {
-	nodeUser := obj.(*api.NodeUser)
+func (u *Users) DelUsers(nodeUser *api.NodeUser) {
 	config := u.CoverUserToConfig(nodeUser)
 	u.proxyHandle.StopServer(config)
 
@@ -143,6 +115,30 @@ func (u *Users) DelObj(obj runtime.Object) {
 	u.refresh(nodeUser, true)
 }
 
-func (u *Users) Error(obj runtime.Object) {
+func (u *Users) AddObj(obj runtime.Object) {
+	nodeUser := obj.(*api.NodeUser)
 
+	switch nodeUser.Spec.Phase {
+	case api.NodeUserPhaseAdd:
+		glog.V(5).Infof("add new node user %v\r\n", nodeUser)
+		u.AddUsers(nodeUser)
+	case api.NodeUserPhaseDelete:
+		glog.V(5).Infof("delete node user %v\r\n", nodeUser)
+		u.DelUsers(nodeUser)
+	case api.NodeUserPhaseUpdate:
+		glog.V(5).Infof("update node user not need implement %v", nodeUser)
+	default:
+		glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
+	}
+
+	return
+}
+
+func (u *Users) ModifyObj(obj runtime.Object) {
+}
+
+func (u *Users) DelObj(obj runtime.Object) {
+}
+
+func (u *Users) Error(obj runtime.Object) {
 }
