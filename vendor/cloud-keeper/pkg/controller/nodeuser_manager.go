@@ -3,6 +3,7 @@ package controller
 import (
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/controller/nodectl"
+	"cloud-keeper/pkg/controller/userctl"
 	"fmt"
 
 	"github.com/golang/glog"
@@ -66,4 +67,28 @@ func (ns *NodeSchedule) BindUserToNode(nodeReference map[string]api.UserReferenc
 	}
 
 	return nil
+}
+
+//SyncUserServiceToNodeUser when node startup sync UserService into node
+func (ns *NodeSchedule) SyncUserServiceToNodeUser(node api.Node) {
+	nodeName := node.Name
+	userlist, err := userctl.GetUserServicesByNodeName(ns.helper, nodeName)
+	if err != nil {
+		glog.Errorf("sync user into node %v failure %v\r\n", nodeName, err)
+		return
+	}
+
+	node2User := make(map[string]api.UserReferences)
+
+	for _, user := range userlist.Items {
+		nodeRefer, ok := user.Spec.NodeUserReference[nodeName]
+		if ok {
+			node2User[nodeName] = nodeRefer.User
+		}
+	}
+
+	err = ns.BindUserToNode(node2User)
+	if err != nil {
+		glog.Warningf("sync user to node %v failure %v", nodeName, err)
+	}
 }

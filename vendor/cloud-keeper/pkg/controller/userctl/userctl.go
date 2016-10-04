@@ -83,6 +83,20 @@ func GetUserService(helper *etcdhelper.EtcdHelper, name string) (runtime.Object,
 	return outItem, nil
 }
 
+//GetUserServicesByNodeName get userlist by nodename
+func GetUserServicesByNodeName(helper *etcdhelper.EtcdHelper, nodeName string) (*api.UserServiceList, error) {
+
+	ctx := prototype.NewContext()
+	outItem := new(api.UserServiceList)
+
+	options := &prototype.ListOptions{ResourceVersion: "0"}
+	prefix := PrefixUserService + "/"
+	filter := NewUserNodeFilter(nodeName)
+	err := helper.StorageCodec.Storage.List(ctx, prefix, options.ResourceVersion, filter, outItem)
+
+	return outItem, err
+}
+
 //UpdateNodeUsers update node user
 func UpdateUserAnnotations(helper *etcdhelper.EtcdHelper, name string, annotation map[string]string) (runtime.Object, error) {
 

@@ -188,38 +188,28 @@ func (mu *MultiUser) BuildNodeHelper(ttl uint64) *nodectl.NodeHelper {
 
 func (mu *MultiUser) KeepHealth() {
 
-	obj, err := nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
+	nodectl.DelNode(nil, mu.etcdHandle, mu.nodeName, true, false)
+
+	nodeHelper := mu.BuildNodeHelper(mu.ttl)
+	if nodeHelper == nil {
+		glog.Errorf("invalid node configure\r\n")
+		return
+	}
+
+	obj, err := nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
+	if err != nil {
+		glog.Errorf("add node error %v\r\n", err)
+		return
+	}
+
+	obj, err = nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
 	if err != nil {
 		glog.Errorf("get node error:%v\r\n", err)
 		return
 	}
-
-	node := obj.(*api.Node)
-	if node.Name == mu.nodeName {
-		glog.Infof("our node %+v already exist \r\n", obj)
-		nodectl.UpdateNode(nil, mu.etcdHandle, node, true, false)
-	} else {
-		nodeHelper := mu.BuildNodeHelper(mu.ttl)
-		if nodeHelper == nil {
-			glog.Errorf("invalid node configure\r\n")
-			return
-		}
-
-		obj, err := nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
-		if err != nil {
-			glog.Errorf("add node error %v\r\n", err)
-			return
-		}
-
-		obj, err = nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
-		if err != nil {
-			glog.Errorf("get node error:%v\r\n", err)
-			return
-		}
-		nodeObj := obj.(*api.Node)
-		node = nodeObj
-		glog.V(5).Infof("Add node %+v err %v\r\n", *node, err)
-	}
+	nodeObj := obj.(*api.Node)
+	node := nodeObj
+	glog.V(5).Infof("Add node %+v err %v\r\n", *node, err)
 
 	expireTime := time.Duration(1800)
 

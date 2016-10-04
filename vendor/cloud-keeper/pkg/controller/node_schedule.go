@@ -26,20 +26,16 @@ func NewNodeSchedule(helper *etcdhelper.EtcdHelper, be *backend.Backend) *NodeSc
 	}
 }
 
+
+
 func (ns *NodeSchedule) NewNodeEvent(node *api.Node) {
 	if node.Name == "" {
 		glog.Errorf("invalid node name\r\n")
 		return
 	}
 
-	_, err := nodectl.GetNode(ns.helper, node.Name)
-	if err != nil {
-		glog.Errorf("get node  error %v\r\n", err)
-		return
-	}
-
 	var mysql bool
-	_, err = nodectl.GetNodeFromDB(ns.be, node.Name)
+	_, err := nodectl.GetNodeFromDB(ns.be, node.Name)
 	if err != nil && err.Error() == "not found" {
 		mysql = true
 	} else if err != nil {
@@ -57,6 +53,7 @@ func (ns *NodeSchedule) NewNodeEvent(node *api.Node) {
 		}
 	}
 
+	go ns.SyncUserServiceToNodeUser(*node)
 }
 
 func (ns *NodeSchedule) UpdateNodeEvent(node *api.Node) {

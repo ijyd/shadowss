@@ -4,24 +4,38 @@ import (
 	"cloud-keeper/pkg/api"
 	"fmt"
 	"golib/pkg/util/exec"
+	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/golang/glog"
 )
+
+var absdir string
+
+func init() {
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	absdir = dir + "/"
+}
 
 func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr map[string]string) error {
 
 	var hostpath, sshkeypath, playbook, attrpath string
 	switch typ {
 	case api.OperatorVultr:
-		hostpath = ansibleVulHostFile
-		sshkeypath = ansibleVulSSHKeyFile
-		playbook = ansibleVulDeploySSPlayBook
-		attrpath = ansibleVulAttrFile
+		hostpath = absdir + ansibleVulHostFile
+		sshkeypath = absdir + ansibleVulSSHKeyFile
+		playbook = absdir + ansibleVulDeploySSPlayBook
+		attrpath = absdir + ansibleVulAttrFile
 	case api.OperatorDigitalOcean:
-		hostpath = ansibleDGOCHostFile
-		sshkeypath = ansibleDGOCSSHKeyFile
-		attrpath = ansibleDGOCAttrFile
-		playbook = ansibleDGOCDeploySSPlayBook
+		hostpath = absdir + ansibleDGOCHostFile
+		sshkeypath = absdir + ansibleDGOCSSHKeyFile
+		attrpath = absdir + ansibleDGOCAttrFile
+		playbook = absdir + ansibleDGOCDeploySSPlayBook
 	}
 
 	err := WriteSSAttrFile(attrpath, attr)
@@ -48,13 +62,13 @@ func RestartShadowss(typ api.OperatorType, hosts []string, sshkey string) error 
 	var hostpath, sshkeypath, playbook string
 	switch typ {
 	case api.OperatorVultr:
-		hostpath = ansibleVulHostFile
-		sshkeypath = ansibleVulSSHKeyFile
-		playbook = ansibleVulRestartSSPlayBook
+		hostpath = absdir + ansibleVulHostFile
+		sshkeypath = absdir + ansibleVulSSHKeyFile
+		playbook = absdir + ansibleVulRestartSSPlayBook
 	case api.OperatorDigitalOcean:
-		hostpath = ansibleDGOCHostFile
-		sshkeypath = ansibleDGOCSSHKeyFile
-		playbook = ansibleDGOCRestartSSPlayBook
+		hostpath = absdir + ansibleDGOCHostFile
+		sshkeypath = absdir + ansibleDGOCSSHKeyFile
+		playbook = absdir + ansibleDGOCRestartSSPlayBook
 	}
 
 	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath)
@@ -76,8 +90,8 @@ func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
 
 	switch typ {
 	case api.OperatorVultr:
-		playbook = ansibleVulDeployVPSPlayBook
-		varfile = ansibleVulVarFile
+		playbook = absdir + ansibleVulDeployVPSPlayBook
+		varfile = absdir + ansibleVulVarFile
 
 		vpsVar = fmt.Sprintf("api_key: %s\r\n", key)
 		vpsVar += fmt.Sprintf("DCID: %s\r\n", srv.Region)
@@ -87,8 +101,8 @@ func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
 		vpsVar += fmt.Sprintf("name: %s\r\n", srv.Name)
 
 	case api.OperatorDigitalOcean:
-		playbook = ansibleDGOCDeployVPSPlayBook
-		varfile = ansibleDGOCVarFile
+		playbook = absdir + ansibleDGOCDeployVPSPlayBook
+		varfile = absdir + ansibleDGOCVarFile
 
 		vpsVar = fmt.Sprintf("do_token: %s\r\n", key)
 		vpsVar += fmt.Sprintf("image_id: %s\r\n", srv.Image)
@@ -122,13 +136,13 @@ func DeleteVPS(typ api.OperatorType, id int64, key string) error {
 	var playbook, varData, varfile string
 	switch typ {
 	case api.OperatorVultr:
-		playbook = ansibleVulDeleteVPSPlayBook
-		varfile = ansibleVulVarFile
+		playbook = absdir + ansibleVulDeleteVPSPlayBook
+		varfile = absdir + ansibleVulVarFile
 
 		//vultr not delete into here
 	case api.OperatorDigitalOcean:
-		playbook = ansibleDGOCDeleteVPSPlayBook
-		varfile = ansibleDGOCVarFile
+		playbook = absdir + ansibleDGOCDeleteVPSPlayBook
+		varfile = absdir + ansibleDGOCVarFile
 
 		varData = fmt.Sprintf("do_token: %q\r\n", key)
 		varData += fmt.Sprintf("id: %d\r\n", id)
