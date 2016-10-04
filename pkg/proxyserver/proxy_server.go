@@ -144,3 +144,14 @@ func (srv *Servers) Start() {
 		srv.StartWithConfig(config)
 	}
 }
+
+//Start create new server for user
+func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
+	var users []config.ConnectionInfo
+	for _, handler := range srv.tcpSrvMap {
+		config := handler.GetConfig()
+		users = append(users, config)
+	}
+
+	return users
+}

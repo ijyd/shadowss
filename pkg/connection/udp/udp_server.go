@@ -68,3 +68,7 @@ func (udpSrv *UDPServer) Compare(client *config.ConnectionInfo) bool {
 func (udpSrv *UDPServer) GetListenPort() int {
 	return udpSrv.Config.Port
 }
+
+func (udpSrv *UDPServer) GetConfig() config.ConnectionInfo {
+	return *udpSrv.Config
+}

@@ -25,6 +25,10 @@ func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser) *Users {
 	}
 }
 
+func (u *Users) GetUsers() []config.ConnectionInfo {
+	return u.proxyHandle.GetUsersConfig()
+}
+
 func (u *Users) StartAPIProxy() error {
 	generateRandID := int64(100000000)
 	id := rand.Int63n(generateRandID)
@@ -53,6 +57,7 @@ func (u *Users) CoverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
 		Password:      user.Spec.User.Password,
 		EnableOTA:     user.Spec.User.EnableOTA,
 		Timeout:       60,
+		Name:          user.Name,
 	}
 }
 

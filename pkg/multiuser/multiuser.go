@@ -17,6 +17,8 @@ import (
 	"cloud-keeper/pkg/controller/nodectl"
 	"cloud-keeper/pkg/etcdhelper"
 	"cloud-keeper/pkg/watcher"
+	"gofreezer/pkg/api/prototype"
+	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/genericstoragecodec/options"
 )
 
@@ -149,10 +151,10 @@ func (mu *MultiUser) StartUp() error {
 	mu.userHandle = userMgr
 
 	//when node start sync user first
-	err = mu.SyncAllUserFromEtcd()
-	if err != nil {
-		return fmt.Errorf("sync user failure %v", err)
-	}
+	// err = mu.SyncAllUserFromEtcd()
+	// if err != nil {
+	// 	return fmt.Errorf("sync user failure %v", err)
+	// }
 
 	if mu.apiProxy {
 		mu.userHandle.StartAPIProxy()
@@ -239,19 +241,42 @@ func (mu *MultiUser) KeepHealth() {
 
 func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 
-	obj, err := nodectl.GetNodeAllUsers(schedule.etcdHandle, mu.nodeName)
-	if err != nil {
-		return 0, 0, err
-	}
-	nodeUserList := obj.(*api.NodeUserList)
+	userList := mu.userHandle.GetUsers()
 
 	var upload, download int64
-	for _, nodeUser := range nodeUserList.Items {
-		config := mu.userHandle.CoverUserToConfig(&nodeUser)
-		mu.userHandle.UpdateTraffic(config, &nodeUser)
-		err := nodectl.UpdateNodeUsersRefer(mu.etcdHandle, nodeUser.Spec)
+	for _, userConfig := range userList {
+		if userConfig.Name == string("") {
+			continue
+		}
+
+		nodeUser := &api.NodeUser{
+			TypeMeta: unversioned.TypeMeta{
+				Kind:       "NodeUser",
+				APIVersion: "v1",
+			},
+			ObjectMeta: prototype.ObjectMeta{
+				Name: userConfig.Name,
+			},
+			Spec: api.NodeUserSpec{
+				User: api.UserReferences{
+					ID:              userConfig.ID,
+					Name:            userConfig.Name,
+					Port:            int64(userConfig.Port),
+					Method:          userConfig.EncryptMethod,
+					Password:        userConfig.Password,
+					EnableOTA:       userConfig.EnableOTA,
+					UploadTraffic:   0,
+					DownloadTraffic: 0,
+				},
+				NodeName: mu.nodeName,
+				Phase:    api.NodeUserPhase(api.NodeUserPhaseUpdate),
+			},
+		}
+
+		mu.userHandle.UpdateTraffic(&userConfig, nodeUser)
+		err := UpdateNodeUserFromNode(nodeUser.Spec)
 		if err != nil {
-			glog.Errorf("update node user err %v \r\n", err)
+			glog.Errorf("update node user %+v err %v \r\n", nodeUser, err)
 		} else {
 			upload += nodeUser.Spec.User.UploadTraffic
 			download += nodeUser.Spec.User.DownloadTraffic
@@ -259,21 +284,6 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 	}
 
 	return upload, download, nil
-}
-
-func (mu *MultiUser) SyncAllUserFromEtcd() error {
-	obj, err := nodectl.GetNodeAllUsers(schedule.etcdHandle, mu.nodeName)
-	if err != nil {
-		return err
-	}
-	nodeUserList := obj.(*api.NodeUserList)
-
-	for _, nodeUser := range nodeUserList.Items {
-		config := mu.userHandle.CoverUserToConfig(&nodeUser)
-		mu.userHandle.StartUserSrv(config, &nodeUser)
-	}
-
-	return nil
 }
 
 const (

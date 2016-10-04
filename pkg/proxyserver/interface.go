@@ -11,4 +11,5 @@ type ProxyServer interface {
 	Compare(*config.ConnectionInfo) bool
 	Traffic() (int64, int64)
 	GetListenPort() int
+	GetConfig() config.ConnectionInfo
 }

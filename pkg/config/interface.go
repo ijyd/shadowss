@@ -9,6 +9,7 @@ type ConnectionInfo struct {
 	Password      string `json:"password"`
 	EnableOTA     bool   `json:"enableOTA"`
 	Timeout       int    `json:"timeout"`
+	Name          string `json:"name,omitempty"`
 }
 
 // Config as a interface for configure file implement

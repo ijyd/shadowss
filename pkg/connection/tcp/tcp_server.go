@@ -204,6 +204,10 @@ func (tcpSrv *TCPServer) GetListenPort() int {
 	return tcpSrv.Config.Port
 }
 
+func (tcpSrv *TCPServer) GetConfig() config.ConnectionInfo {
+	return *tcpSrv.Config
+}
+
 func lock(mutex *sync.Mutex) {
 	mutex.Lock()
 }
