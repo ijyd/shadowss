@@ -16,9 +16,18 @@ type UserReferences struct {
 	DownloadTraffic int64  `json:"downloadTraffic,omitempty"` //download traffic for per user
 }
 
+const (
+	NodeUserPhaseAdd    = "add"
+	NodeUserPhaseDelete = "del"
+	NodeUserPhaseUpdate = "update"
+)
+
+type NodeUserPhase string
+
 type NodeUserSpec struct {
 	User     UserReferences `json:"user,omitempty"`
 	NodeName string         `json:"nodeName,omitempty"`
+	Phase    NodeUserPhase  `json:"phase,omitempty"`
 }
 
 //put your user into your node with node name

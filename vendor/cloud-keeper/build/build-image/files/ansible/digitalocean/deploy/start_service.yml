@@ -1,0 +1,16 @@
+- hosts: cloud
+  gather_facts: no
+  remote_user: root
+
+  tasks:
+    - name: chkconfig ssservice
+      command: chkconfig --add ssservice
+
+    - name: chkconfig ssservice
+      command: chkconfig ssservice on
+      notify:
+        - restart ssservice        
+
+  handlers:
+    - name: restart ssservice
+      service: name=ssservice state=restarted

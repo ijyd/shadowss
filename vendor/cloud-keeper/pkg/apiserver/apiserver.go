@@ -42,6 +42,7 @@ func NewApiServer(config Config) *APIServer {
 
 	err := comm.Storage.CreateStorage()
 	if err != nil {
+		glog.Errorf("CreateStorage failure %v \r\n", err)
 		return nil
 	}
 

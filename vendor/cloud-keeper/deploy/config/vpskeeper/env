@@ -1,0 +1,2 @@
+ETCD_URL=http://etcd3:2379
+MYSQL_URL=sspanel:sspanel@tcp(192.168.60.128:13306)/sspanel

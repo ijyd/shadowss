@@ -1,0 +1,18 @@
+- connection: local
+  hosts: localhost
+
+  vars_files: 
+  - var.yml 
+
+  tasks:
+  - name: ensure galera stack is deleted
+    digital_ocean: >
+      state=absent
+      command=droplet
+      unique_name=yes
+      size_id=512mb
+      region_id=sgp1
+      id={{ id }}
+      image_id=centos-6-5-x64
+      ssh_key_ids=3351031
+      api_token={{ do_token }}

@@ -2,29 +2,50 @@ package app
 
 import (
 	"fmt"
-	"io/ioutil"
+	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"github.com/golang/glog"
 
 	"cloud-keeper/cmd/vpskeeper/app/options"
 	"cloud-keeper/pkg/apiserver"
 	"cloud-keeper/pkg/backend"
 
-	"golib/pkg/permissions"
+	"golib/pkg/util/exec"
 )
 
-func checkLicense(file string) bool {
-	if len(file) == 0 {
-		file = "./.license"
+const (
+	licenseProgram = "vpslicense"
+)
+
+func execLicenseVerify() bool {
+
+	dir, err := filepath.Abs(filepath.Dir(os.Args[0]))
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
+	program := dir + "/" + licenseProgram
+	glog.V(5).Infof("Got license program %v\r\n", program)
+
+	execCom := exec.New()
+	cmd := execCom.Command(program, "check")
+	out, err := cmd.CombinedOutput()
+	if err == exec.ErrExecutableNotFound {
+		glog.Errorf("Expected error ErrExecutableNotFound but got %v", err)
 		return false
 	}
 
-	result := permissions.PermissionsHandler.PermissionsCheck(string(data))
+	result := strings.Contains(string(out), "license result true")
 
+	glog.V(5).Infof("check licese resutl %s:%v", string(out), result)
 	return result
+}
 
+func checkLicense() bool {
+	return execLicenseVerify()
 }
 
 //Run start a api server
@@ -42,7 +63,7 @@ func Run(options *options.ServerOption) error {
 		EtcdStorageOptions: options.EtcdStorageConfig,
 	}
 
-	if checkLicense(options.LicenseFile) == false {
+	if checkLicense() == false {
 		return fmt.Errorf("not allow on this server, please contact administrator")
 	}
 

@@ -154,6 +154,7 @@ func autoConvert_v1_NodeUserSpec_To_api_NodeUserSpec(in *NodeUserSpec, out *api.
 
 	autoConvert_v1_UserReferences_To_api_UserReferences(&in.User, &out.User, s)
 	out.NodeName = in.NodeName
+	out.Phase = api.NodeUserPhase(in.Phase)
 
 	return nil
 }
@@ -162,6 +163,7 @@ func autoConvert_api_NodeUserSpec_To_v1_NodeUserSpec(in *api.NodeUserSpec, out *
 	autoConvert_api_UserReferences_To_v1_UserReferences(&in.User, &out.User, s)
 
 	out.NodeName = in.NodeName
+	out.Phase = NodeUserPhase(in.Phase)
 
 	glog.V(5).Infof("convert %+v to %+v", *in, *out)
 	return nil

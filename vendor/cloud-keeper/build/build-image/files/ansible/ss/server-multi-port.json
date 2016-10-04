@@ -1,0 +1,20 @@
+{
+        "clients": [
+                {
+                        "host":"0.0.0.0",
+                        "port":28387,
+                        "encrypt":"aes-256-cfb",
+                        "password":"713cfeb9dd0faf61609bf1c54bb3e766",
+                        "enableOTA":true,
+                        "timeout":60
+                },
+                {
+                        "host":"0.0.0.0",
+                        "port":38388,
+                        "encrypt":"aes-256-cfb",
+                        "password":"713cfeb9dd0faf61609bf1c54bb3e766",
+                        "enableOTA":false,
+                        "timeout":60
+                }
+        ]
+}

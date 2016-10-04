@@ -49,22 +49,37 @@ func ControllerStart(helper *etcdhelper.EtcdHelper, be *backend.Backend, port in
 	return nil
 }
 
-func DeleteUserAllNode(name string) error {
-	err := AutoSchedule.CleanNodeUser(name)
+//delete this user service.
+func DeleteUserService(name string) error {
+	err := AutoSchedule.DelAllNodeUserByUser(name)
 	if err != nil {
-		return err
+		glog.Errorf("del node user error %v \r\n", err)
 	}
 
 	return AutoSchedule.DelUserService(name)
 }
 
-func DeleteUserNode(nodeName, userName string) error {
-	err := AutoSchedule.DelUserFromNode(nodeName, userName)
+func delUserServiceNode(nodeName, userName string) error {
+	userSrv, err := AutoSchedule.checkUserServiceNode(userName, nodeName)
+	if err != nil {
+		return err
+	}
+
+	err = AutoSchedule.DelUserFromNode(nodeName, userSrv.Spec.NodeUserReference[nodeName].User)
 	if err != nil {
 		glog.Errorf("del user %+v from node %+v error %v", userName, nodeName, err)
 	}
 
-	return err
+	err = AutoSchedule.DeleteUserServiceNode(userName, nodeName)
+	if err != nil {
+		glog.Errorf("del node %+v from user %+v error %v", userName, nodeName, err)
+		return err
+	}
+	return nil
+}
+
+func DeleteUserServiceNode(nodeName, userName string) error {
+	return delUserServiceNode(nodeName, userName)
 }
 
 func BindUserToNode(nodeReference map[string]api.UserReferences) error {
@@ -80,7 +95,7 @@ func AllocDefaultNodeForUser(name string) error {
 }
 
 func ReallocUserNodeByProperties(name string, properties map[string]string) error {
-	AutoSchedule.CleanNodeUser(name)
+	AutoSchedule.DelAllNodeUserByUser(name)
 	err := AutoSchedule.AllocNodeByUserProperties(name, properties)
 	if err != nil {
 		glog.Errorf("alloc user by properties error %v\r\n", err)

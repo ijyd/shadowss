@@ -207,7 +207,7 @@ func DeleteUserNode(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	err = controller.DeleteUserNode(nodeName, name)
+	err = controller.DeleteUserServiceNode(nodeName, name)
 	if err != nil {
 		glog.Errorf("delete user from node error %v\r\n", err)
 		newErr := apierr.NewInternalError(err.Error())

@@ -1,0 +1,25 @@
+- connection: local
+  gather_facts: false
+  hosts: localhost
+
+  vars_files: 
+  - var.yml 
+
+  tasks:
+  - name: Provision Vultr servers
+    register: created_servers
+    vultr: {
+      DCID: '{{ DCID }}',
+      OSID: '{{ OSID }}', 
+      SSHKEYID: '{{ SSHKEYID }}', 
+      VPSPLANID: '{{ VPSPLANID }}', 
+      api_key: '{{ api_key }}', 
+      command: server,
+      enable_private_network: true, 
+      label: '{{ name }}', 
+      state: present, 
+      unique_label: true
+    }
+
+  - debug: msg="IP is {{ created_servers.server.main_ip }}"
+  - debug: msg="ID is {{ created_servers.server.SUBID }}"

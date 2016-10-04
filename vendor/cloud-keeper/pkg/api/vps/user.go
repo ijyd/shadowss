@@ -249,7 +249,7 @@ func DeleteUser(request *restful.Request, response *restful.Response) {
 		statusCode = 404
 	}
 
-	err = controller.DeleteUserAllNode(name)
+	err = controller.DeleteUserService(name)
 	if err != nil {
 		glog.Errorf("delete user all nodes error %v\r\n", err)
 	}
