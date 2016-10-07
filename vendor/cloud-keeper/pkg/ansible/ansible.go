@@ -18,17 +18,19 @@ const (
 	ansibleDGOCDeployVPSPlayBook = ansibleDGOCDir + "/" + deployVPSPlayBook
 	ansibleDGOCDeleteVPSPlayBook = ansibleDGOCDir + "/" + deleteVPSPlayBook
 	ansibleDGOCAttrFile          = ansibleDGOCDir + "/" + attrFile
-
 	ansibleDGOCRestartSSPlayBook = ansibleDGOCDir + "/" + restartSSPlayBook
-	ansibleVulDir                = "ansible/vultr/deploy"
-	ansibleVulVarFile            = ansibleVulDir + "/" + varFile
-	ansibleVulHostFile           = ansibleVulDir + "/" + hostFile
-	ansibleVulSSHKeyFile         = ansibleVulDir + "/" + keyFile
-	ansibleVulDeploySSPlayBook   = ansibleVulDir + "/" + deploySSPlayBook
-	ansibleVulDeployVPSPlayBook  = ansibleVulDir + "/" + deployVPSPlayBook
-	ansibleVulDeleteVPSPlayBook  = ansibleVulDir + "/" + deleteVPSPlayBook
-	ansibleVulRestartSSPlayBook  = ansibleVulDir + "/" + restartSSPlayBook
-	ansibleVulAttrFile           = ansibleVulDir + "/" + attrFile
+	ansibleDGOCPrivateKey        = ansibleDGOCDir + "/" + keyFile
+
+	ansibleVulDir               = "ansible/vultr/deploy"
+	ansibleVulVarFile           = ansibleVulDir + "/" + varFile
+	ansibleVulHostFile          = ansibleVulDir + "/" + hostFile
+	ansibleVulSSHKeyFile        = ansibleVulDir + "/" + keyFile
+	ansibleVulDeploySSPlayBook  = ansibleVulDir + "/" + deploySSPlayBook
+	ansibleVulDeployVPSPlayBook = ansibleVulDir + "/" + deployVPSPlayBook
+	ansibleVulDeleteVPSPlayBook = ansibleVulDir + "/" + deleteVPSPlayBook
+	ansibleVulRestartSSPlayBook = ansibleVulDir + "/" + restartSSPlayBook
+	ansibleVulAttrFile          = ansibleVulDir + "/" + attrFile
+	ansibleVulPrivateKey        = ansibleVulDir + "/" + keyFile
 )
 
 var privateKey = `-----BEGIN RSA PRIVATE KEY-----

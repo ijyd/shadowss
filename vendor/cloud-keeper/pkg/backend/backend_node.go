@@ -30,6 +30,10 @@ func (u *Backend) UpdateNode(detail api.NodeServer) error {
 	return db.UpdateNode(u.StorageHandler, detail)
 }
 
-func (u *Backend) UpdateNodeTraffic(userID int64, upload, download int64) error {
-	return db.UpdateNodeTraffic(u.StorageHandler, userID, upload, download)
+func (u *Backend) UpdateNodeTraffic(nodeID int64, totalUpload, totalDownload, upload, download int64) error {
+	return db.UpdateNodeTraffic(u.StorageHandler, nodeID, totalUpload, totalDownload, upload, download)
+}
+
+func (u *Backend) UpdateNodeStatus(nodeID int64, status bool) error {
+	return db.UpdateNodeStatus(u.StorageHandler, nodeID, status)
 }

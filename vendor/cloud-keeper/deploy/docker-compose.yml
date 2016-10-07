@@ -29,6 +29,7 @@ services:
     #  dockerfile: build/build-image/Dockerfile
     image: bjjyd/vpskeeper
     restart: always
+    container_name: vpskeeper
     env_file:
       - ./config/vpskeeper/env
     ports:

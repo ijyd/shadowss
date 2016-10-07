@@ -171,20 +171,22 @@ type NodeUserList struct {
 }
 
 type NodeServer struct {
-	ID            int64  `json:"id" column:"id" gorm:"column:id"`
-	Name          string `json:"name,omitempty" column:"name" gorm:"column:name"`
-	EnableOTA     bool   `json:"enableOTA" column:"enableota" gorm:"column:enableota"`
-	Host          string `json:"host,omitempty" column:"server" gorm:"column:server"`
-	Method        string `json:"method" column:"method" gorm:"column:method"`
-	Status        bool   `json:"status,omitempty" column:"status" gorm:"column:status"`
-	Location      string `json:"location,omitempty" column:"location" gorm:"column:location"`
-	AccServerID   int64  `json:"accServerID,omitempty" column:"vps_server_id" gorm:"column:vps_server_id"`
-	AccServerName string `json:"accServerName,omitempty" column:"vps_server_name" gorm:"column:vps_server_name"`
-	Description   string `json:"description,omitempty" column:"description" gorm:"column:description"`
-	TrafficLimit  int64  `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"`
-	Upload        int64  `json:"upload,omitempty" column:"upload" gorm:"column:upload"`
-	Download      int64  `json:"download,omitempty" column:"download" gorm:"column:download"`
-	TrafficRate   int64  `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
+	ID                   int64  `json:"id" column:"id" gorm:"column:id"`
+	Name                 string `json:"name,omitempty" column:"name" gorm:"column:name"`
+	EnableOTA            int64  `json:"enableOTA" column:"enableota" gorm:"column:enableota"`
+	Host                 string `json:"host,omitempty" column:"server" gorm:"column:server"`
+	Method               string `json:"method" column:"method" gorm:"column:method"`
+	Status               int64  `json:"status,omitempty" column:"status" gorm:"column:status"`
+	Location             string `json:"location,omitempty" column:"location" gorm:"column:location"`
+	AccServerID          int64  `json:"accServerID,omitempty" column:"vps_server_id" gorm:"column:vps_server_id"`
+	AccServerName        string `json:"accServerName,omitempty" column:"vps_server_name" gorm:"column:vps_server_name"`
+	Description          string `json:"description,omitempty" column:"description" gorm:"column:description"`
+	TrafficLimit         int64  `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"`
+	Upload               int64  `json:"upload,omitempty" column:"upload" gorm:"column:upload"`
+	Download             int64  `json:"download,omitempty" column:"download" gorm:"column:download"`
+	TrafficRate          int64  `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
+	TotalUploadTraffic   int64  `json:"totalUploadTraffic,omitempty" column:"total_upload" gorm:"column:total_upload"`
+	TotalDownloadTraffic int64  `json:"totalDownloadTraffic,omitempty" column:"total_download" gorm:"column:total_download"`
 }
 
 type NodeSpec struct {
@@ -241,6 +243,7 @@ type NodeReferences struct {
 type UserServiceSpec struct {
 	NodeUserReference map[string]NodeReferences `json:"nodeUserReference,omitempty"`
 	NodeCnt           uint                      `json:"nodecnt,omitempty"`
+	Status            bool                      `json:"status,omitempty"`
 }
 
 type UserService struct {
@@ -254,29 +257,32 @@ type UserServiceList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
 
-	Items []UserService `json:"spec,omitempty"`
+	Items []UserService `json:"items"`
 }
 
 //User is a mysql users map
 type UserInfo struct {
-	ID               int64     `json:"id,omitempty" column:"id"`
-	Passwd           string    `json:"passwd,omitempty" column:"passwd"`
-	Email            string    `json:"email,omitempty" column:"email"`
-	EnableOTA        int64     `json:"enableOTA,omitempty" column:"enable_ota"`
-	TrafficLimit     int64     `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"` //traffic for per user
-	UploadTraffic    int64     `json:"uploadTraffic,omitempty" column:"upload" gorm:"column:upload"`              //upload traffic for per user
-	DownloadTraffic  int64     `json:"downloadTraffic,omitempty" column:"download" gorm:"column:download"`        //download traffic for per user
-	Name             string    `json:"name,omitempty" column:"user_name" gorm:"column:user_name"`
-	ManagePasswd     string    `json:"managePasswd,omitempty" column:"manage_pass" gorm:"column:manage_pass"`
-	ExpireTime       time.Time `json:"expireTime,omitempty" column:"expire_time" gorm:"column:expire_time"`
-	EmailVerify      int16     `json:"emailVerify,omitempty" column:"is_email_verify" gorm:"column:is_email_verify"`
-	RegIPAddr        string    `json:"regIPAddr,omitempty" column:"reg_ip" gorm:"column:reg_ip"`
-	RegDBTime        time.Time `json:"regTime,omitempty" column:"reg_date" gorm:"column:reg_date"`
-	Description      string    `json:"description,omitempty" column:"description" gorm:"column:description"`
-	TrafficRate      float64   `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
-	IsAdmin          int64     `json:"isAdmin,omitempty" column:"is_admin" gorm:"column:is_admin"`
-	LastCheckInTime  time.Time `json:"-" column:"last_check_in_time" gorm:"column:last_check_in_time"`
-	LastResetPwdTime time.Time `json:"-" column:"last_reset_pass_time" gorm:"column:last_reset_pass_time"`
+	ID                   int64     `json:"id,omitempty" column:"id"`
+	Passwd               string    `json:"passwd,omitempty" column:"passwd"`
+	Email                string    `json:"email,omitempty" column:"email"`
+	EnableOTA            int64     `json:"enableOTA,omitempty" column:"enable_ota"`
+	TrafficLimit         int64     `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"` //traffic for per user
+	UploadTraffic        int64     `json:"uploadTraffic,omitempty" column:"upload" gorm:"column:upload"`              //upload traffic for per user
+	DownloadTraffic      int64     `json:"downloadTraffic,omitempty" column:"download" gorm:"column:download"`        //download traffic for per user
+	Name                 string    `json:"name,omitempty" column:"user_name" gorm:"column:user_name"`
+	ManagePasswd         string    `json:"managePasswd,omitempty" column:"manage_pass" gorm:"column:manage_pass"`
+	ExpireTime           time.Time `json:"expireTime,omitempty" column:"expire_time" gorm:"column:expire_time"`
+	EmailVerify          int16     `json:"emailVerify,omitempty" column:"is_email_verify" gorm:"column:is_email_verify"`
+	RegIPAddr            string    `json:"regIPAddr,omitempty" column:"reg_ip" gorm:"column:reg_ip"`
+	RegDBTime            time.Time `json:"regTime,omitempty" column:"reg_date" gorm:"column:reg_date"`
+	Description          string    `json:"description,omitempty" column:"description" gorm:"column:description"`
+	TrafficRate          float64   `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
+	IsAdmin              int64     `json:"isAdmin,omitempty" column:"is_admin" gorm:"column:is_admin"`
+	LastCheckInTime      time.Time `json:"-" column:"last_check_in_time" gorm:"column:last_check_in_time"`
+	LastResetPwdTime     time.Time `json:"-" column:"last_reset_pass_time" gorm:"column:last_reset_pass_time"`
+	TotalUploadTraffic   int64     `json:"totalUploadTraffic,omitempty" column:"total_upload" gorm:"column:total_upload"`
+	TotalDownloadTraffic int64     `json:"totalDownloadTraffic,omitempty" column:"total_download" gorm:"column:total_download"`
+	Status               int64     `json:"status,omitempty" column:"status" gorm:"column:status"`
 }
 
 type UserSpec struct {

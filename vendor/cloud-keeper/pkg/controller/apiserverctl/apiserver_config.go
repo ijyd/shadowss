@@ -18,9 +18,13 @@ const (
 	PrefixAPIServer = "/" + "APIServer"
 )
 
+func GetAPIServerName() (string, error) {
+	return network.ExternalMAC()
+}
+
 func AddLocalAPIServer(db *backend.Backend, helper *etcdhelper.EtcdHelper, localhost string, host []string, port int, ttl uint64, etcd bool, mysql bool) (runtime.Object, error) {
 
-	APIName, err := network.ExternalMAC()
+	APIName, err := GetAPIServerName()
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +79,7 @@ func AddAPIServer(db *backend.Backend, helper *etcdhelper.EtcdHelper, srv *api.A
 }
 
 func CheckLocalAPIServer(helper *etcdhelper.EtcdHelper) bool {
-	APIName, err := network.ExternalMAC()
+	APIName, err := GetAPIServerName()
 	if err != nil {
 		glog.Errorf("Got external mac error %v \r\n", err)
 		return false

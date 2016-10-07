@@ -41,11 +41,11 @@ func AddNodeToEtcdHelper(helper *etcdhelper.EtcdHelper, nodehelper *NodeHelper) 
 			Name:          nodehelper.Name,
 			Host:          nodehelper.Host,
 			Method:        "aes-256-cfb",
-			Status:        true,
+			Status:        1,
 			Location:      nodehelper.Location,
 			AccServerID:   nodehelper.AccsrvID,
 			AccServerName: nodehelper.AccsrvName,
-			EnableOTA:     true,
+			EnableOTA:     1,
 		},
 	}
 
@@ -108,6 +108,21 @@ func DelNode(db *backend.Backend, helper *etcdhelper.EtcdHelper, name string, et
 	return nil
 }
 
+//UpdateNodeLease update node leass
+func UpdateNodeAndLease(helper *etcdhelper.EtcdHelper, item *api.Node, ttl uint64) (runtime.Object, error) {
+
+	ctx := prototype.NewContext()
+	outItem := new(api.Node)
+	err := helper.StorageCodec.Storage.GuaranteedUpdate(ctx, PrefixNode+"/"+item.Name, outItem, false, nil, func(existing runtime.Object, res storage.ResponseMeta) (runtime.Object, *uint64, error) {
+		return item, &ttl, nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return nil, nil
+}
+
 func UpdateNode(db *backend.Backend, helper *etcdhelper.EtcdHelper, item *api.Node, etcd bool, mysql bool) (runtime.Object, error) {
 
 	if mysql {
@@ -141,24 +156,31 @@ func UpdateNodeAnotationsUserCnt(helper *etcdhelper.EtcdHelper, name string, del
 	newObj := oldObj.(*api.Node)
 	usercnt, ok := newObj.Annotations[NodeAnnotationUserCnt]
 
+	var count uint64
 	if ok {
 		if cnt, err := strconv.ParseInt(usercnt, 10, 32); err == nil {
 			if del {
-				cnt = cnt - 1
+				if cnt == 0 {
+					cnt = 0
+				} else {
+					cnt = cnt - 1
+				}
 			} else {
 				cnt = cnt + 1
 			}
-			usercnt = strconv.FormatUint(uint64(cnt), 10)
+			count = uint64(cnt)
 		} else {
 			return nil, err
 		}
 	} else {
 		if del {
-			usercnt = strconv.FormatUint(uint64(0), 10)
+			count = 0
 		} else {
-			usercnt = strconv.FormatUint(uint64(1), 10)
+			count = 1
 		}
 	}
+
+	usercnt = strconv.FormatUint(uint64(count), 10)
 
 	ctx := prototype.NewContext()
 	outItem := new(api.Node)

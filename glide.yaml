@@ -2,7 +2,7 @@ package: shadowsocks-go
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: d30fe95626e4ba59321788fc31d77d87b2cc8551
+  version: 9f1f76538328e8869ff951a86ebf832911e07f05
   subpackages:
   - pkg/api
   - pkg/api/install

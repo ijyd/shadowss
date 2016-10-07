@@ -1,9 +1,12 @@
 package etcdrest
 
 import (
+	"cloud-keeper/pkg/api"
 	apierr "cloud-keeper/pkg/api/errors"
 	. "cloud-keeper/pkg/api/vps/common"
-	"cloud-keeper/pkg/controller/nodectl"
+	"cloud-keeper/pkg/controller/userctl"
+	"cloud-keeper/pkg/pagination"
+
 	"gofreezer/pkg/runtime"
 
 	restful "github.com/emicklei/go-restful"
@@ -33,16 +36,30 @@ func GetBindingUsers(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	// page, err := api.PageParse(request)
-	// if err != nil {
-	// 	glog.Errorln("Unauth request ", err)
-	// 	newErr := apierr.NewBadRequestError("invalid pagination")
-	// 	output = EncodeError(newErr)
-	// 	statusCode = 400
-	// 	return
-	// }
+	page, err := api.PageParse(request)
+	if err != nil {
+		newErr := apierr.NewBadRequestError("invalid pagination")
+		output = EncodeError(newErr)
+		statusCode = 400
+		return
+	}
 
-	obj, err := nodectl.GetNodeAllUsers(EtcdStorage, name)
+	objlist, err := userctl.GetUserServicesByNodeName(EtcdStorage, name)
+	if err != nil {
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+		return
+	}
+
+	obj, err := userlistPage(objlist, page)
+	if err != nil {
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+		return
+	}
+
 
 	output, err = runtime.Encode(EtcdStorage.StorageCodec.Codecs, obj)
 	if err != nil {
@@ -52,7 +69,32 @@ func GetBindingUsers(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	// baseLink := request.SelectedRoutePath()
-	// api.SetPageLink(baseLink, response, page)
+	baseLink := request.SelectedRoutePath()
+	api.SetPageLink(baseLink, response, page)
 	return
+}
+
+func userlistPage(list *api.UserServiceList, page pagination.Pager) (*api.UserServiceList, error) {
+
+	listLen := len(list.Items)
+
+	pageList := list
+
+	var notPage bool
+	if page == nil {
+		notPage = true
+	} else {
+		notPage = page.Empty()
+	}
+
+	if !notPage {
+		hasPage, perPage, skip := api.PagerToCondition(page, uint64(listLen))
+		glog.V(5).Infof("Got page has %v  perpage %v skip %v\r\n", hasPage, perPage, skip)
+		if hasPage {
+			pageList.Items = list.Items[skip:perPage]
+		}
+	}
+
+	return pageList, nil
+
 }

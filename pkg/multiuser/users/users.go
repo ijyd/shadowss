@@ -131,7 +131,7 @@ func (u *Users) AddObj(obj runtime.Object) {
 		glog.V(5).Infof("delete node user %v\r\n", nodeUser)
 		u.DelUsers(nodeUser)
 	case api.NodeUserPhaseUpdate:
-		glog.V(5).Infof("update node user not need implement %v", nodeUser)
+		glog.V(5).Infof("update node user not need implement %v", *nodeUser)
 	default:
 		glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
 	}

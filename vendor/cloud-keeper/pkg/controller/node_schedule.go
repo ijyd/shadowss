@@ -68,9 +68,9 @@ func (ns *NodeSchedule) UpdateNodeEvent(node *api.Node) {
 }
 
 func (ns *NodeSchedule) DelNodeEvent(node *api.Node) {
-	err := nodectl.DelNode(ns.be, nil, node.Name, false, true)
+	err := ns.UpdateNodeStatus(node,false)
 	if err != nil {
-		glog.Errorf("delete %+v error %v\r\n", node, err)
+		glog.Errorf("delete event... disable node %+v error %v\r\n", node, err)
 	}
 }
 
@@ -234,8 +234,45 @@ func (ns *NodeSchedule) findNodeByUserProperties(userName string, properties map
 	return info
 }
 
+
+func (ns *NodeSchedule) GetNodeByName(name string) (*api.NodeServer,error) {
+	nodeSrv, err:=ns.be.GetNodeByName(name)
+	if err!=nil {
+		return nil,err
+	}
+
+	return nodeSrv,nil
+}
+
+
 func (ns *NodeSchedule) UpdateNodeTraffic(node *api.Node) error {
-	err := ns.be.UpdateNodeTraffic(node.Spec.Server.ID, node.Spec.Server.Upload, node.Spec.Server.Download)
+	nodeSrv,err:=ns.GetNodeByName(node.Name)
+	if err!=nil {
+		glog.Errorf("update node traffic err %v\r\n", err)
+		return err
+	}
+
+	upload := nodeSrv.Upload + node.Spec.Server.Upload
+	download := nodeSrv.Download + node.Spec.Server.Download
+	totalUpload := nodeSrv.TotalUploadTraffic + node.Spec.Server.Upload
+	totalDownload := nodeSrv.TotalDownloadTraffic + node.Spec.Server.Download
+	err = ns.be.UpdateNodeTraffic(nodeSrv.ID, totalUpload, totalDownload ,upload, download)
+	if err != nil {
+		glog.Errorf("delete %+v error %v\r\n", node, err)
+		return err
+	}
+
+	return nil
+}
+
+func (ns *NodeSchedule) UpdateNodeStatus(node *api.Node, status bool) error {
+	nodeSrv,err:=ns.GetNodeByName(node.Name)
+	if err!=nil {
+		glog.Errorf("update node traffic err %v\r\n", err)
+		return err
+	}
+
+	err = ns.be.UpdateNodeStatus(nodeSrv.ID, status)
 	if err != nil {
 		glog.Errorf("delete %+v error %v\r\n", node, err)
 		return err

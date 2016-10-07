@@ -14,7 +14,7 @@ import (
 
 var nodeFileds = []string{"id", "name", "enableota",
 	"server", "method", "status", "traffic_rate", "description",
-	"traffic_limit", "upload", "download", "location", "vps_server_id", "vps_server_name"}
+	"traffic_limit", "upload", "download", "location", "vps_server_id", "vps_server_name", "total_upload", "total_download"}
 
 func GetNodesByUserID(handle storage.Interface, uid int64) ([]api.NodeServer, error) {
 
@@ -124,16 +124,42 @@ func DeleteNode(handle storage.Interface, name string) error {
 	return err
 }
 
-func UpdateNodeTraffic(handle storage.Interface, userID int64, upload, download int64) error {
+func UpdateNodeTraffic(handle storage.Interface, userID int64, totalUpload, totalDownload, upload, download int64) error {
 
 	node := &api.NodeServer{
-		ID:       userID,
-		Upload:   upload,
-		Download: download,
+		ID:                   userID,
+		Upload:               upload,
+		Download:             download,
+		TotalUploadTraffic:   totalUpload,
+		TotalDownloadTraffic: totalDownload,
 	}
 
 	conditionFields := string("id")
-	updateFields := []string{"upload", "download"}
+	updateFields := []string{"upload", "download", "total_upload", "total_download"}
+
+	ctx := createContextWithValue(nodeTableName)
+	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, node)
+	return err
+}
+
+func UpdateNodeStatus(handle storage.Interface, nodeID int64, status bool) error {
+
+	var statusInt int64
+	if status {
+		statusInt = 1
+	} else {
+		statusInt = 0
+	}
+
+	node := &api.NodeServer{
+		ID:     nodeID,
+		Status: statusInt,
+	}
+
+	conditionFields := string("id")
+	updateFields := []string{"status"}
+
+	glog.V(5).Infof("update node status %v\r\n", node)
 
 	ctx := createContextWithValue(nodeTableName)
 	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, node)

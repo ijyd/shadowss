@@ -9,7 +9,17 @@ import (
 )
 
 func (ns *NodeSchedule) UpdateUserTraffic(userRefer api.UserReferences) error {
-	return ns.be.UpdateUserTraffic(userRefer.ID, userRefer.UploadTraffic, userRefer.DownloadTraffic)
+	userInfo, err := ns.be.GetUserByName(userRefer.Name)
+	if err != nil {
+
+	}
+
+	upload := userInfo.UploadTraffic + userRefer.UploadTraffic
+	download := userInfo.DownloadTraffic + userRefer.DownloadTraffic
+	totalUpload := userInfo.TotalUploadTraffic + userRefer.UploadTraffic
+	totalDownload := userInfo.TotalDownloadTraffic + userRefer.DownloadTraffic
+
+	return ns.be.UpdateUserTraffic(userRefer.ID, totalUpload, totalDownload, upload, download)
 }
 
 func (ns *NodeSchedule) DelUserService(name string) error {

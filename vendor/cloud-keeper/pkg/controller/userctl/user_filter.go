@@ -22,7 +22,7 @@ func NewUserNodeFilter(nodeName string) *UserNodeFilter {
 func (e UserNodeFilter) Filter(obj runtime.Object) bool {
 	kind := obj.GetObjectKind()
 
-	if "UserService" == kind.GroupVersionKind().Kind {
+	if "UserService" != kind.GroupVersionKind().Kind {
 		glog.V(5).Infof("ignore  user in a node\r\n")
 		return false
 	}

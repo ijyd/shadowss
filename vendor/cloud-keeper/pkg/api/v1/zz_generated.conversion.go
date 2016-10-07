@@ -211,6 +211,7 @@ func autoConvert_api_APIServerSpec_To_v1_APIServerSpec(in *api.APIServerSpec, ou
 func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, out *api.UserServiceSpec, s conversion.Scope) error {
 
 	out.NodeCnt = in.NodeCnt
+	out.Status= in.Status
 	if in.NodeUserReference != nil {
 		out.NodeUserReference = make(map[string]api.NodeReferences)
 		for k, v := range in.NodeUserReference {
@@ -232,6 +233,7 @@ func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, 
 
 func autoConvert_api_UserServiceSpec_To_v1_UserServiceSpec(in *api.UserServiceSpec, out *UserServiceSpec, s conversion.Scope) error {
 	out.NodeCnt = in.NodeCnt
+	out.Status= in.Status
 	if in.NodeUserReference != nil {
 		out.NodeUserReference = make(map[string]NodeReferences)
 		for k, v := range in.NodeUserReference {
@@ -270,6 +272,8 @@ func autoConvert_v1_NodeSpec_To_api_NodeSpec(in *NodeSpec, out *api.NodeSpec, s 
 		Upload:        in.Server.Upload,
 		Download:      in.Server.Download,
 		TrafficRate:   in.Server.TrafficRate,
+		TotalUploadTraffic:in.Server.TotalUploadTraffic,
+		TotalDownloadTraffic:in.Server.TotalDownloadTraffic,
 	}
 
 	return nil
@@ -293,6 +297,8 @@ func autoConvert_api_NodeSpec_To_v1_NodeSpec(in *api.NodeSpec, out *NodeSpec, s 
 		Upload:        in.Server.Upload,
 		Download:      in.Server.Download,
 		TrafficRate:   in.Server.TrafficRate,
+		TotalUploadTraffic:in.Server.TotalUploadTraffic,
+		TotalDownloadTraffic:in.Server.TotalDownloadTraffic,
 	}
 
 	return nil

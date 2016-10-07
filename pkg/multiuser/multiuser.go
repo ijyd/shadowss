@@ -8,6 +8,7 @@ import (
 	"shadowsocks-go/pkg/multiuser/apiserverproxy"
 	"shadowsocks-go/pkg/multiuser/users"
 	"shadowsocks-go/pkg/proxyserver"
+	"strconv"
 	"time"
 
 	"github.com/golang/glog"
@@ -23,7 +24,9 @@ import (
 )
 
 const (
-	NodeDefaultTTL = 0 //upstream not support lease interface for etcd v3 keep it alwasy 0
+	//NodeDefaultTTL = 200
+
+	NodeDefaultTTL = 1800
 )
 
 type MultiUser struct {
@@ -211,20 +214,37 @@ func (mu *MultiUser) KeepHealth() {
 	node := nodeObj
 	glog.V(5).Infof("Add node %+v err %v\r\n", *node, err)
 
-	expireTime := time.Duration(1800)
+	expireTime := time.Duration(mu.ttl - 100)
 
+	loopcnt := 0
 	for {
 		select {
 		case <-time.After(time.Second * expireTime):
+			obj, err = nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
+			if err != nil {
+				glog.Errorf("get node error:%v\r\n", err)
+				obj, err = nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
+				if err != nil {
+					glog.Errorf("add node error %v\r\n", err)
+					return
+				}
+			}
+			nodeObj := obj.(*api.Node)
+			node := nodeObj
+
 			upload, download, err := mu.CollectorAndUpdateUserTraffic()
 			if err == nil {
-				node.Spec.Server.Upload += upload
-				node.Spec.Server.Download += download
-				nodectl.UpdateNode(nil, mu.etcdHandle, node, true, false)
-				glog.V(5).Infof("refresh node %+v\r\n", *node)
+				node.Spec.Server.Upload = upload
+				node.Spec.Server.Download = download
 			} else {
 				glog.Warningf("collector user traffic error %v\r\n", err)
 			}
+
+			loopcnt++
+			//it a bug, must update some field to keep node ttl?
+			node.Annotations["Refresh"] = strconv.FormatInt(int64(loopcnt), 10)
+			nodectl.UpdateNodeAndLease(mu.etcdHandle, node, mu.ttl)
+			glog.V(5).Infof("refresh node %+v\r\n", *node)
 		}
 	}
 }
@@ -268,8 +288,8 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 		if err != nil {
 			glog.Errorf("update node user %+v err %v \r\n", nodeUser, err)
 		} else {
-			upload += nodeUser.Spec.User.UploadTraffic
-			download += nodeUser.Spec.User.DownloadTraffic
+			upload = nodeUser.Spec.User.UploadTraffic
+			download = nodeUser.Spec.User.DownloadTraffic
 		}
 	}
 
@@ -277,7 +297,7 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 }
 
 const (
-	nodeUserLease = 600
+	nodeUserLease = 10
 )
 
 //UpdateNodeUserFromNode this is support only for node call

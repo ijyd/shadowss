@@ -24,18 +24,20 @@ func init() {
 
 func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr map[string]string) error {
 
-	var hostpath, sshkeypath, playbook, attrpath string
+	var hostpath, sshkeypath, playbook, attrpath, keypem string
 	switch typ {
 	case api.OperatorVultr:
 		hostpath = absdir + ansibleVulHostFile
 		sshkeypath = absdir + ansibleVulSSHKeyFile
 		playbook = absdir + ansibleVulDeploySSPlayBook
 		attrpath = absdir + ansibleVulAttrFile
+		keypem = absdir + ansibleVulPrivateKey
 	case api.OperatorDigitalOcean:
 		hostpath = absdir + ansibleDGOCHostFile
 		sshkeypath = absdir + ansibleDGOCSSHKeyFile
 		attrpath = absdir + ansibleDGOCAttrFile
 		playbook = absdir + ansibleDGOCDeploySSPlayBook
+		keypem = absdir + ansibleDGOCPrivateKey
 	}
 
 	err := WriteSSAttrFile(attrpath, attr)
@@ -44,7 +46,7 @@ func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr ma
 		return err
 	}
 
-	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath)
+	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath, keypem)
 
 	execCom := exec.New()
 	cmd := execCom.Command("ansible-playbook", "-i", hostpath, playbook)
@@ -59,19 +61,21 @@ func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr ma
 
 func RestartShadowss(typ api.OperatorType, hosts []string, sshkey string) error {
 
-	var hostpath, sshkeypath, playbook string
+	var hostpath, sshkeypath, playbook, keypem string
 	switch typ {
 	case api.OperatorVultr:
 		hostpath = absdir + ansibleVulHostFile
 		sshkeypath = absdir + ansibleVulSSHKeyFile
 		playbook = absdir + ansibleVulRestartSSPlayBook
+		keypem = absdir + ansibleVulPrivateKey
 	case api.OperatorDigitalOcean:
 		hostpath = absdir + ansibleDGOCHostFile
 		sshkeypath = absdir + ansibleDGOCSSHKeyFile
 		playbook = absdir + ansibleDGOCRestartSSPlayBook
+		keypem = absdir + ansibleDGOCPrivateKey
 	}
 
-	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath)
+	WriteDeplossConfigFile(hosts, privateKey, hostpath, sshkeypath, keypem)
 
 	execCom := exec.New()
 	cmd := execCom.Command("ansible-playbook", "-i", hostpath, playbook, "--tags", "restartSS")

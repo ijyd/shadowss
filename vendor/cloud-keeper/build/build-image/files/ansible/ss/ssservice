@@ -11,13 +11,22 @@ SS_PATH="/home/shadowsocks-node"
 
 EXEC="$SS_PATH/shadowss"
 PROG="shadowss"
+etcd_server_url=$(cat $SS_PATH/etcd_server_url)
 
-DAEMON_OPTS='--alsologtostderr="true" \
-                --config-file="./server-multi-port.json" \
+if [ ! -z "$etcd_server_url" ]
+then
+    DAEMON_OPTS="--alsologtostderr=\"true\" \
+                --config-file=\"./server-multi-port.json\" \
                 -v=6 \
                 --enable-udp-relay \
-                --storage-backend="etcd3" \
-                --etcd-servers="http://47.89.189.237:2379"'
+                --storage-backend=\"etcd3\" \
+                --etcd-servers=\"$etcd_server_url\""
+else
+    DAEMON_OPTS="--alsologtostderr=\"true\" \
+                --config-file=\"./server-multi-port.json\" \
+                -v=6 \
+                --enable-udp-relay"
+fi
 
 [ -e /etc/sysconfig/$PROG ] && . /etc/sysconfig/$PROG
 

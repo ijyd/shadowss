@@ -12,7 +12,7 @@ import (
 /*out logic: 1. add user to node in nodeUserLease. 2. use phase to check what operators for obj*/
 /*this will be  prevent many key in our etcd*/
 const (
-	nodeUserLease = 600
+	nodeUserLease = 10
 )
 
 func (ns *NodeSchedule) NewNodeUserEvent(user *api.NodeUser) {
@@ -78,17 +78,15 @@ func (ns *NodeSchedule) SyncUserServiceToNodeUser(node api.Node) {
 		return
 	}
 
-	node2User := make(map[string]api.UserReferences)
-
 	for _, user := range userlist.Items {
 		nodeRefer, ok := user.Spec.NodeUserReference[nodeName]
 		if ok {
+			node2User := make(map[string]api.UserReferences)
 			node2User[nodeName] = nodeRefer.User
+			err = ns.BindUserToNode(node2User)
+			if err != nil {
+				glog.Warningf("sync user to node %v failure %v", nodeName, err)
+			}
 		}
-	}
-
-	err = ns.BindUserToNode(node2User)
-	if err != nil {
-		glog.Warningf("sync user to node %v failure %v", nodeName, err)
 	}
 }

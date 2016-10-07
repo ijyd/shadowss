@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/golang/glog"
 )
@@ -48,12 +49,35 @@ func init() {
 func InitAPIServer(srv []api.APIServerSpec) {
 
 	glog.V(5).Infof("got a  api server %v \r\n", srv)
+
+	secure := &http.Transport{
+		TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
+		DisableCompression: true,
+		DisableKeepAlives:  true,
+	}
+
+	insecure := &http.Transport{
+		DisableKeepAlives:  true,
+		DisableCompression: true,
+	}
+
+	timeout := 10 * time.Second
+	secureClient := &http.Client{
+		Transport: secure,
+		Timeout:   timeout,
+	}
+	insecureClient := &http.Client{
+		Timeout:   timeout,
+		Transport: insecure,
+	}
+
 	for _, spec := range srv {
 		port := spec.Server.Port
 		for _, host := range spec.HostList {
 			requestInsecureURL := fmt.Sprintf("http://%s:%d", host, spec.Server.Port)
 			requestSecureURL := fmt.Sprintf("https://%s:%d", host, spec.Server.Port)
-			resp, err := http.Get(requestInsecureURL)
+
+			resp, err := insecureClient.Get(requestInsecureURL)
 			if err == nil {
 				api := APIServerPair{
 					Host: host,
@@ -64,13 +88,7 @@ func InitAPIServer(srv []api.APIServerSpec) {
 				defer resp.Body.Close()
 			}
 
-			tr := &http.Transport{
-				TLSClientConfig:    &tls.Config{InsecureSkipVerify: true},
-				DisableCompression: true,
-			}
-			client := &http.Client{Transport: tr}
-
-			resp, err = client.Get(requestSecureURL)
+			resp, err = secureClient.Get(requestSecureURL)
 			if err == nil {
 				api := APIServerPair{
 					Host: host,

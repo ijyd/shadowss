@@ -38,6 +38,6 @@ func (u *Backend) UpdateUserPort(userID int64, port int64) error {
 	return db.UpdateUserPort(u.StorageHandler, userID, port)
 }
 
-func (u *Backend) UpdateUserTraffic(userID int64, upload, download int64) error {
-	return db.UpdateUserTraffic(u.StorageHandler, userID, upload, download)
+func (u *Backend) UpdateUserTraffic(userID int64, totalUpload, totalDownload, upload, download int64) error {
+	return db.UpdateUserTraffic(u.StorageHandler, userID, totalUpload, totalDownload, upload, download)
 }
