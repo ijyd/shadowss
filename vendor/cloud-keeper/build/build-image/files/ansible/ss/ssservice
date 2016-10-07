@@ -1,0 +1,109 @@
+#!/bin/sh
+#Author goral.cao
+# shadowss daemon
+
+# chkconfig:   2345 90 10
+#The above indicates that the script should be started in levels 2, 3, 4, and 5, #that its start priority should be 10, and that its stop priority should be 90. 
+# description:  Redis is a persistent key-value database
+. /etc/rc.d/init.d/functions
+
+SS_PATH="/home/shadowsocks-node"
+
+EXEC="$SS_PATH/shadowss"
+PROG="shadowss"
+etcd_server_url=$(cat $SS_PATH/etcd_server_url)
+
+if [ ! -z "$etcd_server_url" ]
+then
+    DAEMON_OPTS="--alsologtostderr=\"true\" \
+                --config-file=\"./server-multi-port.json\" \
+                -v=6 \
+                --enable-udp-relay \
+                --storage-backend=\"etcd3\" \
+                --etcd-servers=\"$etcd_server_url\""
+else
+    DAEMON_OPTS="--alsologtostderr=\"true\" \
+                --config-file=\"./server-multi-port.json\" \
+                -v=6 \
+                --enable-udp-relay"
+fi
+
+[ -e /etc/sysconfig/$PROG ] && . /etc/sysconfig/$PROG
+
+lockfile=/var/lock/subsys/$PROG
+
+start() {
+    [ -x $EXEC ] || exit 5
+    echo -n $"Starting $PROG: "
+    daemon $EXEC "$DAEMON_OPTS" &
+    # if not running, start it up here, usually something like "daemon $exec"
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && touch $lockfile
+    return $retval
+}
+
+stop() {
+    echo -n $"Stopping $PROG: "
+    # stop it here, often "killproc $PROG"
+    killproc $PROG -TERM
+    retval=$?
+    echo
+    [ $retval -eq 0 ] && rm -f $lockfile
+    return $retval
+}
+
+restart() {
+    stop
+    start
+}
+
+reload() {
+    restart
+}
+
+force_reload() {
+    restart
+}
+
+rh_status() {
+    # run checks to determine if the service is running or use generic status
+    status $PROG
+}
+
+rh_status_q() {
+    rh_status >/dev/null 2>&1
+}
+
+
+case "$1" in
+    start)
+        rh_status_q && exit 0
+        $1
+        ;;
+    stop)
+        rh_status_q || exit 0
+        $1
+        ;;
+    restart)
+        $1
+        ;;
+    reload)
+        rh_status_q || exit 7
+        $1
+        ;;
+    force-reload)
+        force_reload
+        ;;
+    status)
+        rh_status
+        ;;
+    condrestart|try-restart)
+        rh_status_q || exit 0
+        restart
+        ;;
+    *)
+        echo $"Usage: $0 {start|stop|status|restart|condrestart|try-restart|reload|force-reload}"
+        exit 2
+esac
+exit $?

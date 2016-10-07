@@ -1,0 +1,7 @@
+do_token: 21c0ddbe1c1a15569bf81abe7f0ad1b9e316bd8b53fdf8b679a0b84395a72a22
+image_id: centos-7-x64
+ssh_key_ids: 3351031
+region: sgp1
+size_id: 512mb
+name: oc1
+timeout: 500

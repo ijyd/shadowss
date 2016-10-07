@@ -2,7 +2,7 @@ package: shadowss
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: 9f1f76538328e8869ff951a86ebf832911e07f05
+  version: 3e1380009d7217025a048d28429e65864eec6cc9
   subpackages:
   - pkg/api/install
   - pkg/controller/apiserverctl
@@ -10,41 +10,32 @@ import:
   - pkg/etcdhelper
   - pkg/watcher
 
+- package: gofreezer
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
+  subpackages:
+  - pkg/api/prototype
+  - pkg/genericstoragecodec/options
+  - pkg/api/unversioned
+  - pkg/runtime
+
 - package: golib
-  repo: ssh://git@192.168.60.116:10022/cloud/golib.git
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
   version: da3c398c67cf66dd01601d4e6c6b8520c7e9022c
   subpackages:
   - pkg/util/flag
   - pkg/util/network
-
-- package: gofreezer
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
-  subpackages:
-  - pkg/api
-  - pkg/genericstoragecodec/options
-  - pkg/storage
-  - pkg/watch
-  - pkg/runtime
 
 - package: github.com/codahale/chacha20
 - package: github.com/coreos/go-semver
   version: ^0.2.0
   subpackages:
   - semver
-- package: github.com/emicklei/go-restful
-  version: ^1.2.0
-  subpackages:
-  - swagger
-- package: github.com/go-sql-driver/mysql
-  version: ^1.2.0
 - package: github.com/godbus/dbus
   version: ^4.0.0
 - package: github.com/golang/glog
 - package: github.com/golang/groupcache
   subpackages:
   - lru
-- package: github.com/jinzhu/gorm
-  version: ^1.0.0
 - package: github.com/spf13/pflag
 - package: golang.org/x/crypto
   subpackages:

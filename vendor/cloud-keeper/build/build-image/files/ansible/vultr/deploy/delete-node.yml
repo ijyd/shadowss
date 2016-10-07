@@ -1,0 +1,18 @@
+- connection: local
+  gather_facts: false
+  hosts: localhost
+
+  vars_files: 
+  - var.yml 
+
+  tasks:
+  - name: Provision Vultr servers
+    register: created_servers
+    vultr: {
+      api_key: '{{ api_key }}', 
+      command: server,
+      SUBID: '{{ SUBID }}', 
+      state: absent, 
+      label: '{{ name }}'
+      unique_label: true
+    }
