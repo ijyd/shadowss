@@ -4,7 +4,7 @@ import (
 	"net"
 	"time"
 
-	"shadowsocks-go/pkg/connection/tcp/ssclient"
+	"shadowss/pkg/connection/tcp/ssclient"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"

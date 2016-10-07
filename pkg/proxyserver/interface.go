@@ -1,7 +1,7 @@
 package proxyserver
 
 import (
-	"shadowsocks-go/pkg/config"
+	"shadowss/pkg/config"
 )
 
 //ProxyServer implement a proxy server interface

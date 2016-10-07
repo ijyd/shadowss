@@ -1,10 +1,10 @@
 package factory
 
 import (
-	"shadowsocks-go/pkg/storage/mysql"
+	"shadowss/pkg/storage/mysql"
 
-	"shadowsocks-go/pkg/storage"
-	"shadowsocks-go/pkg/storage/storagebackend"
+	"shadowss/pkg/storage"
+	"shadowss/pkg/storage/storagebackend"
 
 	_ "github.com/go-sql-driver/mysql"
 	dbmysql "github.com/jinzhu/gorm"

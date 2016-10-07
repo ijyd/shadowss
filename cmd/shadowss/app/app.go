@@ -3,9 +3,9 @@ package app
 import (
 	"runtime"
 
-	"shadowsocks-go/cmd/shadowss/app/options"
-	"shadowsocks-go/pkg/multiuser"
-	"shadowsocks-go/pkg/proxyserver"
+	"shadowss/cmd/shadowss/app/options"
+	"shadowss/pkg/multiuser"
+	"shadowss/pkg/proxyserver"
 
 	"github.com/golang/glog"
 )

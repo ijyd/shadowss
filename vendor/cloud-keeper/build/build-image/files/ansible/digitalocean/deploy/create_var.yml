@@ -1,7 +1,0 @@
-do_token: 21c0ddbe1c1a15569bf81abe7f0ad1b9e316bd8b53fdf8b679a0b84395a72a22
-image_id: centos-6-5-x64
-ssh_key_ids: 3351031
-region: nyc3
-size_id: 512mb
-name: droplet-1
-timeout: 500

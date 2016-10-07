@@ -3,8 +3,8 @@ package shadowssapi
 import (
 	"crypto/rand"
 	"fmt"
-	"shadowsocks-go/pkg/backend/db"
-	cacheutil "shadowsocks-go/pkg/util/cache"
+	"shadowss/pkg/backend/db"
+	cacheutil "shadowss/pkg/util/cache"
 	"strings"
 
 	"github.com/golang/glog"

@@ -3,10 +3,10 @@ package backend
 import (
 	"fmt"
 
-	"shadowsocks-go/pkg/backend/db"
-	"shadowsocks-go/pkg/proxyserver"
-	"shadowsocks-go/pkg/storage"
-	"shadowsocks-go/pkg/storage/storagebackend"
+	"shadowss/pkg/backend/db"
+	"shadowss/pkg/proxyserver"
+	"shadowss/pkg/storage"
+	"shadowss/pkg/storage/storagebackend"
 
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"shadowsocks-go/pkg/crypto/algorithm"
-	cryptoutil "shadowsocks-go/pkg/util/crypto"
+	"shadowss/pkg/crypto/algorithm"
+	cryptoutil "shadowss/pkg/util/crypto"
 )
 
 //Crypto use for crypto wrap

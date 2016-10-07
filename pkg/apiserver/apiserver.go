@@ -3,8 +3,8 @@ package apiserver
 import (
 	"fmt"
 	"net/http"
-	"shadowsocks-go/pkg/api/shadowssapi"
-	"shadowsocks-go/pkg/backend"
+	"shadowss/pkg/api/shadowssapi"
+	"shadowss/pkg/backend"
 
 	"github.com/emicklei/go-restful"
 )

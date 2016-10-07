@@ -4,7 +4,7 @@ import (
 	"net"
 	"sync"
 
-	"shadowsocks-go/pkg/crypto"
+	"shadowss/pkg/crypto"
 
 	"github.com/golang/glog"
 )

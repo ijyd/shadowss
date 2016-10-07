@@ -9,8 +9,8 @@ import (
 	"runtime/debug"
 	"syscall"
 
-	"shadowsocks-go/cmd/shadowss/app"
-	"shadowsocks-go/cmd/shadowss/app/options"
+	"shadowss/cmd/shadowss/app"
+	"shadowss/cmd/shadowss/app/options"
 
 	"github.com/spf13/pflag"
 )

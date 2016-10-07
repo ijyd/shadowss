@@ -1,9 +1,9 @@
 package db
 
 import (
-	"shadowsocks-go/pkg/storage"
-	"shadowsocks-go/pkg/storage/storagebackend"
-	"shadowsocks-go/pkg/storage/storagebackend/factory"
+	"shadowss/pkg/storage"
+	"shadowss/pkg/storage/storagebackend"
+	"shadowss/pkg/storage/storagebackend/factory"
 
 	"golang.org/x/net/context"
 )

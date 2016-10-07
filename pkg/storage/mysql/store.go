@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"shadowsocks-go/pkg/storage"
+	"shadowss/pkg/storage"
 
 	"github.com/golang/glog"
 	dbmysql "github.com/jinzhu/gorm"

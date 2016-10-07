@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"golib/pkg/util/network"
 	"io/ioutil"
-	"shadowsocks-go/pkg/multiuser/apiserverproxy"
-	"shadowsocks-go/pkg/multiuser/users"
-	"shadowsocks-go/pkg/proxyserver"
+	"shadowss/pkg/multiuser/apiserverproxy"
+	"shadowss/pkg/multiuser/users"
+	"shadowss/pkg/proxyserver"
 	"strconv"
 	"time"
 
@@ -232,7 +232,7 @@ func (mu *MultiUser) KeepHealth() {
 			nodeObj := obj.(*api.Node)
 			node := nodeObj
 
-			upload, download, err := mu.CollectorAndUpdateUserTraffic()
+			upload, download, usercnt, err := mu.CollectorAndUpdateUserTraffic()
 			if err == nil {
 				node.Spec.Server.Upload = upload
 				node.Spec.Server.Download = download
@@ -243,17 +243,21 @@ func (mu *MultiUser) KeepHealth() {
 			loopcnt++
 			//it a bug, must update some field to keep node ttl?
 			node.Annotations["Refresh"] = strconv.FormatInt(int64(loopcnt), 10)
+			node.Annotations["userCount"] = strconv.FormatInt(usercnt, 10)
 			nodectl.UpdateNodeAndLease(mu.etcdHandle, node, mu.ttl)
 			glog.V(5).Infof("refresh node %+v\r\n", *node)
 		}
 	}
 }
 
-func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
+func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error) {
 
 	userList := mu.userHandle.GetUsers()
 
-	var upload, download int64
+	var upload, download, usercnt int64
+
+	usercnt = int64(len(userList))
+
 	for _, userConfig := range userList {
 		if userConfig.Name == string("") {
 			continue
@@ -293,7 +297,7 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, error) {
 		}
 	}
 
-	return upload, download, nil
+	return upload, download, usercnt, nil
 }
 
 const (
@@ -329,9 +333,9 @@ func RefreshUser(user *api.NodeUser, del bool) {
 		}
 	}
 
-	_, err := nodectl.UpdateNodeAnotationsUserCnt(schedule.etcdHandle, user.Spec.NodeName, del)
-	if err != nil {
-		glog.Errorf("update node anotation err %v \r\n", err)
-	}
+	// _, err := nodectl.UpdateNodeAnotationsUserCnt(schedule.etcdHandle, user.Spec.NodeName, del)
+	// if err != nil {
+	// 	glog.Errorf("update node anotation err %v \r\n", err)
+	// }
 
 }

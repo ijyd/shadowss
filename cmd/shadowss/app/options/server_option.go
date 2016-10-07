@@ -1,7 +1,7 @@
 package options
 
 import (
-	"shadowsocks-go/pkg/config"
+	"shadowss/pkg/config"
 
 	storageoptions "gofreezer/pkg/genericstoragecodec/options"
 

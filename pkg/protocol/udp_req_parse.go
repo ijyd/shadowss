@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"shadowsocks-go/pkg/util"
+	"shadowss/pkg/util"
 
 	"github.com/golang/glog"
 )

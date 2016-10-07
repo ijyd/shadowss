@@ -7,10 +7,10 @@ import (
 	"io"
 	"net"
 
-	"shadowsocks-go/pkg/crypto"
-	"shadowsocks-go/pkg/protocol"
-	"shadowsocks-go/pkg/util"
-	bytesPool "shadowsocks-go/pkg/util/pool/bytes"
+	"shadowss/pkg/crypto"
+	"shadowss/pkg/protocol"
+	"shadowss/pkg/util"
+	bytesPool "shadowss/pkg/util/pool/bytes"
 
 	"github.com/golang/glog"
 )

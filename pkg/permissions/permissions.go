@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"shadowsocks-go/pkg/util/crypto"
-	"shadowsocks-go/pkg/util/dmidecode"
-	"shadowsocks-go/pkg/util/license"
-	"shadowsocks-go/pkg/util/network"
+	"shadowss/pkg/util/crypto"
+	"shadowss/pkg/util/dmidecode"
+	"shadowss/pkg/util/license"
+	"shadowss/pkg/util/network"
 
 	"github.com/golang/glog"
 )

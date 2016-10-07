@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"shadowsocks-go/pkg/api"
-	apierr "shadowsocks-go/pkg/api/errors"
+	"shadowss/pkg/api"
+	apierr "shadowss/pkg/api/errors"
 
 	restful "github.com/emicklei/go-restful"
 

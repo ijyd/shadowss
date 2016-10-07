@@ -2,9 +2,9 @@ package proxyserver
 
 import (
 	"fmt"
-	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/connection/tcp"
-	"shadowsocks-go/pkg/connection/udp"
+	"shadowss/pkg/config"
+	"shadowss/pkg/connection/tcp"
+	"shadowss/pkg/connection/udp"
 
 	"github.com/golang/glog"
 )
@@ -145,7 +145,7 @@ func (srv *Servers) Start() {
 	}
 }
 
-//Start create new server for user
+
 func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
 	var users []config.ConnectionInfo
 	for _, handler := range srv.tcpSrvMap {

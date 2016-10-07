@@ -2,8 +2,8 @@ package db
 
 import (
 	"fmt"
-	"shadowsocks-go/pkg/storage"
-	"shadowsocks-go/pkg/util/network"
+	"shadowss/pkg/storage"
+	"shadowss/pkg/util/network"
 
 	"github.com/golang/glog"
 )

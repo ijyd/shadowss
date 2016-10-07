@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net"
 
-	"shadowsocks-go/pkg/util"
+	"shadowss/pkg/util"
 
 	"github.com/golang/glog"
 )

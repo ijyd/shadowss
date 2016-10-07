@@ -4,8 +4,8 @@ import (
 	"cloud-keeper/pkg/api"
 	"gofreezer/pkg/runtime"
 	"math/rand"
-	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/proxyserver"
+	"shadowss/pkg/config"
+	"shadowss/pkg/proxyserver"
 	"time"
 
 	"github.com/golang/glog"

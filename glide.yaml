@@ -1,29 +1,30 @@
-package: shadowsocks-go
+package: shadowss
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   version: 9f1f76538328e8869ff951a86ebf832911e07f05
   subpackages:
-  - pkg/api
   - pkg/api/install
+  - pkg/controller/apiserverctl
+  - pkg/controller/nodectl
   - pkg/etcdhelper
-
-- package: gofreezer
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
-  version: ae3b36de2ca25aec79fc2331da6fa1771b526c26
-  subpackages:
-    - pkg/api
-    - pkg/genericstoragecodec/options
-    - pkg/storage
-    - pkg/watch
+  - pkg/watcher
 
 - package: golib
   repo: ssh://git@192.168.60.116:10022/cloud/golib.git
   version: da3c398c67cf66dd01601d4e6c6b8520c7e9022c
   subpackages:
-    - pkg/util/flag
-    - pkg/util/timewrap
+  - pkg/util/flag
+  - pkg/util/network
 
+- package: gofreezer
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
+  subpackages:
+  - pkg/api
+  - pkg/genericstoragecodec/options
+  - pkg/storage
+  - pkg/watch
+  - pkg/runtime
 
 - package: github.com/codahale/chacha20
 - package: github.com/coreos/go-semver
@@ -45,7 +46,6 @@ import:
 - package: github.com/jinzhu/gorm
   version: ^1.0.0
 - package: github.com/spf13/pflag
-
 - package: golang.org/x/crypto
   subpackages:
   - blowfish
@@ -54,7 +54,6 @@ import:
 - package: golang.org/x/net
   subpackages:
   - context
-
 
 - package: k8s.io/kubernetes
   version: ^1.5.0-alpha.0

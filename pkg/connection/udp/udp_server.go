@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"time"
 
-	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/crypto"
+	"shadowss/pkg/config"
+	"shadowss/pkg/crypto"
 
 	"github.com/golang/glog"
 )

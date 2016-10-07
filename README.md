@@ -1,8 +1,8 @@
-# shadowsocks-go
+# shadowss
 
-[![Build Status](https://travis-ci.org/bjjyd/shadowsocks-go.svg?branch=master)](https://travis-ci.org/bjjyd/shadowsocks-go/)
+[![Build Status](https://travis-ci.org/bjjyd/shadowss.svg?branch=master)](https://travis-ci.org/bjjyd/shadowss/)
 
-shadowsocks-go is a lightweight tunnel proxy which can help you get through firewalls. It is a port of [shadowsocks](https://github.com/clowwindy/shadowsocks).
+shadowss is a lightweight tunnel proxy which can help you get through firewalls. It is a port of [shadowsocks](https://github.com/clowwindy/shadowsocks).
 
 The protocol is compatible with the origin shadowsocks (if both have been upgraded to the latest version).
 
@@ -11,13 +11,13 @@ The protocol is compatible with the origin shadowsocks (if both have been upgrad
 You can also install from source (assume you have go installed):
 
 ```
-git clone  https://github.com/bjjyd/shadowsocks-go
-cd shadowsocks-go/cmd/shadowss/server/
+git clone  https://github.com/bjjyd/shadowss
+cd shadowss/cmd/shadowss/server/
 go build -a  -o shadowss
 ./shadowss --alsologtostderr=true --config-file="/etc/server-multi-port.json" &
 ```
 
-It's recommended to disable cgo when compiling shadowsocks-go. This will prevent the go runtime from creating too many threads for dns lookup.
+It's recommended to disable cgo when compiling shadowss. This will prevent the go runtime from creating too many threads for dns lookup.
 
 # Usage
 
@@ -50,7 +50,7 @@ Configuration file is in json format like this:
 
 ## About encryption methods
 
-AES is recommended for shadowsocks-go. [Intel AES Instruction Set](http://en.wikipedia.org/wiki/AES_instruction_set) will be used if available and can make encryption/decryption very fast. To be more specific, **`aes-128-cfb` is recommended as it is faster and [secure enough](https://www.schneier.com/blog/archives/2009/07/another_new_aes.html)**.
+AES is recommended for shadowss. [Intel AES Instruction Set](http://en.wikipedia.org/wiki/AES_instruction_set) will be used if available and can make encryption/decryption very fast. To be more specific, **`aes-128-cfb` is recommended as it is faster and [secure enough](https://www.schneier.com/blog/archives/2009/07/another_new_aes.html)**.
 
 **rc4 and table encryption methods are deprecated because they are not secure.**
 

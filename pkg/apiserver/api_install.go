@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"shadowsocks-go/pkg/api"
-	apierr "shadowsocks-go/pkg/api/errors"
-	"shadowsocks-go/pkg/api/shadowssapi"
+	"shadowss/pkg/api"
+	apierr "shadowss/pkg/api/errors"
+	"shadowss/pkg/api/shadowssapi"
 
 	"github.com/emicklei/go-restful"
 	"github.com/emicklei/go-restful/swagger"

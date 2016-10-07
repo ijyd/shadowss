@@ -8,11 +8,11 @@ import (
 	"syscall"
 	"time"
 
-	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/multiuser/apiserverproxy"
+	"shadowss/pkg/config"
+	"shadowss/pkg/multiuser/apiserverproxy"
 
-	"shadowsocks-go/pkg/connection/tcp/ssclient"
-	"shadowsocks-go/pkg/crypto"
+	"shadowss/pkg/connection/tcp/ssclient"
+	"shadowss/pkg/crypto"
 
 	"github.com/golang/glog"
 	"golang.org/x/net/context"

@@ -1,5 +1,5 @@
 package shadowssapi
 
-import "shadowsocks-go/pkg/backend"
+import "shadowss/pkg/backend"
 
 var Storage *backend.Backend

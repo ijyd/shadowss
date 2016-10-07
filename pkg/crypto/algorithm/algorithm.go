@@ -3,13 +3,13 @@ package algorithm
 import (
 	"fmt"
 
-	"shadowsocks-go/pkg/crypto/algorithm/aes"
-	"shadowsocks-go/pkg/crypto/algorithm/blowfish"
-	"shadowsocks-go/pkg/crypto/algorithm/cast5"
-	"shadowsocks-go/pkg/crypto/algorithm/chacha20"
-	"shadowsocks-go/pkg/crypto/algorithm/des"
-	"shadowsocks-go/pkg/crypto/algorithm/rc4md5"
-	"shadowsocks-go/pkg/crypto/algorithm/salsa20"
+	"shadowss/pkg/crypto/algorithm/aes"
+	"shadowss/pkg/crypto/algorithm/blowfish"
+	"shadowss/pkg/crypto/algorithm/cast5"
+	"shadowss/pkg/crypto/algorithm/chacha20"
+	"shadowss/pkg/crypto/algorithm/des"
+	"shadowss/pkg/crypto/algorithm/rc4md5"
+	"shadowss/pkg/crypto/algorithm/salsa20"
 )
 
 const (

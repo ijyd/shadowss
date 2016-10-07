@@ -1,6 +1,6 @@
 package backend
 
-import "shadowsocks-go/pkg/backend/db"
+import "shadowss/pkg/backend/db"
 
 func (u *Backend) GetAPIServer() ([]db.APIServers, error) {
 	return db.GetApiServers(u.StorageHandler)

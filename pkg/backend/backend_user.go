@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"shadowsocks-go/pkg/backend/db"
-	"shadowsocks-go/pkg/config"
-	"shadowsocks-go/pkg/proxyserver"
+	"shadowss/pkg/backend/db"
+	"shadowss/pkg/config"
+	"shadowss/pkg/proxyserver"
 
 	"github.com/golang/glog"
 )

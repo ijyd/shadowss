@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"strconv"
 
-	"shadowsocks-go/pkg/api"
-	apierr "shadowsocks-go/pkg/api/errors"
-	"shadowsocks-go/pkg/backend/db"
+	"shadowss/pkg/api"
+	apierr "shadowss/pkg/api/errors"
+	"shadowss/pkg/backend/db"
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/golang/glog"

@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"shadowsocks-go/pkg/crypto"
-	"shadowsocks-go/pkg/protocol"
-	"shadowsocks-go/pkg/util"
+	"shadowss/pkg/crypto"
+	"shadowss/pkg/protocol"
+	"shadowss/pkg/util"
 
 	"github.com/golang/glog"
 )

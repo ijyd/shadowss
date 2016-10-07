@@ -3,8 +3,8 @@ package factory
 // Create creates a storage backend based on given config.
 import (
 	"fmt"
-	"shadowsocks-go/pkg/storage"
-	"shadowsocks-go/pkg/storage/storagebackend"
+	"shadowss/pkg/storage"
+	"shadowss/pkg/storage/storagebackend"
 )
 
 //Create a storage interface
