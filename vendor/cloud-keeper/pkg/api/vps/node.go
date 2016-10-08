@@ -73,6 +73,24 @@ func getNodes(page pagination.Pager) ([]byte, int) {
 					},
 				},
 			}
+
+			obj, err := nodectl.GetNode(EtcdStorage, v.Name)
+			if err != nil {
+				glog.Errorf("got node %v object error %v \r\n", v.Name, err)
+			} else {
+				nodeObj := obj.(*api.Node)
+				item.Labels = make(map[string]string)
+				for k, v := range nodeObj.Labels {
+					item.Labels[k] = v
+				}
+
+				item.Annotations = make(map[string]string)
+				for k, v := range nodeObj.Annotations {
+					item.Annotations[k] = v
+				}
+
+			}
+
 			items = append(items, item)
 		}
 

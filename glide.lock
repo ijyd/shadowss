@@ -1,8 +1,8 @@
-hash: ed6f5fb64dabb67354e6c56a52f6101969661baaa9c2b781a57c5ee8bfc6884b
-updated: 2016-10-07T16:31:30.023352106+08:00
+hash: c8df46d3e320f32ded128ca8d1aa5c75ae5675f07206b5a539fffca5d8e91476
+updated: 2016-10-08T13:37:32.063067167+08:00
 imports:
 - name: cloud-keeper
-  version: 3e1380009d7217025a048d28429e65864eec6cc9
+  version: adb0ab20a3fb00f43abd76b348a1e004775b9019
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
@@ -50,7 +50,7 @@ imports:
   - httputil
   - timeutil
 - name: github.com/emicklei/go-restful
-  version: 777bb3f19bcafe2575ffb2a3e46af92509ae9594
+  version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
   - log
   - swagger

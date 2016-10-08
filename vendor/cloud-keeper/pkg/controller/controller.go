@@ -31,8 +31,10 @@ func getNodeUserLock(username string, val string) (string, bool) {
 	result, ok := nodeUserLockCache.Get(username)
 	if !ok {
 		nodeUserLockCache.Add(username, val, 10*time.Minute)
+	} else {
+		//covert result to value
+		value = result.(string)
 	}
-	value = result.(string)
 
 	return value, ok
 }

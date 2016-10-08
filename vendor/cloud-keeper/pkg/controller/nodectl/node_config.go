@@ -20,7 +20,9 @@ const (
 )
 
 const (
-	NodeAnnotationUserCnt = "userCount"
+	NodeAnnotationUserCnt    = "userCount"
+	NodeAnnotationRefreshCnt = "Refresh"
+	NodeAnnotationVersion    = "version"
 )
 
 type NodeHelper struct {
