@@ -7,16 +7,17 @@ import (
 
 	"github.com/golang/glog"
 
-	utildbus "k8s.io/kubernetes/pkg/util/dbus"
-	utilexec "k8s.io/kubernetes/pkg/util/exec"
-	utiliptables "k8s.io/kubernetes/pkg/util/iptables"
+	utildbus "shadowss/pkg/util/dbus"
+	utilexec "shadowss/pkg/util/exec"
+	utiliptables "shadowss/pkg/util/iptables"
 )
 
 var IptablesHandler utiliptables.Interface
 
 const (
-	jumpAccept = "ACCEPT"
-	jumpDrop   = "DROP"
+	jumpAccept       = "ACCEPT"
+	jumpDrop         = "DROP"
+	publicAllowChain = "IN_public_allow"
 )
 
 func init() {
@@ -36,13 +37,15 @@ func OpenLocalPort(port int, protocol string) error {
 		"-m", "comment", "--comment", fmt.Sprintf(`"%s hostport %d"`, "shadowss", port),
 		"-m", protocol, "-p", protocol,
 		"--dport", fmt.Sprintf("%d", port),
+		"-m", "conntrack", "--ctstate", "NEW",
 		"-j", string(jumpAccept),
 	}
 	writeLine(portRules, args...)
 
 	natLines := portRules.Bytes()
-	glog.V(3).Infof("Restoring iptables rules: %s", natLines)
-	ok, err := IptablesHandler.EnsureRule(utiliptables.Append, utiliptables.TableFilter, utiliptables.ChainInput, args...)
+	glog.V(3).Infof("ensure iptables rules: %s", natLines)
+
+	ok, err := IptablesHandler.EnsureRule(utiliptables.Append, utiliptables.TableFilter, utiliptables.Chain(publicAllowChain), args...)
 	if err != nil {
 		return fmt.Errorf("Failed to execute iptables: %v", err)
 	}
@@ -58,13 +61,14 @@ func TurnoffLocalPort(port int, protocol string) error {
 		"-m", "comment", "--comment", fmt.Sprintf(`"%s hostport %d"`, "shadowss", port),
 		"-m", protocol, "-p", protocol,
 		"--dport", fmt.Sprintf("%d", port),
+		"-m", "conntrack", "--ctstate", "NEW",
 		"-j", string(jumpAccept)}
 
 	writeLine(portRules, args...)
 
 	natLines := portRules.Bytes()
 	glog.V(3).Infof("Ensure iptables rules: %s", natLines)
-	err := IptablesHandler.DeleteRule(utiliptables.TableFilter, utiliptables.ChainInput, args...)
+	err := IptablesHandler.DeleteRule(utiliptables.TableFilter, utiliptables.Chain(publicAllowChain), args...)
 	if err != nil {
 		return fmt.Errorf("Failed to execute iptables : %v", err)
 	}

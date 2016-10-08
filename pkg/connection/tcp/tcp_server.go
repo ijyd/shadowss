@@ -142,7 +142,8 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 
 //Run start a tcp listen for user
 func (tcpSrv *TCPServer) Run() {
-	port := tcpSrv.Config.Port
+	//allways realloc port for user
+	port := 0
 
 	portStr := strconv.Itoa(port)
 	ln, err := net.Listen("tcp", ":"+portStr)

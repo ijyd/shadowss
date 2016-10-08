@@ -24,12 +24,15 @@ import (
 	"strings"
 	"sync"
 
+	utildbus "shadowss/pkg/util/dbus"
+
+	utilexec "shadowss/pkg/util/exec"
+
+	"shadowss/pkg/util/sets"
+
 	"github.com/coreos/go-semver/semver"
 	godbus "github.com/godbus/dbus"
 	"github.com/golang/glog"
-	utildbus "k8s.io/kubernetes/pkg/util/dbus"
-	utilexec "k8s.io/kubernetes/pkg/util/exec"
-	"k8s.io/kubernetes/pkg/util/sets"
 )
 
 type RulePosition string

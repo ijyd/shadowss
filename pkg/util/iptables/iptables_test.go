@@ -21,9 +21,9 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/kubernetes/pkg/util/dbus"
-	"k8s.io/kubernetes/pkg/util/exec"
-	"k8s.io/kubernetes/pkg/util/sets"
+	"shadowss/pkg/util/dbus"
+	"shadowss/pkg/util/exec"
+	"shadowss/pkg/util/sets"
 )
 
 func getIptablesCommand(protocol Protocol) string {

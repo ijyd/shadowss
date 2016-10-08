@@ -14,5 +14,5 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package iptables provides an interface and implementations for running iptables commands.
-package iptables // import "shadowss/pkg/util/iptables"
+// Package exec provides an injectable interface and implementations for running commands.
+package exec // import "shadowss/pkg/util/exec"
