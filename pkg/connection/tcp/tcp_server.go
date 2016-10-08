@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	"shadowss/pkg/access"
 	"shadowss/pkg/config"
 	"shadowss/pkg/multiuser/apiserverproxy"
 
@@ -159,7 +160,14 @@ func (tcpSrv *TCPServer) Run() {
 	defer func() {
 		cancel()
 		ln.Close()
+		access.TurnoffLocalPort(tcpSrv.Config.Port, string("tcp"))
 	}()
+
+	//open port
+	err = access.OpenLocalPort(tcpSrv.Config.Port, string("tcp"))
+	if err != nil {
+		glog.Warningf("open port(%d) on local host firewall error %v", tcpSrv.Config.Port, err)
+	}
 
 	var wg sync.WaitGroup
 	type accepted struct {
@@ -169,7 +177,7 @@ func (tcpSrv *TCPServer) Run() {
 	for {
 		c := make(chan accepted, 1)
 		go func() {
-			glog.V(5).Infof("wait for accept on %v\r\n", port)
+			glog.V(5).Infof("wait for accept on %v\r\n", tcpSrv.Config.Port)
 			var conn net.Conn
 			conn, err = ln.Accept()
 			c <- accepted{conn: conn, err: err}

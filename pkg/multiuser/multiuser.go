@@ -8,6 +8,7 @@ import (
 	"shadowss/pkg/multiuser/apiserverproxy"
 	"shadowss/pkg/multiuser/users"
 	"shadowss/pkg/proxyserver"
+	"shadowss/pkg/util"
 	"strconv"
 	"time"
 
@@ -175,14 +176,18 @@ func (mu *MultiUser) BuildNodeHelper(ttl uint64) *nodectl.NodeHelper {
 	vpsLocation, _ := mu.nodeAttr[api.NodeLablesVPSLocation]
 
 	nodeHelper := &nodectl.NodeHelper{
-		TTL:         ttl,
-		Name:        mu.nodeName,
-		Host:        vpsIP,
-		Location:    vpsLocation,
-		AccsrvID:    int64(0),
-		AccsrvName:  vpsName,
-		Annotations: map[string]string{nodectl.NodeAnnotationUserCnt: "0"},
-		Labels:      mu.nodeAttr,
+		TTL:        ttl,
+		Name:       mu.nodeName,
+		Host:       vpsIP,
+		Location:   vpsLocation,
+		AccsrvID:   int64(0),
+		AccsrvName: vpsName,
+		Annotations: map[string]string{
+			nodectl.NodeAnnotationUserCnt:    "0",
+			nodectl.NodeAnnotationVersion:    util.PrintVersion(),
+			nodectl.NodeAnnotationRefreshCnt: "0",
+		},
+		Labels: mu.nodeAttr,
 	}
 
 	return nodeHelper
@@ -242,8 +247,9 @@ func (mu *MultiUser) KeepHealth() {
 
 			loopcnt++
 			//it a bug, must update some field to keep node ttl?
-			node.Annotations["Refresh"] = strconv.FormatInt(int64(loopcnt), 10)
-			node.Annotations["userCount"] = strconv.FormatInt(usercnt, 10)
+			node.Annotations[nodectl.NodeAnnotationRefreshCnt] = strconv.FormatInt(int64(loopcnt), 10)
+			node.Annotations[nodectl.NodeAnnotationUserCnt] = strconv.FormatInt(usercnt, 10)
+			node.Spec.Server.Status = 1
 			nodectl.UpdateNodeAndLease(mu.etcdHandle, node, mu.ttl)
 			glog.V(5).Infof("refresh node %+v\r\n", *node)
 		}

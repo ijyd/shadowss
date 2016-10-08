@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"shadowss/pkg/access"
 	"shadowss/pkg/crypto"
 	"shadowss/pkg/protocol"
 	"shadowss/pkg/util"
@@ -266,6 +267,16 @@ func (pxy *Proxy) handleRequest(recv receive) {
 func (pxy *Proxy) RunProxy() {
 
 	pxy.wg.Add(1)
+
+	defer func() {
+		access.TurnoffLocalPort(pxy.port, string("udp"))
+	}()
+
+	//open port
+	err := access.OpenLocalPort(pxy.port, string("udp"))
+	if err != nil {
+		glog.Warningf("open port(%d) on local host firewall error %v", pxy.port, err)
+	}
 
 	for {
 		recvChan := make(chan receive, 1)

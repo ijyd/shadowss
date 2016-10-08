@@ -5,6 +5,7 @@ import (
 	"shadowss/pkg/config"
 	"shadowss/pkg/connection/tcp"
 	"shadowss/pkg/connection/udp"
+	"time"
 
 	"github.com/golang/glog"
 )
@@ -128,6 +129,12 @@ func (srv *Servers) StartWithConfig(v *config.ConnectionInfo) {
 	tcpSrv := tcp.NewTCPServer(v)
 	go tcpSrv.Run()
 
+	//we need to ensure tcp and udp on same port
+	time.Sleep(1 * time.Second)
+	port := tcpSrv.GetListenPort()
+	//fix config for udp
+	v.Port = port
+
 	var udpSrv ProxyServer
 	if srv.enableUDP {
 		udpSrv = udp.NewUDPServer(v)
@@ -144,7 +151,6 @@ func (srv *Servers) Start() {
 		srv.StartWithConfig(config)
 	}
 }
-
 
 func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
 	var users []config.ConnectionInfo
