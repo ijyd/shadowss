@@ -16,10 +16,7 @@
 
     - name: Copy shadowss
       copy: src=../../ss/shadowss dest=/home/shadowsocks-node/shadowss owner=root group=root mode=0755
-
-    - name: Copy server-multi-port.json
-      copy: src=../../ss/server-multi-port.json dest=/server-multi-port.json owner=root group=root mode=0755
-    
+  
     - name: Copy startvps.sh
       copy: src=../../ss/startvps.sh dest=/home/shadowsocks-node/startvps.sh  owner=root group=root mode=0755
 

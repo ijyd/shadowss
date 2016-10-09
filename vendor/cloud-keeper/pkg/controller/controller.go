@@ -16,10 +16,6 @@ import (
 )
 
 const (
-	perNodeUserLimit = 30
-)
-
-const (
 	maxNodeUserLockCacheSize int = 128
 )
 

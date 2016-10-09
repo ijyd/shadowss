@@ -16,14 +16,12 @@ etcd_server_url=$(cat $SS_PATH/etcd_server_url)
 if [ ! -z "$etcd_server_url" ]
 then
     DAEMON_OPTS="--alsologtostderr=\"true\" \
-                --config-file=\"./server-multi-port.json\" \
                 -v=6 \
                 --enable-udp-relay \
                 --storage-backend=\"etcd3\" \
                 --etcd-servers=\"$etcd_server_url\""
 else
     DAEMON_OPTS="--alsologtostderr=\"true\" \
-                --config-file=\"./server-multi-port.json\" \
                 -v=6 \
                 --enable-udp-relay"
 fi

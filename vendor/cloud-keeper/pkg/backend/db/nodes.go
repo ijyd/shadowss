@@ -132,10 +132,11 @@ func UpdateNodeTraffic(handle storage.Interface, userID int64, totalUpload, tota
 		Download:             download,
 		TotalUploadTraffic:   totalUpload,
 		TotalDownloadTraffic: totalDownload,
+		Status:               1, //Update traffic  purport active node
 	}
 
 	conditionFields := string("id")
-	updateFields := []string{"upload", "download", "total_upload", "total_download"}
+	updateFields := []string{"upload", "download", "total_upload", "total_download", "status"}
 
 	ctx := createContextWithValue(nodeTableName)
 	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, node)

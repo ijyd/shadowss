@@ -52,6 +52,14 @@ func GetBindingUsers(request *restful.Request, response *restful.Response) {
 		return
 	}
 
+	for k, user := range objlist.Items {
+		nodeRefer, ok := user.Spec.NodeUserReference[name]
+		if ok {
+			nodeUserRefer := map[string]api.NodeReferences{name: nodeRefer}
+			objlist.Items[k].Spec.NodeUserReference = nodeUserRefer
+		}
+	}
+
 	obj, err := userlistPage(objlist, page)
 	if err != nil {
 		newErr := apierr.NewInternalError(err.Error())
@@ -59,7 +67,6 @@ func GetBindingUsers(request *restful.Request, response *restful.Response) {
 		statusCode = 500
 		return
 	}
-
 
 	output, err = runtime.Encode(EtcdStorage.StorageCodec.Codecs, obj)
 	if err != nil {

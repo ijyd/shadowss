@@ -1,28 +1,129 @@
 package controller
 
 import (
+	"fmt"
+	"strconv"
+	"sync"
+
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/backend"
 	"cloud-keeper/pkg/controller/nodectl"
 	"cloud-keeper/pkg/etcdhelper"
-	"fmt"
+
 	"gofreezer/pkg/api/prototype"
 	"gofreezer/pkg/storage"
 	"gofreezer/pkg/watch"
-	"strconv"
 
 	"github.com/golang/glog"
 )
 
+type dynamicNodeInfo struct {
+	name      string
+	host      string
+	isp       string
+	userSpace string
+}
+
 type NodeSchedule struct {
-	helper *etcdhelper.EtcdHelper
-	be     *backend.Backend
+	helper             *etcdhelper.EtcdHelper
+	be                 *backend.Backend
+	availableNode      map[string]dynamicNodeInfo
+	availableNodeMutex sync.RWMutex
 }
 
 func NewNodeSchedule(helper *etcdhelper.EtcdHelper, be *backend.Backend) *NodeSchedule {
 	return &NodeSchedule{
-		helper: helper,
-		be:     be,
+		helper:        helper,
+		be:            be,
+		availableNode: make(map[string]dynamicNodeInfo),
+	}
+}
+
+//retrieveNode retrieve available Node  when system startup
+func (ns *NodeSchedule) retrieveNode() {
+	objList, err := nodectl.GetAllNodes(ns.helper)
+	if err != nil {
+		glog.Fatalf("get all node failure %v\r\n", err)
+	}
+
+	nodeList := objList.(*api.NodeList)
+
+	for _, v := range nodeList.Items {
+		ns.checkAvailableNode(v)
+	}
+}
+
+//getAvailableNodeAPINode retrieve available API Node
+func (ns *NodeSchedule) getAvailableNodeAPINode(limit int) []dynamicNodeInfo {
+	var info []dynamicNodeInfo
+	var loop int
+	ns.availableNodeMutex.RLock()
+	for _, val := range ns.availableNode {
+		if limit < loop && val.userSpace == api.NodeUserSpaceAPI {
+			loop++
+			glog.V(5).Infof("got availableNode %+v \r\n", val)
+			info = append(info, val)
+		}
+	}
+	ns.availableNodeMutex.RUnlock()
+
+	return info
+}
+
+//getAvailableNodeByISP retrieve available Node  with isp info
+func (ns *NodeSchedule) getAvailableNodeByISP(userSpace string, isp string, limit int) []dynamicNodeInfo {
+	var info []dynamicNodeInfo
+	var loop int
+	ns.availableNodeMutex.RLock()
+	for _, val := range ns.availableNode {
+		if limit < loop && val.userSpace == userSpace && val.isp == isp {
+			loop++
+			glog.V(5).Infof("got availableNode %+v \r\n", val)
+			info = append(info, val)
+		}
+	}
+	ns.availableNodeMutex.RUnlock()
+
+	return info
+}
+
+//checkAvailableNode check available Node  when have node event
+func (ns *NodeSchedule) checkAvailableNode(node api.Node) {
+
+	nodeName := node.Name
+	cnt, ok := node.Annotations[nodectl.NodeAnnotationUserCnt]
+
+	if node.Spec.Server.Status != 1 {
+		goto delNode
+	}
+
+	//check user number on this node
+	if ok {
+		if cnt, err := strconv.ParseUint(cnt, 10, 32); err == nil && cnt < 80 {
+			nodeInfo := dynamicNodeInfo{
+				name:      node.Name,
+				host:      node.Spec.Server.Host,
+				isp:       node.Labels[api.NodeLablesChinaISP],
+				userSpace: node.Labels[api.NodeLablesUserSpace],
+			}
+			ns.availableNodeMutex.Lock()
+			ns.availableNode[nodeInfo.name] = nodeInfo
+			ns.availableNodeMutex.Unlock()
+		} else {
+			goto delNode
+		}
+	} else {
+		goto delNode
+	}
+
+delNode:
+	ns.availableNodeMutex.RLock()
+	_, ok = ns.availableNode[nodeName]
+	ns.availableNodeMutex.RUnlock()
+	if ok {
+		ns.availableNodeMutex.Lock()
+		delete(ns.availableNode, nodeName)
+		ns.availableNodeMutex.Unlock()
 	}
 }
 
@@ -50,6 +151,7 @@ func (ns *NodeSchedule) NewNodeEvent(node *api.Node) {
 			return
 		}
 	}
+	ns.checkAvailableNode(*node)
 
 	go ns.SyncUserServiceToNodeUser(*node)
 }
@@ -62,6 +164,7 @@ func (ns *NodeSchedule) UpdateNodeEvent(node *api.Node) {
 	if err != nil {
 		glog.Errorf("update node traffic error %v\r\n", err)
 	}
+	ns.checkAvailableNode(*node)
 
 }
 
@@ -70,11 +173,7 @@ func (ns *NodeSchedule) DelNodeEvent(node *api.Node) {
 	if err != nil {
 		glog.Errorf("delete event... disable node %+v error %v\r\n", node, err)
 	}
-}
-
-type dynamicNodeInfo struct {
-	name string
-	host string
+	ns.checkAvailableNode(*node)
 }
 
 func (ns *NodeSchedule) configureDynamicNode(info []dynamicNodeInfo, userInfo api.UserInfo) error {
@@ -167,76 +266,79 @@ func (ns *NodeSchedule) AllocNodeByUserProperties(name string, properties map[st
 
 func (ns *NodeSchedule) findAPINode(userName string) []dynamicNodeInfo {
 
-	var info []dynamicNodeInfo
+	nodeLimit := 5
+	return ns.getAvailableNodeAPINode(nodeLimit)
 
-	objList, err := nodectl.GetAllNodes(ns.helper)
-	if err != nil {
-		glog.Errorf("get all node failure %v\r\n", err)
-		return nil
-	}
-
-	nodeList := objList.(*api.NodeList)
-	glog.V(5).Infof("check all node %v \r\n", nodeList)
-
-	for _, v := range nodeList.Items {
-		userSpace, ok := v.Labels[api.NodeLablesUserSpace]
-		if ok && userSpace == api.NodeUserSpaceAPI {
-			node := dynamicNodeInfo{
-				name: v.Name,
-				host: v.Spec.Server.Host,
-			}
-			info = append(info, node)
-		}
-	}
-
-	return info
+	// var info []dynamicNodeInfo
+	// objList, err := nodectl.GetAllNodes(ns.helper)
+	// if err != nil {
+	// 	glog.Errorf("get all node failure %v\r\n", err)
+	// 	return nil
+	// }
+	//
+	// nodeList := objList.(*api.NodeList)
+	// glog.V(5).Infof("check all node %v \r\n", nodeList)
+	//
+	// for _, v := range nodeList.Items {
+	// 	userSpace, ok := v.Labels[api.NodeLablesUserSpace]
+	// 	if ok && userSpace == api.NodeUserSpaceAPI {
+	// 		node := dynamicNodeInfo{
+	// 			name: v.Name,
+	// 			host: v.Spec.Server.Host,
+	// 		}
+	// 		info = append(info, node)
+	// 	}
+	// }
+	//
+	// return info
 }
 
 func (ns *NodeSchedule) findNodeByUserProperties(userName string, properties map[string]string) []dynamicNodeInfo {
 
-	var info []dynamicNodeInfo
-
-	objList, err := nodectl.GetAllNodes(ns.helper)
-	if err != nil {
-		glog.Errorf("get all node failure %v\r\n", err)
-		return nil
-	}
-
-	nodeList := objList.(*api.NodeList)
 	userISP, _ := properties[api.NodeLablesChinaISP]
 	userSpace, _ := properties[api.NodeLablesUserSpace]
+	nodeLimit := 4
 
-	glog.V(5).Infof("check user isp(%v) with node %v \r\n", userISP)
+	glog.V(5).Infof("check user space(%v) isp(%v) with node\r\n", userSpace, userISP)
 
-	availableNodeCnt := 0
+	return ns.getAvailableNodeByISP(userSpace, userISP, nodeLimit)
 
-	for _, v := range nodeList.Items {
-		if availableNodeCnt > 4 {
-			//have enough node
-			break
-		}
-		//check this node is default node
-		nodeUserSpace, ok := v.Labels[api.NodeLablesUserSpace]
-		if ok && userSpace == nodeUserSpace {
-			//check user number on this node
-			cnt, ok := v.Annotations[nodectl.NodeAnnotationUserCnt]
-			if ok {
-				if cnt, err := strconv.ParseUint(cnt, 10, 32); err == nil && cnt < 80 {
-					cnISP, ok := v.Labels[api.NodeLablesChinaISP]
-					if ok && cnISP == userISP {
-						node := dynamicNodeInfo{
-							name: v.Name,
-							host: v.Spec.Server.Host,
-						}
-						availableNodeCnt++
-						info = append(info, node)
-					}
-				}
-			}
-		}
-	}
+	// var info []dynamicNodeInfo
+	//
+	// objList, err := nodectl.GetAllNodes(ns.helper)
+	// if err != nil {
+	// 	glog.Errorf("get all node failure %v\r\n", err)
+	// 	return nil
+	// }
+	//
+	// nodeList := objList.(*api.NodeList)
+	//availableNodeCnt := 0
 
-	return info
+	// for _, v := range nodeList.Items {
+	// 	if availableNodeCnt > 4 {
+	// 		//have enough node
+	// 		break
+	// 	}
+	// 	//check this node is default node
+	// 	nodeUserSpace, ok := v.Labels[api.NodeLablesUserSpace]
+	// 	if ok && userSpace == nodeUserSpace {
+	// 		//check user number on this node
+	// 		cnt, ok := v.Annotations[nodectl.NodeAnnotationUserCnt]
+	// 		if ok {
+	// 			if cnt, err := strconv.ParseUint(cnt, 10, 32); err == nil && cnt < 80 {
+	// 				cnISP, ok := v.Labels[api.NodeLablesChinaISP]
+	// 				if ok && cnISP == userISP {
+	// 					node := dynamicNodeInfo{
+	// 						name: v.Name,
+	// 						host: v.Spec.Server.Host,
+	// 					}
+	// 					availableNodeCnt++
+	// 					info = append(info, node)
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 
 func (ns *NodeSchedule) GetActiveNodeByName(name string) (*api.Node, error) {
