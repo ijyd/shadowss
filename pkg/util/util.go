@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-const version = "2.1.3-alpha"
+const version = "2.1.3-beta"
 
 func PrintVersion() string {
 
