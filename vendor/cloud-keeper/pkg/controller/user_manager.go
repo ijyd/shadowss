@@ -1,21 +1,184 @@
 package controller
 
 import (
+	"fmt"
+	"time"
+
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/controller/userctl"
-	"fmt"
+	"cloud-keeper/pkg/pagination"
 
 	"github.com/golang/glog"
 )
 
+const (
+	BillDay  = 1
+	BillHour = 0
+)
+
+func (ns *NodeSchedule) cleanUserTraffic(users []api.UserInfo) {
+	glog.V(5).Infof("clean user traffic %v\r\n", users)
+	for _, user := range users {
+		obj, err := userctl.GetUserService(ns.helper, user.Name)
+		if err != nil {
+			glog.Errorf("get user service error %v\r\n", err)
+			continue
+		}
+		userSrv := obj.(*api.UserService)
+		if userSrv.Spec.NodeUserReference == nil {
+			continue
+		}
+
+		upload := int64(0)
+		download := int64(0)
+		totalUpload := user.TotalUploadTraffic
+		totalDownload := user.TotalDownloadTraffic
+
+		err = ns.be.UpdateUserTraffic(user.ID, totalUpload, totalDownload, upload, download)
+		if err != nil {
+			glog.Errorf("clean user traffic error %v\r\n", err)
+		}
+
+		if user.Status != 1 {
+			err = userctl.UpdateUserServiceStatus(ns.helper, user.Name, true)
+			if err != nil {
+				glog.Errorf("update user service status to available status error %v \r\b", err)
+			}
+
+			err = ns.be.UpdateUserStatus(user.ID, true)
+			if err != nil {
+				glog.Errorf("update user status to available status error %v", err)
+			}
+
+			nodeRefer := make(map[string]api.UserReferences)
+			for k, v := range userSrv.Spec.NodeUserReference {
+				nodeRefer[k] = v.User
+			}
+			err = ns.BindUserToNode(nodeRefer)
+			if err != nil {
+				glog.Errorf("resume user bind  node error %v\r\n", err)
+			}
+		}
+
+	}
+}
+
+func (ns *NodeSchedule) resumeUser() {
+	reqPage := uint64(1)
+	perPage := uint64(10)
+	lastPage := uint64(1)
+
+	pageParam := fmt.Sprintf("page=%v,perPage=%v", reqPage, perPage)
+
+	glog.V(5).Infof("resume user start %v...\r\n", pageParam)
+	pager, err := pagination.ParsePaginaton(pageParam)
+	if err != nil {
+		glog.Errorf("pagination error %v \r\n", err)
+		return
+	}
+
+	user, err := ns.be.GetUserList(pager)
+	if err != nil {
+		glog.Errorf("got user list failure %v \r\n", err)
+		return
+	}
+
+	if !pager.Empty() {
+		has, last, _ := pager.LastPage()
+		if has {
+			lastPage = last
+		}
+	}
+
+	//clean first page
+	ns.cleanUserTraffic(user)
+	if lastPage == 1 {
+		return
+	}
+
+	for index := uint64(2); index <= lastPage; index++ {
+		pageParam = fmt.Sprintf("page=%v,perPage=%v", index, perPage)
+		pager, err = pagination.ParsePaginaton(pageParam)
+		if err != nil {
+			glog.Errorf("pagination error %v \r\n", err)
+			continue
+		}
+
+		user, err := ns.be.GetUserList(pager)
+		if err != nil {
+			glog.Errorf("got user list failure %v \r\n", err)
+			continue
+		}
+		ns.cleanUserTraffic(user)
+	}
+
+}
+
+//resumeUserEachMonth clean user traffic and reconfig user node
+func resumeUserEachMonth(ns *NodeSchedule) {
+	year := time.Now().Year()
+	month := time.Now().Year()
+
+	var billYear, billMonth int
+	if month == 12 {
+		billYear = year + 1
+		billMonth = 1
+	} else {
+		billYear = year
+		billMonth = 1
+	}
+
+	bill := time.Date(billYear, time.Month(billMonth), BillDay, BillHour, 0, 0, 0, time.UTC)
+	//test data
+	// day := time.Now().Day()
+	// hour := time.Now().Hour()
+	// bill = time.Date(year, time.Month(month), day, hour, 10, 0, 0, time.UTC)
+
+	duration := time.Since(bill)
+
+	glog.Infof("install auto clean user traffic after %v \r\n", duration)
+
+	time.AfterFunc(duration, func() {
+		glog.Infof("clean trafifc and resume all users.....")
+		ns.resumeUser()
+	})
+
+}
+
+func (ns *NodeSchedule) exceedTrafficLimit(user api.UserInfo) error {
+	err := userctl.UpdateUserServiceStatus(ns.helper, user.Name, false)
+	if err != nil {
+		glog.Errorf("user(%v) exceed traffic limit disable it failure %v\r\n", user.Name, err)
+	}
+
+	err = ns.be.UpdateUserStatus(user.ID, false)
+	if err != nil {
+		glog.Errorf("user(%v) exceed traffic limit disable it failure %v\r\n", user.Name, err)
+	}
+
+	err = ns.DelAllNodeUserByUser(user.Name)
+	return err
+}
+
 func (ns *NodeSchedule) UpdateUserTraffic(userRefer api.UserReferences) error {
 	userInfo, err := ns.be.GetUserByName(userRefer.Name)
 	if err != nil {
-
+		return err
 	}
 
 	upload := userInfo.UploadTraffic + userRefer.UploadTraffic
 	download := userInfo.DownloadTraffic + userRefer.DownloadTraffic
+
+	traffic := upload + download
+
+	if traffic > userInfo.TrafficLimit {
+		err = ns.exceedTrafficLimit(*userInfo)
+		if err != nil {
+			glog.Errorf("user %v exceed traffic(%v) limit disable it failure %v\r\n", userInfo, traffic, err)
+		}
+		return nil
+	}
+
 	totalUpload := userInfo.TotalUploadTraffic + userRefer.UploadTraffic
 	totalDownload := userInfo.TotalDownloadTraffic + userRefer.DownloadTraffic
 
@@ -33,6 +196,9 @@ func (ns *NodeSchedule) checkUserServiceNode(userName, nodeName string) (*api.Us
 		return nil, err
 	}
 	userSrv := obj.(*api.UserService)
+	if userSrv.Spec.NodeUserReference == nil {
+		return nil, fmt.Errorf("not found user %v", userName)
+	}
 
 	_, ok := userSrv.Spec.NodeUserReference[nodeName]
 	if ok {
@@ -67,6 +233,9 @@ func (ns *NodeSchedule) UpdateNewUserServiceSpec(nodes map[string]api.NodeRefere
 		return err
 	}
 	userSrv := obj.(*api.UserService)
+	if userSrv.Spec.NodeUserReference == nil {
+		return fmt.Errorf("not found user %v", userName)
+	}
 
 	userSrv.Spec.NodeUserReference = nodes
 
@@ -88,6 +257,9 @@ func (ns *NodeSchedule) BindUserServiceWithNode(userName string, nodes map[strin
 		return err
 	}
 	userSrv := obj.(*api.UserService)
+	if userSrv.Spec.NodeUserReference == nil {
+		return fmt.Errorf("not found user %v", userName)
+	}
 
 	for nodeName, userRefer := range nodes {
 		node, err := ns.GetActiveNodeByName(nodeName)

@@ -69,18 +69,27 @@ func ControllerStart(helper *etcdhelper.EtcdHelper, be *backend.Backend, port in
 	nodeUserLockCache = cache.NewLRUExpireCache(maxNodeUserLockCacheSize)
 
 	go manageNode(helper)
+	go resumeUserEachMonth(AutoSchedule)
 
 	return nil
 }
 
 //delete this user service.
 func DeleteUserService(name string) error {
+	_, ok := getNodeUserLock(name, name)
+	glog.V(5).Infof("get user %v lock %v\r\n", name, ok)
+	if ok {
+		return fmt.Errorf("alloc for %v in progressing", name)
+	}
+
 	err := AutoSchedule.DelAllNodeUserByUser(name)
 	if err != nil {
 		glog.Errorf("del node user error %v \r\n", err)
 	}
+	err = AutoSchedule.DelUserService(name)
 
-	return AutoSchedule.DelUserService(name)
+	releaseNodeUserLock(name)
+	return err
 }
 
 func delUserServiceNode(nodeName, userName string) error {
@@ -103,25 +112,39 @@ func delUserServiceNode(nodeName, userName string) error {
 }
 
 func DeleteUserServiceNode(nodeName, userName string) error {
-	return delUserServiceNode(nodeName, userName)
+	_, ok := getNodeUserLock(userName, userName)
+	glog.V(5).Infof("get user %v lock %v\r\n", userName, ok)
+	if ok {
+		return fmt.Errorf("alloc for %v in progressing", userName)
+	}
+
+	err := delUserServiceNode(nodeName, userName)
+
+	releaseNodeUserLock(userName)
+
+	return err
 }
 
 func BindUserToNode(userName string, nodeReference map[string]api.UserReferences) error {
 	_, ok := getNodeUserLock(userName, userName)
+	glog.V(5).Infof("get user %v lock %v\r\n", userName, ok)
 	if ok {
 		return fmt.Errorf("alloc for %v in progressing", userName)
 	}
 	err := AutoSchedule.BindUserServiceWithNode(userName, nodeReference)
+	glog.V(5).Infof("bind user %v to node %v done %v\r\n", userName, nodeReference, err)
 	releaseNodeUserLock(userName)
 
 	return err
 }
 
 func AllocDefaultNodeForUser(name string) error {
+
 	err := AutoSchedule.AllocDefaultNode(name)
 	if err != nil {
 		glog.Errorf("alloc default api node for user error %v\r\n", err)
 	}
+
 	return err
 }
 
@@ -143,4 +166,9 @@ func ReallocUserNodeByProperties(name string, properties map[string]string) erro
 	releaseNodeUserLock(name)
 
 	return err
+}
+
+//GetAvailableNodeAPINode for api
+func GetAvailableNodeAPINode(limit int) []dynamicNodeInfo {
+	return AutoSchedule.getAvailableNodeAPINode(limit)
 }

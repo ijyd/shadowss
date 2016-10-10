@@ -74,6 +74,7 @@ func getUsers(page pagination.Pager) ([]byte, int) {
 						Description:     v.Description,
 						TrafficRate:     v.TrafficRate,
 						IsAdmin:         v.IsAdmin,
+						Status:          v.Status,
 					},
 				},
 			}
@@ -184,7 +185,7 @@ func PostUser(request *restful.Request, response *restful.Response) {
 		return
 	}
 
-	glog.Infof("Got Post api user:%+v\n", user)
+	//user.Spec.DetailInfo.Status = 1
 	err = Storage.CreateUser(user.Spec.DetailInfo)
 	if err != nil {
 		newErr := apierr.NewBadRequestError(err.Error())
@@ -204,14 +205,6 @@ func PostUser(request *restful.Request, response *restful.Response) {
 	}
 
 	go controller.AllocDefaultNodeForUser(user.Name)
-	// err = controller.AllocDefaultNodeForUser(user.Name)
-	// if err != nil {
-	// 	glog.Errorf("alloc user default node error %v\r\n", err)
-	// 	newErr := apierr.NewInternalError(err.Error())
-	// 	output = EncodeError(newErr)
-	// 	statusCode = 500
-	// 	return
-	// }
 
 	output, err = json.Marshal(user)
 	statusCode = 200

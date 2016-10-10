@@ -85,6 +85,13 @@ func PutProperties(request *restful.Request, response *restful.Response) {
 		return
 	}
 
+	if user.Status == 0 {
+		newErr := apierr.NewBadRequestError("user status is disable")
+		output = EncodeError(newErr)
+		statusCode = 400
+		return
+	}
+
 	annotations := new(map[string]string)
 	err = request.ReadEntity(annotations)
 	if err != nil {
@@ -105,14 +112,6 @@ func PutProperties(request *restful.Request, response *restful.Response) {
 	}
 
 	go controller.ReallocUserNodeByProperties(name, *annotations)
-	// err = controller.ReallocUserNodeByProperties(name, *annotations)
-	// if err != nil {
-	// 	glog.Errorf("update user node by properties failure %v\r\n", err)
-	// 	newErr := apierr.NewInternalError(err.Error())
-	// 	output = EncodeError(newErr)
-	// 	statusCode = 500
-	// 	return
-	// }
 
 	output, err = runtime.Encode(EtcdStorage.StorageCodec.Codecs, obj)
 	if err != nil {
@@ -149,6 +148,13 @@ func PutUserToNode(request *restful.Request, response *restful.Response) {
 		return
 	}
 
+	if user.Status == 0 {
+		newErr := apierr.NewBadRequestError("user status is disable")
+		output = EncodeError(newErr)
+		statusCode = 400
+		return
+	}
+
 	nodeRefer := new(map[string]api.UserReferences)
 	err = request.ReadEntity(nodeRefer)
 	if err != nil {
@@ -159,7 +165,17 @@ func PutUserToNode(request *restful.Request, response *restful.Response) {
 		return
 	}
 
+	nodeCnt := len(*nodeRefer)
+	if nodeCnt > 1 || nodeCnt == 0 {
+		newErr := apierr.NewBadRequestError("too many user to bind")
+		output = EncodeError(newErr)
+		statusCode = 400
+		return
+	}
+
+	var bindUserName string
 	for _, userRefer := range *nodeRefer {
+		bindUserName = userRefer.Name
 		err = validation.ValidateUserReference(userRefer)
 		if err != nil {
 			newErr := apierr.NewBadRequestError(err.Error())
@@ -169,7 +185,7 @@ func PutUserToNode(request *restful.Request, response *restful.Response) {
 		}
 	}
 
-	err = controller.BindUserToNode(user.Name, *nodeRefer)
+	err = controller.BindUserToNode(bindUserName, *nodeRefer)
 	if err != nil {
 		newErr := apierr.NewInternalError(err.Error())
 		output = EncodeError(newErr)
@@ -204,6 +220,13 @@ func DeleteUserNode(request *restful.Request, response *restful.Response) {
 		newErr := apierr.NewUnauthorized("invalid token")
 		output = EncodeError(newErr)
 		statusCode = 401
+		return
+	}
+
+	if user.Status == 0 {
+		newErr := apierr.NewBadRequestError("user status is disable")
+		output = EncodeError(newErr)
+		statusCode = 400
 		return
 	}
 

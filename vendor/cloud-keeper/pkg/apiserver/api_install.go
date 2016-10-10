@@ -13,24 +13,58 @@ import (
 	"github.com/emicklei/go-restful/swagger"
 )
 
-func installControllerSrv(container *restful.Container) {
-	// ws := new(restful.WebService)
-	// ws.
-	// 	Path("/api/v1/").
-	// 	Consumes(restful.MIME_JSON).
-	// 	Produces(restful.MIME_JSON) // you can specify this per route as well
-	// container.Add(ws)
-	// route := ws.POST("").To(controller.StartConfigNodeUser).
-	// 	Doc("reinit node config").
-	// 	Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
-	// 	Operation("StartConfigNodeUser")
-	// ws.Route(route)
-	//
-	// route = ws.GET("").To(controller.AddNodeConfig).
-	// 	Doc("add node config").
-	// 	Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
-	// 	Operation("AddNodeConfig")
-	// ws.Route(route)
+const (
+	MIME_MUTIPART_FORMDATA = "multipart/form-data"
+)
+
+func installGetActiveAPINodeSrv(container *restful.Container) {
+	ws := new(restful.WebService)
+	ws.
+		Path("/api/v1/activeapinode").
+		Consumes(restful.MIME_JSON).
+		Produces(restful.MIME_JSON) // you can specify this per route as well
+	container.Add(ws)
+
+	route := ws.GET("").To(vps.GetAPINodes).
+		Doc("get user file").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.ActiveAPINodeList{}).
+		Operation("GetAPINodes")
+	ws.Route(route)
+
+}
+
+func installUserPublicFileSrv(container *restful.Container) {
+	ws := new(restful.WebService)
+	ws.
+		Path("/api/v1/userfile").
+		Consumes(restful.MIME_JSON, MIME_MUTIPART_FORMDATA).
+		Produces(restful.MIME_JSON, MIME_MUTIPART_FORMDATA) // you can specify this per route as well
+	container.Add(ws)
+
+	route := ws.GET("{name}").To(vps.GetFile).
+		Doc("get user file").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("GetFile")
+	ws.Route(route)
+
+	route = ws.GET("{name}/desc").To(vps.GetFileDesc).
+		Doc("get user files desc").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("GetFileDesc")
+	ws.Route(route)
+
+	route = ws.GET("").To(vps.GetFileList).
+		Doc("get user file list").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Operation("GetFileList")
+	ws.Route(route)
+
+	route = ws.POST("").To(vps.PostPublicFiles).
+		Doc("post public file").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), apierr.Status{}).
+		Param(ws.BodyParameter("body", "identifier of the public file").DataType("multupart/form-data")).
+		Operation("PostPublicFiles")
+	ws.Route(route)
 }
 
 func installUserSrv(container *restful.Container) {
@@ -265,11 +299,12 @@ func (apis *APIServer) installSwaggerAPI(container *restful.Container, secure bo
 func (apis *APIServer) install(container *restful.Container) error {
 
 	installAccountResource(container)
-	installControllerSrv(container)
 	installAPIServerSrv(container)
 	installLoginSrv(container)
 	installNodeSrv(container)
 	installUserSrv(container)
+	installUserPublicFileSrv(container)
+	installGetActiveAPINodeSrv(container)
 
 	return nil
 }

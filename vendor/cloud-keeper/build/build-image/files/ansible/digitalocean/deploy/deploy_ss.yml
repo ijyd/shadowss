@@ -32,7 +32,7 @@
     - name: Copy attr.json
       copy: src=attr.json dest=/attr.json  owner=root group=root mode=0755
 
-    - cron: name="restart ssservice" minute="30" hour="5,18" job="/home/shadowsocks-node/restartss.sh"
+    - cron: name="restart ssservice" minute="10" hour="18" job="/home/shadowsocks-node/restartss.sh"
     
     - cron: name="dropcache" minute="*/10" job="/home/shadowsocks-node/dropcache.sh"
 

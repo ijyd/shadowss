@@ -18,10 +18,10 @@ import (
 )
 
 type dynamicNodeInfo struct {
-	name      string
-	host      string
-	isp       string
-	userSpace string
+	Name      string
+	Host      string
+	ISP       string
+	UserSpace string
 }
 
 type NodeSchedule struct {
@@ -59,7 +59,8 @@ func (ns *NodeSchedule) getAvailableNodeAPINode(limit int) []dynamicNodeInfo {
 	var loop int
 	ns.availableNodeMutex.RLock()
 	for _, val := range ns.availableNode {
-		if limit < loop && val.userSpace == api.NodeUserSpaceAPI {
+		glog.V(5).Infof("traverse node %+v loop(%v) limit(%v) userSpace(%v:%v)\r\n", val, loop, limit, val.UserSpace, api.NodeUserSpaceAPI)
+		if loop < limit && val.UserSpace == api.NodeUserSpaceAPI {
 			loop++
 			glog.V(5).Infof("got availableNode %+v \r\n", val)
 			info = append(info, val)
@@ -76,7 +77,8 @@ func (ns *NodeSchedule) getAvailableNodeByISP(userSpace string, isp string, limi
 	var loop int
 	ns.availableNodeMutex.RLock()
 	for _, val := range ns.availableNode {
-		if limit < loop && val.userSpace == userSpace && val.isp == isp {
+		glog.V(5).Infof("traverse node %+v loop(%v) limit(%v) userSpace(%v:%v) isp(%v:%v)\r\n", val, loop, limit, val.UserSpace, userSpace, val.ISP, isp)
+		if loop < limit && val.UserSpace == userSpace && val.ISP == isp {
 			loop++
 			glog.V(5).Infof("got availableNode %+v \r\n", val)
 			info = append(info, val)
@@ -101,13 +103,14 @@ func (ns *NodeSchedule) checkAvailableNode(node api.Node) {
 	if ok {
 		if cnt, err := strconv.ParseUint(cnt, 10, 32); err == nil && cnt < 80 {
 			nodeInfo := dynamicNodeInfo{
-				name:      node.Name,
-				host:      node.Spec.Server.Host,
-				isp:       node.Labels[api.NodeLablesChinaISP],
-				userSpace: node.Labels[api.NodeLablesUserSpace],
+				Name:      node.Name,
+				Host:      node.Spec.Server.Host,
+				ISP:       node.Labels[api.NodeLablesChinaISP],
+				UserSpace: node.Labels[api.NodeLablesUserSpace],
 			}
 			ns.availableNodeMutex.Lock()
-			ns.availableNode[nodeInfo.name] = nodeInfo
+			ns.availableNode[nodeInfo.Name] = nodeInfo
+			glog.V(5).Infof("get node %+v cnt %v\r\n", ns.availableNode, cnt)
 			ns.availableNodeMutex.Unlock()
 		} else {
 			goto delNode
@@ -115,6 +118,8 @@ func (ns *NodeSchedule) checkAvailableNode(node api.Node) {
 	} else {
 		goto delNode
 	}
+
+	return
 
 delNode:
 	ns.availableNodeMutex.RLock()
@@ -191,14 +196,14 @@ func (ns *NodeSchedule) configureDynamicNode(info []dynamicNodeInfo, userInfo ap
 	}
 	for _, v := range info {
 		//create a user for node
-		node2UserRefer[v.name] = userRefer
+		node2UserRefer[v.Name] = userRefer
 
 		node := api.NodeReferences{
 			User: userRefer,
-			Host: v.host,
+			Host: v.Host,
 		}
 
-		nodeRefer[v.name] = node
+		nodeRefer[v.Name] = node
 	}
 
 	//direct update user service spec

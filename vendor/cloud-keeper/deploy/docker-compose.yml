@@ -38,12 +38,13 @@ services:
       - /dev/mem:/dev/mem
       - /home/seanchann/pgitlab/cloud/src/cloud-keeper/.license:/go/bin/.license
       - /var/log/vpskeeper:/var/log/vpskeeper
+      - /vps/userdata:/userdata
       #- /ansible:/go/bin/ansible
     privileged: true
     command: >-
       --alsologtostderr=true
       -v=6
       --log-dir="/var/log/vpskeeper"
-      --secure-port=18088
+      --insecure-port=18088
     depends_on:
       - etcd3

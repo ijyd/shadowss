@@ -79,6 +79,9 @@ func (ns *NodeSchedule) SyncUserServiceToNodeUser(node api.Node) {
 	}
 
 	for _, user := range userlist.Items {
+		if user.Spec.Status == false {
+			continue
+		}
 		nodeRefer, ok := user.Spec.NodeUserReference[nodeName]
 		if ok {
 			node2User := make(map[string]api.UserReferences)

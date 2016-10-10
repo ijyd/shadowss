@@ -302,3 +302,35 @@ type UserList struct {
 
 	Items []User `json:"spec,omitempty"`
 }
+
+// type UserPublicFilesSpec struct {
+// 	FileName string `json:"file,omitempty"`
+// }
+//
+// type UserPublicFiles struct {
+// 	unversioned.TypeMeta `json:",inline"`
+// 	prototype.ObjectMeta `json:"metadata,omitempty"`
+//
+// 	Spec UserSpec `json:"spec,omitempty"`
+// }
+
+type ActiveAPINodeSpec struct {
+	Host     string `json:"host,omitempty"`
+	Port     int    `json:"port,omitempty"`
+	Password string `jsong:"pwd,omitempty"`
+	Method   string `json:"method,omitempty"`
+}
+
+type ActiveAPINode struct {
+	unversioned.TypeMeta `json:",inline"`
+	prototype.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec ActiveAPINodeSpec `json:"spec,omitempty"`
+}
+
+type ActiveAPINodeList struct {
+	unversioned.TypeMeta `json:",inline"`
+	unversioned.ListMeta `json:"metadata,omitempty"`
+
+	Items []ActiveAPINode `json:"items,omitempty"`
+}

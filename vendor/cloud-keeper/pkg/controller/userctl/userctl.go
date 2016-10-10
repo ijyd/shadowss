@@ -17,6 +17,10 @@ const (
 	PrefixUserService = "/" + "UserService"
 )
 
+const (
+	ErrNotFoundUser = "not found this user"
+)
+
 func AddUserServiceHelper(helper *etcdhelper.EtcdHelper, username string, nodeUserRefer map[string]api.NodeReferences) error {
 
 	spec := api.UserServiceSpec{
@@ -131,6 +135,38 @@ func UpdateUserAnnotations(helper *etcdhelper.EtcdHelper, name string, annotatio
 	}
 
 	return newres, nil
+}
+
+//UpdateUserServiceStatus update  user status
+func UpdateUserServiceStatus(helper *etcdhelper.EtcdHelper, userName string, status bool) error {
+
+	obj, err := GetUserService(helper, userName)
+	if err != nil {
+		glog.Errorf("Get resource error %v\r\n", err)
+		return err
+	}
+
+	userSrv := obj.(*api.UserService)
+	if userSrv.Name == "" {
+		return fmt.Errorf("%s %s", ErrNotFoundUser, userName)
+	}
+
+	ctx := prototype.NewContext()
+	outItem := new(api.UserService)
+
+	key := PrefixUserService + "/" + userSrv.Name
+	err = helper.StorageCodec.Storage.GuaranteedUpdate(ctx, key, outItem, false, nil, func(existing runtime.Object, res storage.ResponseMeta) (runtime.Object, *uint64, error) {
+		glog.Infof("existing obj %+v", existing)
+		userSrv.Spec.Status = status
+		newres := userSrv
+		return newres, nil, nil
+	})
+	if err != nil {
+		glog.Errorf("update failure %v\r\n", err)
+		return err
+	}
+
+	return nil
 }
 
 //UpdateNodeUsers update node user

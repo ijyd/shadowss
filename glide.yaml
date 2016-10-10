@@ -2,7 +2,7 @@ package: shadowss
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: 63ebf8af7fd768b02c827d6d81a054bdf6d0e552
+  version: 0274a9106e3c95a5276bab00f95d6d224594c189
   subpackages:
   - pkg/api/install
   - pkg/controller/apiserverctl

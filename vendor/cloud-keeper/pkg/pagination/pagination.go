@@ -165,6 +165,7 @@ func try(pagination, op string) (lhs, rhs string, ok bool) {
 	return "", "", false
 }
 
+//parsePagination accept format like : "page=1,perPage=10"
 func parsePagination(pagination string) (Pager, error) {
 	parts := strings.Split(pagination, ",")
 	sort.StringSlice(parts).Sort()

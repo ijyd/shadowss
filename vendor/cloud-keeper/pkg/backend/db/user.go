@@ -174,6 +174,26 @@ func UpdateUserPort(handle storage.Interface, userID int64, port int64) error {
 	return nil
 }
 
+func UpdateUserStatus(handle storage.Interface, userID int64, status bool) error {
+
+	statusInt := 0
+	if status {
+		statusInt = 1
+	}
+
+	user := &api.UserInfo{
+		ID:     userID,
+		Status: int64(statusInt),
+	}
+
+	conditionFields := string("id")
+	updateFields := []string{"status"}
+
+	ctx := createContextWithValue(userTableName)
+	err := handle.GuaranteedUpdate(ctx, conditionFields, updateFields, user)
+	return err
+}
+
 func DeleteUserByName(handle storage.Interface, name string) error {
 
 	ctx := createContextWithValue(userTableName)
