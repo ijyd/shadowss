@@ -87,6 +87,10 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		glog.Errorf("get invalid request  from %s error %v\r\n", reqAddr, err)
 		return
 	}
+	if ssProtocol.OneTimeAuth != tcpSrv.Config.EnableOTA {
+		glog.Errorf("not match one time auth with config(%v:%v)\r\n", ssProtocol.OneTimeAuth, tcpSrv.Config.EnableOTA)
+		return
+	}
 	remoteAddr := &net.TCPAddr{
 		IP:   ssProtocol.DstAddr.IP,
 		Port: ssProtocol.DstAddr.Port,
