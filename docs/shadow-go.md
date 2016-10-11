@@ -142,7 +142,7 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 ```
 
 ```
-./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://192.168.60.128:2379"
+./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="192.168.60.128:2379" --etcd-certfile="../../contrib/keys/client.pem" --etcd-keyfile="../../contrib/keys/client-key.pem" --etcd-cafile="../../contrib/keys/ca.pem"
 ```
 
 ./shadowss --alsologtostderr=true --config-file="./server-multi-port.json" -v=6 --enable-udp-relay --storage-backend="etcd3" --etcd-servers="http://47.89.189.237:2379"
