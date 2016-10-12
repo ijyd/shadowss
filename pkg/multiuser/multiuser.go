@@ -194,6 +194,40 @@ func (mu *MultiUser) BuildNodeHelper(ttl uint64) *nodectl.NodeHelper {
 
 }
 
+func (mu *MultiUser) refreshNode(loopcnt int64) {
+	obj, err := nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
+	if err != nil {
+		glog.Warningf("need to add node, get node error %v \r\n", err)
+		nodeHelper := mu.BuildNodeHelper(mu.ttl)
+		if nodeHelper == nil {
+			glog.Errorf("invalid node configure\r\n")
+			return
+		}
+		obj, err = nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
+		if err != nil {
+			glog.Errorf("add node error %v\r\n", err)
+			return
+		}
+	}
+	nodeObj := obj.(*api.Node)
+	node := nodeObj
+
+	upload, download, usercnt, err := mu.CollectorAndUpdateUserTraffic()
+	if err == nil {
+		node.Spec.Server.Upload = upload
+		node.Spec.Server.Download = download
+	} else {
+		glog.Warningf("collector user traffic error %v\r\n", err)
+	}
+
+	//it a bug, must update some field to keep node ttl?
+	node.Annotations[nodectl.NodeAnnotationRefreshCnt] = strconv.FormatInt(loopcnt, 10)
+	node.Annotations[nodectl.NodeAnnotationUserCnt] = strconv.FormatInt(usercnt, 10)
+	node.Spec.Server.Status = 1
+	nodectl.UpdateNodeAndLease(mu.etcdHandle, node, mu.ttl)
+	glog.V(3).Infof("refresh node %+v\r\n", *node)
+}
+
 func (mu *MultiUser) KeepHealth() {
 
 	nodectl.DelNode(nil, mu.etcdHandle, mu.nodeName, true, false)
@@ -204,54 +238,25 @@ func (mu *MultiUser) KeepHealth() {
 		return
 	}
 
-	obj, err := nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
+	_, err := nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
 	if err != nil {
 		glog.Errorf("add node error %v\r\n", err)
 		return
 	}
 
-	obj, err = nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
-	if err != nil {
-		glog.Errorf("get node error:%v\r\n", err)
-		return
-	}
-	nodeObj := obj.(*api.Node)
-	node := nodeObj
-	glog.V(5).Infof("Add node %+v err %v\r\n", *node, err)
+	//wait enough time for flush our user from keeper
+	time.Sleep(5 * time.Minute)
+	loopcnt := int64(0)
+	mu.refreshNode(loopcnt)
+	loopcnt++
 
 	expireTime := time.Duration(mu.ttl - 100)
 
-	loopcnt := 0
 	for {
 		select {
 		case <-time.After(time.Second * expireTime):
-			obj, err = nodectl.GetNode(schedule.etcdHandle, mu.nodeName)
-			if err != nil {
-				glog.Errorf("get node error:%v\r\n", err)
-				obj, err = nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
-				if err != nil {
-					glog.Errorf("add node error %v\r\n", err)
-					return
-				}
-			}
-			nodeObj := obj.(*api.Node)
-			node := nodeObj
-
-			upload, download, usercnt, err := mu.CollectorAndUpdateUserTraffic()
-			if err == nil {
-				node.Spec.Server.Upload = upload
-				node.Spec.Server.Download = download
-			} else {
-				glog.Warningf("collector user traffic error %v\r\n", err)
-			}
-
+			mu.refreshNode(loopcnt)
 			loopcnt++
-			//it a bug, must update some field to keep node ttl?
-			node.Annotations[nodectl.NodeAnnotationRefreshCnt] = strconv.FormatInt(int64(loopcnt), 10)
-			node.Annotations[nodectl.NodeAnnotationUserCnt] = strconv.FormatInt(usercnt, 10)
-			node.Spec.Server.Status = 1
-			nodectl.UpdateNodeAndLease(mu.etcdHandle, node, mu.ttl)
-			glog.V(5).Infof("refresh node %+v\r\n", *node)
 		}
 	}
 }
