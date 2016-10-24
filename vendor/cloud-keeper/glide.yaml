@@ -25,7 +25,7 @@ import:
   - pkg/genericstoragecodec/options
 - package: golib
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
-  version: da3c398c67cf66dd01601d4e6c6b8520c7e9022c
+  version: 02c1abb7ca6f030728d028621ba41e8a328d7968
   subpackages:
   - pkg/permissions
   - pkg/storage/storagebackend

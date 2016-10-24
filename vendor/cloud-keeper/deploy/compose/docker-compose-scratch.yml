@@ -1,0 +1,61 @@
+version: '2'
+services:
+  etcd3:
+    image: bjjyd/etcd:v3.0.12
+    build: ./etcd/
+    container_name: etcd3
+    volumes:
+      - /etcdbackup/data:/data
+      #- /etcdbackup/walData:/walData
+    ports:
+      - "4001:4001"
+      - "2380:2380"
+      - "2379:2379"
+    hostname: etcd3
+    command: >-
+      /usr/local/bin/etcd
+      --debug=true
+      --name etcd0
+      --data-dir /data/
+      --auto-compaction-retention 1
+      --client-cert-auth
+      --trusted-ca-file=/keys/ca.pem
+      --cert-file=/keys/server.pem
+      --key-file=/keys/server-key.pem
+      --peer-client-cert-auth
+      --peer-trusted-ca-file=/keys/ca.pem
+      --peer-cert-file=/keys/member1.pem
+      --peer-key-file=/keys/member1-key.pem
+      --advertise-client-urls https://etcd3:2379,https://etcd3:4001
+      --listen-client-urls https://0.0.0.0:2379,https://0.0.0.0:4001
+      --initial-advertise-peer-urls https://etcd3:2380
+      --listen-peer-urls https://0.0.0.0:2380
+      --initial-cluster-token etcd-cluster-1
+      --initial-cluster etcd0=https://etcd3:2380
+      --initial-cluster-state new
+    restart: always
+  vpskeeper:
+    build:
+      context: ../../
+      dockerfile: build/build-image/Dockerfile
+    image: bjjyd/vpskeeper
+    restart: always
+    container_name: vpskeeper
+    env_file:
+      - ./config/vpskeeper/env
+    ports:
+      - "18088:18088"
+    volumes:
+      - /dev/mem:/dev/mem
+      - /home/seanchann/pgitlab/cloud/src/cloud-keeper/.license:/go/bin/.license
+      - /var/log/vpskeeper:/var/log/vpskeeper
+      - /vps/userdata:/userdata
+      #- /ansible:/go/bin/ansible
+    privileged: true
+    command: >-
+      --alsologtostderr=true
+      -v=6
+      --log-dir="/var/log/vpskeeper"
+      --secure-port=18088
+    depends_on:
+      - etcd3

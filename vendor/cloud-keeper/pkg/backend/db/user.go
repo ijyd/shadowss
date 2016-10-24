@@ -117,6 +117,7 @@ func CreateUser(handle storage.Interface, info api.UserInfo) error {
 		RegDBTime:    time.Now(),
 		TrafficRate:  info.TrafficRate,
 		Description:  info.Description,
+		Status:       info.Status,
 	}
 
 	err := handle.Create(ctx, info.Name, user, user)

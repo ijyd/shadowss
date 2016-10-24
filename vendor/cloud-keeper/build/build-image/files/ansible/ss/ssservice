@@ -12,14 +12,18 @@ SS_PATH="/home/shadowsocks-node"
 EXEC="$SS_PATH/shadowss"
 PROG="shadowss"
 etcd_server_url=$(cat $SS_PATH/etcd_server_url)
+KEYPATH=/home/shadowsocks-node
 
 if [ ! -z "$etcd_server_url" ]
 then
-    DAEMON_OPTS="--alsologtostderr=\"true\" \
-                -v=6 \
+    DAEMON_OPTS=" --log-dir=\"/var/log/shadowss\" \
+                -v=3 \
                 --enable-udp-relay \
                 --storage-backend=\"etcd3\" \
-                --etcd-servers=\"$etcd_server_url\""
+                --etcd-servers=\"$etcd_server_url\" \
+                --etcd-certfile=\"$KEYPATH/client.pem\" \
+                --etcd-keyfile=\"$KEYPATH/client-key.pem\" \
+                --etcd-cafile=\"$KEYPATH/ca.pem\""
 else
     DAEMON_OPTS="--alsologtostderr=\"true\" \
                 -v=6 \

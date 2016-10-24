@@ -7,7 +7,7 @@ sudo ./vpskeeper --alsologtostderr=true -v=6  --insecure-port=18088  --storage-t
 ```
 
 ```
-sudo ./vpskeeper --alsologtostderr=true -v=6  --secure-port=18088 --tls-cert-file="../../keys/server.crt" --tls-private-key-file="../../keys/server.key"  --swagger-path="../../third_party/swagger-ui" --storage-backend="etcd3" --etcd-servers="http://192.168.60.128:2379" --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel"
+sudo ./vpskeeper --alsologtostderr=true -v=6  --secure-port=18088 --tls-cert-file="../../contrib/keys/server.crt" --tls-private-key-file="../../contrib/keys/server.key" --swagger-path="../../third_party/swagger-ui" --storage-backend="etcd3" --etcd-servers="192.168.60.128:2379" --etcd-certfile="../../contrib/keys/client.pem" --etcd-keyfile="../../contrib/keys/client-key.pem" --etcd-cafile="../../contrib/keys/ca.pem" --storage-type="mysql"  --server-list="sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel"
 ```
 
 ## run on aliyun

@@ -17,6 +17,25 @@ import (
 	"github.com/golang/glog"
 )
 
+func mergeUserService(user *api.User) {
+	name := user.Name
+
+	obj, err := userctl.GetUserService(EtcdStorage, name)
+	if err != nil {
+		glog.Errorf("got user service failure %v object error %v \r\n", name, err)
+	} else {
+		userObj := obj.(*api.UserService)
+		if user.Annotations == nil {
+			user.Annotations = make(map[string]string)
+		}
+
+		for k, v := range userObj.Annotations {
+			user.Annotations[k] = v
+		}
+
+	}
+}
+
 func getUsers(page pagination.Pager) ([]byte, int) {
 	statusCode := 500
 	var output []byte
@@ -78,6 +97,9 @@ func getUsers(page pagination.Pager) ([]byte, int) {
 					},
 				},
 			}
+
+			mergeUserService(&item)
+
 			items = append(items, item)
 		}
 
@@ -143,6 +165,77 @@ func GetUsers(request *restful.Request, response *restful.Response) {
 	output, statusCode = getUsers(page)
 	baseLink := request.SelectedRoutePath()
 	api.SetPageLink(baseLink, response, page)
+}
+
+//GetUser ...
+func GetUser(request *restful.Request, response *restful.Response) {
+	name := request.PathParameter("name")
+	w := response.ResponseWriter
+	w.Header().Set("Content-Type", "application/json")
+	encoded := request.Request.Header.Get("Authorization")
+	statusCode := 200
+	var output []byte
+
+	defer func() {
+		w.WriteHeader(statusCode)
+		w.Write(output)
+	}()
+
+	user, err := CheckToken(encoded)
+	if err != nil || user == nil {
+		glog.Errorln("Unauth request ", err)
+		newErr := apierr.NewUnauthorized("invalid token")
+		output = EncodeError(newErr)
+		statusCode = 401
+		return
+	}
+
+	v, err := Storage.GetUserByName(name)
+	if err != nil {
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+		return
+	}
+
+	item := api.User{
+		TypeMeta: unversioned.TypeMeta{
+			Kind:       "User",
+			APIVersion: "v1",
+		},
+		ObjectMeta: prototype.ObjectMeta{
+			Name: v.Name,
+		},
+		Spec: api.UserSpec{
+			DetailInfo: api.UserInfo{
+				ID:              v.ID,
+				Passwd:          v.Passwd,
+				EnableOTA:       v.EnableOTA,
+				TrafficLimit:    v.TrafficLimit,
+				UploadTraffic:   v.UploadTraffic,
+				DownloadTraffic: v.DownloadTraffic,
+				Name:            v.Name,
+				Email:           v.Email,
+				ManagePasswd:    v.ManagePasswd,
+				ExpireTime:      v.ExpireTime,
+				RegIPAddr:       v.RegIPAddr,
+				RegDBTime:       v.RegDBTime,
+				Description:     v.Description,
+				TrafficRate:     v.TrafficRate,
+				IsAdmin:         v.IsAdmin,
+				Status:          v.Status,
+			},
+		},
+	}
+	mergeUserService(&item)
+
+	output, err = json.Marshal(item)
+	if err != nil {
+		newErr := apierr.NewInternalError(err.Error())
+		output = EncodeError(newErr)
+		statusCode = 500
+	}
+
 }
 
 func PostUser(request *restful.Request, response *restful.Response) {

@@ -39,10 +39,12 @@ COPY . /go/src/cloud-keeper/
 
 RUN set -ex \
   && cd /go/src/cloud-keeper/\
-  && cp -rf build/build-image/files/keys/ /keys/\
+  && cp -rf contrib/keys/ /keys/\
   && cp -rf build/build-image/files/entrypoint.sh /entrypoint.sh\
   && cp -rf third_party/swagger-ui /swagger-ui\
   && cp -rf build/build-image/files/ansible /go/bin/ansible\
+  && mkdir -p /go/bin/ansible/client-keys \
+  && cp -rf contrib/keys/ca.pem contrib/keys/client-key.pem contrib/keys/client.pem /go/bin/ansible/client-keys/\
   && cp -rf build/build-image/files/vpslicense /go/bin/vpslicense\
   && chmod +x /go/bin/vpslicense
 

@@ -51,6 +51,7 @@ const (
 	NodeLablesChinaISP    = "cnISP"
 	NodeLablesUserSpace   = "userSpace"
 	NodeLablesVPSLocation = "vpsLocation"
+	NodeLablesVPSID       = "vpsID"
 	NodeLablesVPSOP       = "vpsOperator"
 	NodeLablesVPSName     = "vpsName"
 	NodeLablesVPSIP       = "vpsIP"
@@ -66,6 +67,7 @@ type AccServerCommand struct {
 
 	SSHKey  string            `json:"sshKey,omitempty"`
 	Command string            `json:"command,omitempty"`
+	ID      int64             `json:"id,omitempty"`
 	Deploy  AccServerDeploySS `json:"deploySS,omitempty"`
 }
 
@@ -332,5 +334,6 @@ type ActiveAPINodeList struct {
 	unversioned.TypeMeta `json:",inline"`
 	unversioned.ListMeta `json:"metadata,omitempty"`
 
-	Items []ActiveAPINode `json:"items,omitempty"`
+	Items       []ActiveAPINode `json:"items,omitempty"`
+	EncryptData string          `json:"encData,omitempty"`
 }

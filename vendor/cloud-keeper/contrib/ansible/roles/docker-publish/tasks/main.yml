@@ -1,0 +1,6 @@
+---
+  - name: docker image tag {{ name }}:{{ tag }}
+    command: docker tag {{ name }}:{{ tag }} {{ repo }}:{{ tag }}
+
+  - name: docker image push into  {{ repo }}:{{ tag }}
+    command: docker push {{ repo }}:{{ tag }}

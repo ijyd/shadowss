@@ -13,29 +13,35 @@ type RSAHelper struct {
 }
 
 func NewRSAHelper(privateKey, publicKey []byte) *RSAHelper {
-	block, _ := pem.Decode(publicKey)
-	if block == nil {
-		return nil
-	}
-	pubInterface, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil
-	}
-	pub := pubInterface.PublicKey.(*rsa.PublicKey)
 
-	block, _ = pem.Decode(privateKey)
-	if block == nil {
-		return nil
-	}
-	priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		return nil
+	helper := &RSAHelper{}
+
+	if len(privateKey) != 0 {
+		block, _ := pem.Decode(privateKey)
+		if block == nil {
+			return nil
+		}
+		priv, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+		if err != nil {
+			return nil
+		}
+		helper.privateKey = priv
 	}
 
-	return &RSAHelper{
-		privateKey: priv,
-		publicKey:  pub,
+	if len(publicKey) != 0 {
+		block, _ := pem.Decode(publicKey)
+		if block == nil {
+			return nil
+		}
+		pubInterface, err := x509.ParseCertificate(block.Bytes)
+		if err != nil {
+			return nil
+		}
+		pub := pubInterface.PublicKey.(*rsa.PublicKey)
+		helper.publicKey = pub
 	}
+
+	return helper
 }
 
 func (rsaHelper *RSAHelper) RsaEncrypt(origData []byte) ([]byte, error) {

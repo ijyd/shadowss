@@ -135,6 +135,9 @@ func (c *Client) Exec(param interface{}) error {
 		return ansible.DeployShadowss(api.OperatorVultr, execParam.Deploy.HostList, sshkey, execParam.Deploy.Attribute)
 	case "restartSS":
 		return ansible.RestartShadowss(api.OperatorVultr, execParam.Deploy.HostList, sshkey)
+	case "reboot":
+		idStr := strconv.FormatInt(execParam.ID, 10)
+		return c.vultrClient.RebootServer(idStr)
 	default:
 		return fmt.Errorf("not support command %s", execParam.Command)
 	}

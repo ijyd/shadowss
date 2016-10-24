@@ -160,6 +160,9 @@ func (c *Client) Exec(param interface{}) error {
 		return ansible.DeployShadowss(api.OperatorDigitalOcean, execParam.Deploy.HostList, sshkey, execParam.Deploy.Attribute)
 	case "restartSS":
 		return ansible.RestartShadowss(api.OperatorDigitalOcean, execParam.Deploy.HostList, sshkey)
+	case "reboot":
+		_, _, err := c.client.DropletActions.Reboot(int(execParam.ID))
+		return err
 	default:
 		return fmt.Errorf("not support command %s", execParam.Command)
 	}

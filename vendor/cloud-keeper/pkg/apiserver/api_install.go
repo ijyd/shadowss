@@ -76,9 +76,15 @@ func installUserSrv(container *restful.Container) {
 	container.Add(ws)
 
 	route := ws.GET("").To(vps.GetUsers).
-		Doc("get api server").
+		Doc("get user list").
 		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.UserList{}).
 		Operation("GetUsers")
+	ws.Route(route)
+
+	route = ws.GET("{name}").To(vps.GetUser).
+		Doc("get user by name").
+		Returns(http.StatusOK, http.StatusText(http.StatusOK), api.User{}).
+		Operation("GetUser")
 	ws.Route(route)
 
 	route = ws.POST("").To(vps.PostUser).

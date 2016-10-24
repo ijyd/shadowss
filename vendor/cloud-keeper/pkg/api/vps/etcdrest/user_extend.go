@@ -7,11 +7,16 @@ import (
 	. "cloud-keeper/pkg/api/vps/common"
 	"cloud-keeper/pkg/controller"
 	"cloud-keeper/pkg/controller/userctl"
+	"time"
 
 	"gofreezer/pkg/runtime"
 
 	restful "github.com/emicklei/go-restful"
 	"github.com/golang/glog"
+)
+
+const (
+	userAnnotationRefreshTime = "refreshTime"
 )
 
 //GetRouters ... get router list
@@ -101,6 +106,10 @@ func PutProperties(request *restful.Request, response *restful.Response) {
 		statusCode = 400
 		return
 	}
+
+	//append refesh time into annotations
+	//append custom field
+	(*annotations)[userAnnotationRefreshTime] = time.Now().String()
 
 	obj, err := userctl.UpdateUserAnnotations(EtcdStorage, name, *annotations)
 	if err != nil {
