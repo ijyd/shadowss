@@ -174,13 +174,19 @@ func (mu *MultiUser) BuildNodeHelper(ttl uint64) *nodectl.NodeHelper {
 	vpsIP, _ := mu.nodeAttr[api.NodeLablesVPSIP]
 	vpsName, _ := mu.nodeAttr[api.NodeLablesVPSName]
 	vpsLocation, _ := mu.nodeAttr[api.NodeLablesVPSLocation]
+	vpsID, _ := mu.nodeAttr[api.NodeLablesVPSID]
+
+	id, err := strconv.ParseInt(vpsID, 10, 64)
+	if err != nil {
+		id = 0
+	}
 
 	nodeHelper := &nodectl.NodeHelper{
 		TTL:        ttl,
 		Name:       mu.nodeName,
 		Host:       vpsIP,
 		Location:   vpsLocation,
-		AccsrvID:   int64(0),
+		AccsrvID:   id,
 		AccsrvName: vpsName,
 		Annotations: map[string]string{
 			nodectl.NodeAnnotationUserCnt:    "0",
