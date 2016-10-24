@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	"k8s.io/kubernetes/pkg/apis/storage"
 )
 
 // Test single call to syncVolume, expecting recycling to happen.
@@ -77,7 +77,7 @@ func TestDeleteSync(t *testing.T) {
 			// delete failure - delete() returns error
 			"8-5 - delete returns error",
 			newVolumeArray("volume8-5", "1Gi", "uid8-5", "claim8-5", api.VolumeBound, api.PersistentVolumeReclaimDelete),
-			withMessage("Delete of volume \"volume8-5\" failed: Mock delete error", newVolumeArray("volume8-5", "1Gi", "uid8-5", "claim8-5", api.VolumeFailed, api.PersistentVolumeReclaimDelete)),
+			withMessage("Mock delete error", newVolumeArray("volume8-5", "1Gi", "uid8-5", "claim8-5", api.VolumeFailed, api.PersistentVolumeReclaimDelete)),
 			noclaims,
 			noclaims,
 			[]string{"Warning VolumeFailedDelete"}, noerrors,
@@ -133,8 +133,23 @@ func TestDeleteSync(t *testing.T) {
 			// deleter simulates one delete() call that succeeds.
 			wrapTestWithReclaimCalls(operationDelete, []error{nil}, testSyncVolume),
 		},
+		{
+			// PV requires external deleter
+			"8-10 - external deleter",
+			newVolumeArray("volume8-10", "1Gi", "uid10-1", "claim10-1", api.VolumeBound, api.PersistentVolumeReclaimDelete, annBoundByController),
+			newVolumeArray("volume8-10", "1Gi", "uid10-1", "claim10-1", api.VolumeReleased, api.PersistentVolumeReclaimDelete, annBoundByController),
+			noclaims,
+			noclaims,
+			noevents, noerrors,
+			func(ctrl *PersistentVolumeController, reactor *volumeReactor, test controllerTest) error {
+				// Inject external deleter annotation
+				test.initialVolumes[0].Annotations[annDynamicallyProvisioned] = "external.io/test"
+				test.expectedVolumes[0].Annotations[annDynamicallyProvisioned] = "external.io/test"
+				return testSyncVolume(ctrl, reactor, test)
+			},
+		},
 	}
-	runSyncTests(t, tests, []*extensions.StorageClass{})
+	runSyncTests(t, tests, []*storage.StorageClass{})
 }
 
 // Test multiple calls to syncClaim/syncVolume and periodic sync of all
@@ -166,5 +181,5 @@ func TestDeleteMultiSync(t *testing.T) {
 		},
 	}
 
-	runMultisyncTests(t, tests, []*extensions.StorageClass{}, "")
+	runMultisyncTests(t, tests, []*storage.StorageClass{}, "")
 }

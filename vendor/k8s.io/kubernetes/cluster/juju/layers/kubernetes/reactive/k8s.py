@@ -307,7 +307,7 @@ def start_cadvisor():
 
 
 @when('kubelet.available', 'kubeconfig.created')
-@when_any('proxy.available', 'cadvisor.available', 'skydns.available')
+@when_any('proxy.available', 'cadvisor.available', 'kubedns.available')
 def final_message():
     '''Issue some final messages when the services are started. '''
     # TODO: Run a simple/quick health checks before issuing this message.
@@ -468,7 +468,7 @@ def render_files(reldata=None):
 def status_set(level, message):
     '''Output status message with leadership information.'''
     if is_leader():
-        message = '(master) {0}'.format(message)
+        message = '{0} (master) '.format(message)
     hookenv.status_set(level, message)
 
 

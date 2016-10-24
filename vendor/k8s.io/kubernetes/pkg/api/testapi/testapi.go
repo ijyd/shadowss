@@ -15,6 +15,12 @@ limitations under the License.
 */
 
 // Package testapi provides a helper for retrieving the KUBE_TEST_API environment variable.
+//
+// TODO(lavalamp): this package is a huge disaster at the moment. I intend to
+// refactor. All code currently using this package should change:
+// 1. Declare your own registered.APIGroupRegistrationManager in your own test code.
+// 2. Import the relevant install packages.
+// 3. Register the types you need, from the announced.APIGroupAnnouncementManager.
 package testapi
 
 import (
@@ -37,6 +43,7 @@ import (
 	"k8s.io/kubernetes/pkg/apis/imagepolicy"
 	"k8s.io/kubernetes/pkg/apis/policy"
 	"k8s.io/kubernetes/pkg/apis/rbac"
+	"k8s.io/kubernetes/pkg/apis/storage"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/runtime/serializer/recognizer"
 
@@ -53,6 +60,7 @@ import (
 	_ "k8s.io/kubernetes/pkg/apis/imagepolicy/install"
 	_ "k8s.io/kubernetes/pkg/apis/policy/install"
 	_ "k8s.io/kubernetes/pkg/apis/rbac/install"
+	_ "k8s.io/kubernetes/pkg/apis/storage/install"
 )
 
 var (
@@ -66,6 +74,7 @@ var (
 	Federation   TestGroup
 	Rbac         TestGroup
 	Certificates TestGroup
+	Storage      TestGroup
 	ImagePolicy  TestGroup
 
 	serializer        runtime.SerializerInfo
@@ -106,8 +115,10 @@ func init() {
 
 	kubeTestAPI := os.Getenv("KUBE_TEST_API")
 	if len(kubeTestAPI) != 0 {
+		// priority is "first in list preferred", so this has to run in reverse order
 		testGroupVersions := strings.Split(kubeTestAPI, ",")
-		for _, gvString := range testGroupVersions {
+		for i := len(testGroupVersions) - 1; i >= 0; i-- {
+			gvString := testGroupVersions[i]
 			groupVersion, err := unversioned.ParseGroupVersion(gvString)
 			if err != nil {
 				panic(fmt.Sprintf("Error parsing groupversion %v: %v", gvString, err))
@@ -218,6 +229,15 @@ func init() {
 			externalTypes:        api.Scheme.KnownTypes(externalGroupVersion),
 		}
 	}
+	if _, ok := Groups[storage.GroupName]; !ok {
+		externalGroupVersion := unversioned.GroupVersion{Group: storage.GroupName, Version: registered.GroupOrDie(storage.GroupName).GroupVersion.Version}
+		Groups[storage.GroupName] = TestGroup{
+			externalGroupVersion: externalGroupVersion,
+			internalGroupVersion: storage.SchemeGroupVersion,
+			internalTypes:        api.Scheme.KnownTypes(storage.SchemeGroupVersion),
+			externalTypes:        api.Scheme.KnownTypes(externalGroupVersion),
+		}
+	}
 	if _, ok := Groups[certificates.GroupName]; !ok {
 		externalGroupVersion := unversioned.GroupVersion{Group: certificates.GroupName, Version: registered.GroupOrDie(certificates.GroupName).GroupVersion.Version}
 		Groups[certificates.GroupName] = TestGroup{
@@ -247,6 +267,7 @@ func init() {
 	Extensions = Groups[extensions.GroupName]
 	Federation = Groups[federation.GroupName]
 	Rbac = Groups[rbac.GroupName]
+	Storage = Groups[storage.GroupName]
 	ImagePolicy = Groups[imagepolicy.GroupName]
 }
 

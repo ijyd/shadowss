@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/design/admission_control_resource_quota.md).
+[here](http://releases.k8s.io/release-1.4/docs/design/admission_control_resource_quota.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -121,7 +121,7 @@ If a third-party wants to track additional resources, it must follow the
 resource naming conventions prescribed by Kubernetes. This means the resource
 must have a fully-qualified name (i.e. mycompany.org/shinynewresource)
 
-## Resource Requirements: Requests vs Limits
+## Resource Requirements: Requests vs. Limits
 
 If a resource supports the ability to distinguish between a request and a limit
 for a resource, the quota tracking system will only cost the request value

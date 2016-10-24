@@ -47,15 +47,21 @@ elif [[ "${MASTER_OS_DISTRIBUTION}" == "debian" ]]; then
   MASTER_IMAGE_PROJECT=${KUBE_GCE_MASTER_PROJECT:-google-containers}
 fi
 
-if [[ "${NODE_OS_DISTRIBUTION}" == "gci" ]]; then
-  # If the node image is not set, we use the latest GCI image.
-  # Otherwise, we respect whatever is set by the user.
-  NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${GCI_VERSION}}
-  NODE_IMAGE_PROJECT=${KUBE_GCE_NODE_PROJECT:-google-containers}
-elif [[ "${NODE_OS_DISTRIBUTION}" == "debian" ]]; then
-  NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${CVM_VERSION}}
-  NODE_IMAGE_PROJECT=${KUBE_GCE_NODE_PROJECT:-google-containers}
-fi
+# Sets node image based on the specified os distro. Currently this function only
+# supports gci and debian.
+function set-node-image() {
+  if [[ "${NODE_OS_DISTRIBUTION}" == "gci" ]]; then
+    # If the node image is not set, we use the latest GCI image.
+    # Otherwise, we respect whatever is set by the user.
+    NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${GCI_VERSION}}
+    NODE_IMAGE_PROJECT=${KUBE_GCE_NODE_PROJECT:-google-containers}
+  elif [[ "${NODE_OS_DISTRIBUTION}" == "debian" ]]; then
+    NODE_IMAGE=${KUBE_GCE_NODE_IMAGE:-${CVM_VERSION}}
+    NODE_IMAGE_PROJECT=${KUBE_GCE_NODE_PROJECT:-google-containers}
+  fi
+}
+
+set-node-image
 
 # Verfiy cluster autoscaler configuration.
 if [[ "${ENABLE_CLUSTER_AUTOSCALER}" == "true" ]]; then
@@ -367,15 +373,18 @@ function detect-nodes() {
 function detect-master() {
   detect-project
   KUBE_MASTER=${MASTER_NAME}
+  echo "Trying to find master named '${MASTER_NAME}'" >&2
   if [[ -z "${KUBE_MASTER_IP-}" ]]; then
-    KUBE_MASTER_IP=$(gcloud compute addresses describe "${MASTER_NAME}-ip" \
+    local master_address_name="${MASTER_NAME}-ip"
+    echo "Looking for address '${master_address_name}'" >&2
+    KUBE_MASTER_IP=$(gcloud compute addresses describe "${master_address_name}" \
       --project "${PROJECT}" --region "${REGION}" -q --format='value(address)')
   fi
   if [[ -z "${KUBE_MASTER_IP-}" ]]; then
     echo "Could not detect Kubernetes master node.  Make sure you've launched a cluster with 'kube-up.sh'" >&2
     exit 1
   fi
-  echo "Using master: $KUBE_MASTER (external IP: $KUBE_MASTER_IP)"
+  echo "Using master: $KUBE_MASTER (external IP: $KUBE_MASTER_IP)" >&2
 }
 
 # Reads kube-env metadata from master
@@ -402,7 +411,21 @@ function create-static-ip() {
     if gcloud compute addresses create "$1" \
       --project "${PROJECT}" \
       --region "${REGION}" -q > /dev/null; then
-      # successful operation
+      # successful operation - wait until it's visible
+      start="$(date +%s)"
+      while true; do
+        now="$(date +%s)"
+        # Timeout set to 15 minutes
+        if [ $((now - start)) -gt 900 ]; then
+          echo "Timeout while waiting for master IP visibility"
+          exit 2
+        fi
+        if gcloud compute addresses describe "$1" --project "${PROJECT}" --region "${REGION}" >/dev/null 2>&1; then
+          break
+        fi
+        echo "Master IP not visible yet. Waiting..."
+        sleep 5
+      done
       break
     fi
 
@@ -592,15 +615,14 @@ function kube-up() {
     parse-master-env
     create-nodes
   elif [[ ${KUBE_EXPERIMENTAL_REPLICATE_EXISTING_MASTER:-} == "true" ]]; then
-    # TODO(jsz): implement adding replica for other distributions.
-    if  [[ "${MASTER_OS_DISTRIBUTION}" != "gci" ]]; then
-      echo "Master replication supported only for gci"
+    if  [[ "${MASTER_OS_DISTRIBUTION}" != "gci" && "${MASTER_OS_DISTRIBUTION}" != "debian" ]]; then
+      echo "Master replication supported only for gci and debian"
       return 1
     fi
     create-loadbalancer
     # If replication of master fails, we need to ensure that the replica is removed from etcd clusters.
     if ! replicate-master; then
-      remove-replica-from-etcd 4001 || true
+      remove-replica-from-etcd 2379 || true
       remove-replica-from-etcd 4002 || true
     fi
   else
@@ -647,12 +669,22 @@ function create-network() {
     gcloud compute networks create --project "${PROJECT}" "${NETWORK}" --range "10.240.0.0/16"
   fi
 
-  if ! gcloud compute firewall-rules --project "${PROJECT}" describe "${NETWORK}-default-internal" &>/dev/null; then
-    gcloud compute firewall-rules create "${NETWORK}-default-internal" \
+  if ! gcloud compute firewall-rules --project "${PROJECT}" describe "${NETWORK}-default-internal-master" &>/dev/null; then
+    gcloud compute firewall-rules create "${NETWORK}-default-internal-master" \
       --project "${PROJECT}" \
       --network "${NETWORK}" \
       --source-ranges "10.0.0.0/8" \
-      --allow "tcp:1-65535,udp:1-65535,icmp" &
+      --allow "tcp:1-2379,tcp:2382-65535,udp:1-65535,icmp" \
+      --target-tags "${MASTER_TAG}"&
+  fi
+
+  if ! gcloud compute firewall-rules --project "${PROJECT}" describe "${NETWORK}-default-internal-node" &>/dev/null; then
+    gcloud compute firewall-rules create "${NETWORK}-default-internal-node" \
+      --project "${PROJECT}" \
+      --network "${NETWORK}" \
+      --source-ranges "10.0.0.0/8" \
+      --allow "tcp:1-65535,udp:1-65535,icmp" \
+      --target-tags "${NODE_TAG}"&
   fi
 
   if ! gcloud compute firewall-rules describe --project "${PROJECT}" "${NETWORK}-default-ssh" &>/dev/null; then
@@ -670,7 +702,7 @@ function create-network() {
 #   MASTER_ROOT_DISK_SIZE
 function get-master-root-disk-size() {
   if [[ "${NUM_NODES}" -le "1000" ]]; then
-    export MASTER_ROOT_DISK_SIZE="10"
+    export MASTER_ROOT_DISK_SIZE="20"
   else
     export MASTER_ROOT_DISK_SIZE="50"
   fi
@@ -699,6 +731,16 @@ function create-master() {
       --zone "${ZONE}" \
       --type "${CLUSTER_REGISTRY_DISK_TYPE_GCE}" \
       --size "${CLUSTER_REGISTRY_DISK_SIZE}" &
+  fi
+
+  # Create rule for accessing and securing etcd servers.
+  if ! gcloud compute firewall-rules --project "${PROJECT}" describe "${MASTER_NAME}-etcd" &>/dev/null; then
+    gcloud compute firewall-rules create "${MASTER_NAME}-etcd" \
+      --project "${PROJECT}" \
+      --network "${NETWORK}" \
+      --source-tags "${MASTER_TAG}" \
+      --allow "tcp:2380,tcp:2381" \
+      --target-tags "${MASTER_TAG}" &
   fi
 
   # Generate a bearer token for this cluster. We push this separately
@@ -766,7 +808,7 @@ function replicate-master() {
   echo "Experimental: replicating existing master ${EXISTING_MASTER_ZONE}/${EXISTING_MASTER_NAME} as ${ZONE}/${REPLICA_NAME}"
 
   # Before we do anything else, we should configure etcd to expect more replicas.
-  if ! add-replica-to-etcd 4001 2380; then
+  if ! add-replica-to-etcd 2379 2380; then
     echo "Failed to add master replica to etcd cluster."
     return 1
   fi
@@ -1124,41 +1166,43 @@ function kube-down() {
   echo "Bringing down cluster"
   set +e  # Do not stop on error
 
-  # Get the name of the managed instance group template before we delete the
-  # managed instance group. (The name of the managed instance group template may
-  # change during a cluster upgrade.)
-  local templates=$(get-template "${PROJECT}")
+  if [[ "${KUBE_DELETE_NODES:-}" != "false" ]]; then
+    # Get the name of the managed instance group template before we delete the
+    # managed instance group. (The name of the managed instance group template may
+    # change during a cluster upgrade.)
+    local templates=$(get-template "${PROJECT}")
 
-  for group in ${INSTANCE_GROUPS[@]:-}; do
-    if gcloud compute instance-groups managed describe "${group}" --project "${PROJECT}" --zone "${ZONE}" &>/dev/null; then
-      gcloud compute instance-groups managed delete \
-        --project "${PROJECT}" \
-        --quiet \
-        --zone "${ZONE}" \
-        "${group}" &
-    fi
-  done
+    for group in ${INSTANCE_GROUPS[@]:-}; do
+      if gcloud compute instance-groups managed describe "${group}" --project "${PROJECT}" --zone "${ZONE}" &>/dev/null; then
+        gcloud compute instance-groups managed delete \
+          --project "${PROJECT}" \
+          --quiet \
+          --zone "${ZONE}" \
+          "${group}" &
+      fi
+    done
 
-  # Wait for last batch of jobs
-  kube::util::wait-for-jobs || {
-    echo -e "Failed to delete instance group(s)." >&2
-  }
+    # Wait for last batch of jobs
+    kube::util::wait-for-jobs || {
+      echo -e "Failed to delete instance group(s)." >&2
+    }
 
-  for template in ${templates[@]:-}; do
-    if gcloud compute instance-templates describe --project "${PROJECT}" "${template}" &>/dev/null; then
-      gcloud compute instance-templates delete \
-        --project "${PROJECT}" \
-        --quiet \
-        "${template}"
-    fi
-  done
+    for template in ${templates[@]:-}; do
+      if gcloud compute instance-templates describe --project "${PROJECT}" "${template}" &>/dev/null; then
+        gcloud compute instance-templates delete \
+          --project "${PROJECT}" \
+          --quiet \
+          "${template}"
+      fi
+    done
+  fi
 
   local -r REPLICA_NAME="$(get-replica-name)"
 
   set-existing-master
 
   # Un-register the master replica from etcd and events etcd.
-  remove-replica-from-etcd 4001
+  remove-replica-from-etcd 2379
   remove-replica-from-etcd 4002
 
   # Delete the master replica (if it exists).
@@ -1180,12 +1224,14 @@ function kube-down() {
   fi
 
   # Delete the master replica pd (possibly leaked by kube-up if master create failed).
-  if gcloud compute disks describe "${REPLICA_NAME}"-pd --zone "${ZONE}" --project "${PROJECT}" &>/dev/null; then
+  # TODO(jszczepkowski): remove also possibly leaked replicas' pds
+  local -r replica_pd="${REPLICA_NAME:-${MASTER_NAME}}-pd"
+  if gcloud compute disks describe "${replica_pd}" --zone "${ZONE}" --project "${PROJECT}" &>/dev/null; then
     gcloud compute disks delete \
       --project "${PROJECT}" \
       --quiet \
       --zone "${ZONE}" \
-      "${REPLICA_NAME}"-pd
+      "${replica_pd}"
   fi
 
   # Delete disk for cluster registry if enabled
@@ -1249,25 +1295,34 @@ function kube-down() {
         --quiet \
         "${NODE_TAG}-all"
     fi
+    # Delete firewall rule for etcd servers.
+    if gcloud compute firewall-rules --project "${PROJECT}" describe "${MASTER_NAME}-etcd" &>/dev/null; then
+      gcloud compute firewall-rules delete  \
+        --project "${PROJECT}" \
+        --quiet \
+        "${MASTER_NAME}-etcd"
+    fi
   fi
 
-  # Find out what minions are running.
-  local -a minions
-  minions=( $(gcloud compute instances list \
-                --project "${PROJECT}" --zones "${ZONE}" \
-                --regexp "${NODE_INSTANCE_PREFIX}-.+" \
-                --format='value(name)') )
-  # If any minions are running, delete them in batches.
-  while (( "${#minions[@]}" > 0 )); do
-    echo Deleting nodes "${minions[*]::${batch}}"
-    gcloud compute instances delete \
-      --project "${PROJECT}" \
-      --quiet \
-      --delete-disks boot \
-      --zone "${ZONE}" \
-      "${minions[@]::${batch}}"
-    minions=( "${minions[@]:${batch}}" )
-  done
+  if [[ "${KUBE_DELETE_NODES:-}" != "false" ]]; then
+    # Find out what minions are running.
+    local -a minions
+    minions=( $(gcloud compute instances list \
+                  --project "${PROJECT}" --zones "${ZONE}" \
+                  --regexp "${NODE_INSTANCE_PREFIX}-.+" \
+                  --format='value(name)') )
+    # If any minions are running, delete them in batches.
+    while (( "${#minions[@]}" > 0 )); do
+      echo Deleting nodes "${minions[*]::${batch}}"
+      gcloud compute instances delete \
+        --project "${PROJECT}" \
+        --quiet \
+        --delete-disks boot \
+        --zone "${ZONE}" \
+        "${minions[@]::${batch}}"
+      minions=( "${minions[@]:${batch}}" )
+    done
+  fi
 
   # Delete routes.
   local -a routes

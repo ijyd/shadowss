@@ -26,16 +26,17 @@ import (
 	"sync"
 	"time"
 
-	release_1_4 "k8s.io/client-go/1.4/kubernetes"
-	"k8s.io/client-go/1.4/pkg/util/sets"
-	clientreporestclient "k8s.io/client-go/1.4/rest"
-	"k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_4"
+	staging "k8s.io/client-go/1.5/kubernetes"
+	"k8s.io/client-go/1.5/pkg/util/sets"
+	clientreporestclient "k8s.io/client-go/1.5/rest"
+	"k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_5"
 	"k8s.io/kubernetes/pkg/api"
 	apierrs "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/api/v1"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/release_1_2"
-	"k8s.io/kubernetes/pkg/client/clientset_generated/release_1_3"
+	"k8s.io/kubernetes/pkg/apimachinery/registered"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/client/typed/dynamic"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -59,10 +60,14 @@ const (
 type Framework struct {
 	BaseName string
 
-	Client        *client.Client
-	Clientset_1_2 *release_1_2.Clientset
-	Clientset_1_3 *release_1_3.Clientset
-	StagingClient *release_1_4.Clientset
+	// Client is manually created and should not be used unless absolutely necessary. Use ClientSet_1_5
+	// where possible.
+	Client *client.Client
+	// ClientSet uses internal objects, you should use ClientSet_1_5 where possible.
+	ClientSet internalclientset.Interface
+
+	ClientSet_1_5 *release_1_5.Clientset
+	StagingClient *staging.Clientset
 	ClientPool    dynamic.ClientPool
 
 	Namespace                *api.Namespace   // Every test has at least one namespace
@@ -91,7 +96,7 @@ type Framework struct {
 	federated bool
 
 	// Federation specific params. These are set only if federated = true.
-	FederationClientset_1_4 *federation_release_1_4.Clientset
+	FederationClientset_1_5 *federation_release_1_5.Clientset
 	FederationNamespace     *v1.Namespace
 }
 
@@ -119,6 +124,12 @@ func NewDefaultFramework(baseName string) *Framework {
 func NewDefaultFederatedFramework(baseName string) *Framework {
 	f := NewDefaultFramework(baseName)
 	f.federated = true
+	return f
+}
+
+func NewDefaultGroupVersionFramework(baseName string, groupVersion unversioned.GroupVersion) *Framework {
+	f := NewDefaultFramework(baseName)
+	f.options.GroupVersion = &groupVersion
 	return f
 }
 
@@ -188,24 +199,25 @@ func (f *Framework) BeforeEach() {
 		c, err := loadClientFromConfig(config)
 		Expect(err).NotTo(HaveOccurred())
 		f.Client = c
-		f.Clientset_1_2, err = release_1_2.NewForConfig(config)
-		f.Clientset_1_3, err = release_1_3.NewForConfig(config)
+		f.ClientSet, err = internalclientset.NewForConfig(config)
+		Expect(err).NotTo(HaveOccurred())
+		f.ClientSet_1_5, err = release_1_5.NewForConfig(config)
 		Expect(err).NotTo(HaveOccurred())
 		clientRepoConfig := getClientRepoConfig(config)
-		f.StagingClient, err = release_1_4.NewForConfig(clientRepoConfig)
+		f.StagingClient, err = staging.NewForConfig(clientRepoConfig)
 		Expect(err).NotTo(HaveOccurred())
-		f.ClientPool = dynamic.NewClientPool(config, dynamic.LegacyAPIPathResolverFunc)
+		f.ClientPool = dynamic.NewClientPool(config, registered.RESTMapper(), dynamic.LegacyAPIPathResolverFunc)
 	}
 
 	if f.federated {
-		if f.FederationClientset_1_4 == nil {
+		if f.FederationClientset_1_5 == nil {
 			By("Creating a release 1.4 federation Clientset")
 			var err error
-			f.FederationClientset_1_4, err = LoadFederationClientset_1_4()
+			f.FederationClientset_1_5, err = LoadFederationClientset_1_5()
 			Expect(err).NotTo(HaveOccurred())
 		}
 		By("Waiting for federation-apiserver to be ready")
-		err := WaitForFederationApiserverReady(f.FederationClientset_1_4)
+		err := WaitForFederationApiserverReady(f.FederationClientset_1_5)
 		Expect(err).NotTo(HaveOccurred())
 		By("federation-apiserver is ready")
 
@@ -257,6 +269,10 @@ func (f *Framework) BeforeEach() {
 }
 
 func (f *Framework) deleteFederationNs() {
+	if !f.federated {
+		// Nothing to do if this is not a federation setup.
+		return
+	}
 	ns := f.FederationNamespace
 	By(fmt.Sprintf("Destroying federation namespace %q for this suite.", ns.Name))
 	timeout := 5 * time.Minute
@@ -264,9 +280,9 @@ func (f *Framework) deleteFederationNs() {
 		timeout = f.NamespaceDeletionTimeout
 	}
 
-	clientset := f.FederationClientset_1_4
+	clientset := f.FederationClientset_1_5
 	// First delete the namespace from federation apiserver.
-	if err := clientset.Core().Namespaces().Delete(ns.Name, &api.DeleteOptions{}); err != nil {
+	if err := clientset.Core().Namespaces().Delete(ns.Name, &v1.DeleteOptions{}); err != nil {
 		Failf("Error while deleting federation namespace %s: %s", ns.Name, err)
 	}
 	// Verify that it got deleted.
@@ -299,7 +315,10 @@ func (f *Framework) AfterEach() {
 	// expectation failures preventing deleting the namespace.
 	defer func() {
 		nsDeletionErrors := map[string]error{}
-		if TestContext.DeleteNamespace {
+		// Whether to delete namespace is determined by 3 factors: delete-namespace flag, delete-namespace-on-failure flag and the test result
+		// if delete-namespace set to false, namespace will always be preserved.
+		// if delete-namespace is true and delete-namespace-on-failure is false, namespace will be preserved if test failed.
+		if TestContext.DeleteNamespace && (TestContext.DeleteNamespaceOnFailure || !CurrentGinkgoTestDescription().Failed) {
 			for _, ns := range f.namespacesToDelete {
 				By(fmt.Sprintf("Destroying namespace %q for this suite.", ns.Name))
 				timeout := 5 * time.Minute
@@ -315,12 +334,14 @@ func (f *Framework) AfterEach() {
 				}
 			}
 			// Delete the federation namespace.
-			// TODO(nikhiljindal): Uncomment this, once https://github.com/kubernetes/kubernetes/issues/31077 is fixed.
-			// In the meantime, we will have these extra namespaces in all clusters.
-			// Note: this will not cause any failure since we create a new namespace for each test in BeforeEach().
-			// f.deleteFederationNs()
+			f.deleteFederationNs()
 		} else {
-			Logf("Found DeleteNamespace=false, skipping namespace deletion!")
+			if TestContext.DeleteNamespace {
+				Logf("Found DeleteNamespace=false, skipping namespace deletion!")
+			} else if TestContext.DeleteNamespaceOnFailure {
+				Logf("Found DeleteNamespaceOnFailure=false, skipping namespace deletion!")
+			}
+
 		}
 
 		// Paranoia-- prevent reuse!
@@ -333,7 +354,7 @@ func (f *Framework) AfterEach() {
 		if len(nsDeletionErrors) != 0 {
 			messages := []string{}
 			for namespaceKey, namespaceErr := range nsDeletionErrors {
-				messages = append(messages, fmt.Sprintf("Couldn't delete ns: %q: %s", namespaceKey, namespaceErr))
+				messages = append(messages, fmt.Sprintf("Couldn't delete ns: %q: %s (%#v)", namespaceKey, namespaceErr, namespaceErr))
 			}
 			Failf(strings.Join(messages, ","))
 		}
@@ -341,11 +362,11 @@ func (f *Framework) AfterEach() {
 
 	if f.federated {
 		defer func() {
-			if f.FederationClientset_1_4 == nil {
+			if f.FederationClientset_1_5 == nil {
 				Logf("Warning: framework is marked federated, but has no federation 1.4 clientset")
 				return
 			}
-			if err := f.FederationClientset_1_4.Federation().Clusters().DeleteCollection(nil, api.ListOptions{}); err != nil {
+			if err := f.FederationClientset_1_5.Federation().Clusters().DeleteCollection(nil, v1.ListOptions{}); err != nil {
 				Logf("Error: failed to delete Clusters: %+v", err)
 			}
 		}()
@@ -353,10 +374,15 @@ func (f *Framework) AfterEach() {
 
 	// Print events if the test failed.
 	if CurrentGinkgoTestDescription().Failed && TestContext.DumpLogsOnFailure {
-		DumpAllNamespaceInfo(f.Client, f.Namespace.Name)
+		// Pass both unversioned client and and versioned clientset, till we have removed all uses of the unversioned client.
+		DumpAllNamespaceInfo(f.Client, f.ClientSet_1_5, f.Namespace.Name)
 		By(fmt.Sprintf("Dumping a list of prepulled images on each node"))
 		LogContainersInPodsWithLabels(f.Client, api.NamespaceSystem, ImagePullerLabels, "image-puller")
 		if f.federated {
+			// Dump federation events in federation namespace.
+			DumpEventsInNamespace(func(opts v1.ListOptions, ns string) (*v1.EventList, error) {
+				return f.FederationClientset_1_5.Core().Events(ns).List(opts)
+			}, f.FederationNamespace.Name)
 			// Print logs of federation control plane pods (federation-apiserver and federation-controller-manager)
 			LogPodsWithLabels(f.Client, "federation", map[string]string{"app": "federated-cluster"})
 			// Print logs of kube-dns pod
@@ -414,7 +440,7 @@ func (f *Framework) AfterEach() {
 	// Check whether all nodes are ready after the test.
 	// This is explicitly done at the very end of the test, to avoid
 	// e.g. not removing namespace in case of this failure.
-	if err := AllNodesReady(f.Client, time.Minute); err != nil {
+	if err := AllNodesReady(f.Client, 3*time.Minute); err != nil {
 		Failf("All nodes should be ready after test, %v", err)
 	}
 }
@@ -432,7 +458,7 @@ func (f *Framework) CreateNamespace(baseName string, labels map[string]string) (
 }
 
 func (f *Framework) createFederationNamespace(baseName string) (*v1.Namespace, error) {
-	clientset := f.FederationClientset_1_4
+	clientset := f.FederationClientset_1_5
 	namespaceObj := &v1.Namespace{
 		ObjectMeta: v1.ObjectMeta{
 			GenerateName: fmt.Sprintf("e2e-tests-%v-", baseName),
@@ -564,6 +590,16 @@ func (f *Framework) ReadFileViaContainer(podName, containerName string, path str
 	By("reading a file in the container")
 
 	stdout, stderr, err := kubectlExecWithRetry(f.Namespace.Name, podName, containerName, "--", "cat", path)
+	if err != nil {
+		Logf("error running kubectl exec to read file: %v\nstdout=%v\nstderr=%v)", err, string(stdout), string(stderr))
+	}
+	return string(stdout), err
+}
+
+func (f *Framework) CheckFileSizeViaContainer(podName, containerName, path string) (string, error) {
+	By("checking a file size in the container")
+
+	stdout, stderr, err := kubectlExecWithRetry(f.Namespace.Name, podName, containerName, "--", "ls", "-l", path)
 	if err != nil {
 		Logf("error running kubectl exec to read file: %v\nstdout=%v\nstderr=%v)", err, string(stdout), string(stderr))
 	}

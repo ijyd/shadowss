@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/api_changes.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/api_changes.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -519,7 +519,7 @@ hack/update-codecgen.sh
 This section is under construction, as we make the tooling completely generic.
 
 At the moment, you'll have to make a new directory under `pkg/apis/`; copy the
-directory structure from `pkg/apis/extensions`. Add the new group/version to all
+directory structure from `pkg/apis/authentication`. Add the new group/version to all
 of the `hack/{verify,update}-generated-{deep-copy,conversions,swagger}.sh` files
 in the appropriate places--it should just require adding your new group/version
 to a bash array.  See [docs on adding an API group](adding-an-APIGroup.md) for
@@ -590,10 +590,11 @@ out. Put `grep` or `ack` to good use.
 If you added functionality, you should consider documenting it and/or writing
 an example to illustrate your change.
 
-Make sure you update the swagger API spec by running:
+Make sure you update the swagger and OpenAPI spec by running:
 
 ```sh
 hack/update-swagger-spec.sh
+hack/update-openapi-spec.sh
 ```
 
 The API spec changes should be in a commit separate from your other changes.

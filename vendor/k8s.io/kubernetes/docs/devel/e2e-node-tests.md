@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/e2e-node-tests.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/e2e-node-tests.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -41,6 +41,8 @@ Tests can be run either locally or against a host running on GCE.
 Node e2e tests are run as both pre- and post- submit tests by the Kubernetes project.
 
 *Note: Linux only. Mac and Windows unsupported.*
+
+*Note: There is no scheduler running. The e2e tests have to do manual scheduling, e.g. by using `framework.PodClient`.*
 
 # Running tests
 

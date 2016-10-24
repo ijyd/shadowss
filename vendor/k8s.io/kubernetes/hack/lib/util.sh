@@ -164,17 +164,21 @@ kube::util::host_platform() {
   echo "${host_os}/${host_arch}"
 }
 
-kube::util::find-binary() {
-  local lookfor="${1}"
-  local host_platform="$(kube::util::host_platform)"
-  local locations=(
+kube::util::find-binary-for-platform() {
+  local -r lookfor="$1"
+  local -r platform="$2"
+  local -r locations=(
     "${KUBE_ROOT}/_output/bin/${lookfor}"
-    "${KUBE_ROOT}/_output/dockerized/bin/${host_platform}/${lookfor}"
-    "${KUBE_ROOT}/_output/local/bin/${host_platform}/${lookfor}"
-    "${KUBE_ROOT}/platforms/${host_platform}/${lookfor}"
+    "${KUBE_ROOT}/_output/dockerized/bin/${platform}/${lookfor}"
+    "${KUBE_ROOT}/_output/local/bin/${platform}/${lookfor}"
+    "${KUBE_ROOT}/platforms/${platform}/${lookfor}"
   )
-  local bin=$( (ls -t "${locations[@]}" 2>/dev/null || true) | head -1 )
+  local -r bin=$( (ls -t "${locations[@]}" 2>/dev/null || true) | head -1 )
   echo -n "${bin}"
+}
+
+kube::util::find-binary() {
+  kube::util::find-binary-for-platform "$1" "$(kube::util::host_platform)"
 }
 
 # Run all known doc generators (today gendocs and genman for kubectl)
@@ -205,7 +209,13 @@ kube::util::gen-docs() {
   "${genfeddocs}" "${dest}/docs/admin/" "federation-controller-manager"
 
   mkdir -p "${dest}/docs/man/man1/"
-  "${genman}" "${dest}/docs/man/man1/"
+  "${genman}" "${dest}/docs/man/man1/" "kube-apiserver"
+  "${genman}" "${dest}/docs/man/man1/" "kube-controller-manager"
+  "${genman}" "${dest}/docs/man/man1/" "kube-proxy"
+  "${genman}" "${dest}/docs/man/man1/" "kube-scheduler"
+  "${genman}" "${dest}/docs/man/man1/" "kubelet"
+  "${genman}" "${dest}/docs/man/man1/" "kubectl"
+
   mkdir -p "${dest}/docs/yaml/kubectl/"
   "${genyaml}" "${dest}/docs/yaml/kubectl/"
 
@@ -293,6 +303,7 @@ kube::util::analytics-link() {
 # * default behavior: extensions/v1beta1 -> apis/extensions/v1beta1
 # * default behavior for only a group: experimental -> apis/experimental
 # * Special handling for empty group: v1 -> api/v1, unversioned -> api/unversioned
+# * Special handling for groups suffixed with ".k8s.io": foo.k8s.io/v1 -> apis/foo/v1
 # * Very special handling for when both group and version are "": / -> api
 kube::util::group-version-to-pkg-path() {
   local group_version="$1"
@@ -309,6 +320,12 @@ kube::util::group-version-to-pkg-path() {
       ;;
     unversioned)
       echo "api/unversioned"
+      ;;
+    *.k8s.io)
+      echo "apis/${group_version%.*k8s.io}"
+      ;;
+    *.k8s.io/*)
+      echo "apis/${group_version/.*k8s.io/}"
       ;;
     *)
       echo "apis/${group_version%__internal}"
@@ -340,6 +357,9 @@ kube::util::gv-to-swagger-name() {
 # VERSIONS: Array of group versions to include in swagger spec.
 kube::util::fetch-swagger-spec() {
   for ver in ${VERSIONS}; do
+    if [[ " ${KUBE_NONSERVER_GROUP_VERSIONS} " == *" ${ver} "* ]]; then
+      continue
+    fi
     # fetch the swagger spec for each group version.
     if [[ ${ver} == "v1" ]]; then
       SUBPATH="api"
@@ -365,6 +385,59 @@ kube::util::fetch-swagger-spec() {
   curl -w "\n" -fs "${SWAGGER_API_PATH}api" > "${SWAGGER_ROOT_DIR}/api.json"
   curl -w "\n" -fs "${SWAGGER_API_PATH}apis" > "${SWAGGER_ROOT_DIR}/apis.json"
   curl -w "\n" -fs "${SWAGGER_API_PATH}logs" > "${SWAGGER_ROOT_DIR}/logs.json"
+}
+
+# Takes a group/version and returns the openapi-spec file name.
+# default behavior: extensions/v1beta1 -> v1beta1.extensions
+# special case for v1: v1 -> v1
+kube::util::gv-to-openapi-name() {
+  local group_version="$1"
+  case "${group_version}" in
+    v1)
+      echo "v1"
+      ;;
+    *)
+      echo "${group_version#*/}.${group_version%/*}"
+      ;;
+  esac
+}
+
+
+# Fetches openapi spec from apiserver.
+# Assumed vars:
+# OPENAPI_API_PATH: Base path for openapi on apiserver. normally APIServer root. i.e., http://localhost:8080/
+# OPENAPI_ROOT_DIR: Root dir where we want to to save the fetched spec.
+# VERSIONS: Array of group versions to include in swagger spec.
+kube::util::fetch-openapi-spec() {
+  for ver in ${VERSIONS}; do
+    if [[ " ${KUBE_NONSERVER_GROUP_VERSIONS} " == *" ${ver} "* ]]; then
+      continue
+    fi
+    # fetch the openapi spec for each group version.
+    if [[ ${ver} == "v1" ]]; then
+      SUBPATH="api"
+    else
+      SUBPATH="apis"
+    fi
+    SUBPATH="${SUBPATH}/${ver}"
+    OPENAPI_JSON_NAME="$(kube::util::gv-to-openapi-name ${ver}).json"
+    curl -w "\n" -fs "${OPENAPI_PATH}${SUBPATH}/swagger.json" > "${OPENAPI_ROOT_DIR}/${OPENAPI_JSON_NAME}"
+
+    # fetch the openapi spec for the discovery mechanism at group level.
+    if [[ ${ver} == "v1" ]]; then
+      continue
+    fi
+    SUBPATH="apis/"${ver%/*}
+    OPENAPI_JSON_NAME="${ver%/*}.json"
+    curl -w "\n" -fs "${OPENAPI_PATH}${SUBPATH}/swagger.json" > "${OPENAPI_ROOT_DIR}/${OPENAPI_JSON_NAME}"
+  done
+
+  # fetch openapi specs for other discovery mechanism.
+  curl -w "\n" -fs "${OPENAPI_PATH}swagger.json" > "${OPENAPI_ROOT_DIR}/root_swagger.json"
+  curl -w "\n" -fs "${OPENAPI_PATH}version/swagger.json" > "${OPENAPI_ROOT_DIR}/version.json"
+  curl -w "\n" -fs "${OPENAPI_PATH}api/swagger.json" > "${OPENAPI_ROOT_DIR}/api.json"
+  curl -w "\n" -fs "${OPENAPI_PATH}apis/swagger.json" > "${OPENAPI_ROOT_DIR}/apis.json"
+  curl -w "\n" -fs "${OPENAPI_PATH}logs/swagger.json" > "${OPENAPI_ROOT_DIR}/logs.json"
 }
 
 

@@ -33,7 +33,6 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	kcache "k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
-	kframework "k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/validation"
 	"k8s.io/kubernetes/pkg/util/wait"
@@ -99,7 +98,7 @@ type KubeDNS struct {
 	// Map of cluster IP to service object. Headless services are not part of this map.
 	// Used to get a service when given its cluster IP.
 	// Access to this is coordinated using cacheLock. We use the same lock for cache and this map
-	// to ensure that they dont get out of sync.
+	// to ensure that they don't get out of sync.
 	clusterIPServiceMap map[string]*kapi.Service
 
 	// caller is responsible for using the cacheLock before invoking methods on cache
@@ -112,10 +111,10 @@ type KubeDNS struct {
 	domainPath []string
 
 	// endpointsController  invokes registered callbacks when endpoints change.
-	endpointsController *kframework.Controller
+	endpointsController *kcache.Controller
 
 	// serviceController invokes registered callbacks when services change.
-	serviceController *kframework.Controller
+	serviceController *kcache.Controller
 
 	// Map of federation names that the cluster in which this kube-dns is running belongs to, to
 	// the corresponding domain names.
@@ -188,7 +187,7 @@ func (kd *KubeDNS) GetCacheAsJSON() (string, error) {
 
 func (kd *KubeDNS) setServicesStore() {
 	// Returns a cache.ListWatch that gets all changes to services.
-	kd.servicesStore, kd.serviceController = kframework.NewInformer(
+	kd.servicesStore, kd.serviceController = kcache.NewInformer(
 		&kcache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return kd.kubeClient.Core().Services(kapi.NamespaceAll).List(options)
@@ -199,7 +198,7 @@ func (kd *KubeDNS) setServicesStore() {
 		},
 		&kapi.Service{},
 		resyncPeriod,
-		kframework.ResourceEventHandlerFuncs{
+		kcache.ResourceEventHandlerFuncs{
 			AddFunc:    kd.newService,
 			DeleteFunc: kd.removeService,
 			UpdateFunc: kd.updateService,
@@ -209,7 +208,7 @@ func (kd *KubeDNS) setServicesStore() {
 
 func (kd *KubeDNS) setEndpointsStore() {
 	// Returns a cache.ListWatch that gets all changes to endpoints.
-	kd.endpointsStore, kd.endpointsController = kframework.NewInformer(
+	kd.endpointsStore, kd.endpointsController = kcache.NewInformer(
 		&kcache.ListWatch{
 			ListFunc: func(options kapi.ListOptions) (runtime.Object, error) {
 				return kd.kubeClient.Core().Endpoints(kapi.NamespaceAll).List(options)
@@ -220,7 +219,7 @@ func (kd *KubeDNS) setEndpointsStore() {
 		},
 		&kapi.Endpoints{},
 		resyncPeriod,
-		kframework.ResourceEventHandlerFuncs{
+		kcache.ResourceEventHandlerFuncs{
 			AddFunc: kd.handleEndpointAdd,
 			UpdateFunc: func(oldObj, newObj interface{}) {
 				// TODO: Avoid unwanted updates.
@@ -253,7 +252,7 @@ func (kd *KubeDNS) newService(obj interface{}) {
 			return
 		}
 		if len(service.Spec.Ports) == 0 {
-			glog.Warningf("Unexpected service with no ports, this should not have happend: %v", service)
+			glog.Warningf("Unexpected service with no ports, this should not have happened: %v", service)
 		}
 		kd.newPortalService(service)
 	}
@@ -504,7 +503,7 @@ func (kd *KubeDNS) Records(name string, exact bool) (retval []skymsg.Service, er
 		if !kd.isHeadlessServiceRecord(&val) {
 			ok, err := kd.serviceWithClusterIPHasEndpoints(&val)
 			if err != nil {
-				glog.V(2).Infof("federation service query: unexpected error while trying to find if service has endpoint: %v")
+				glog.V(2).Infof("federation service query: unexpected error while trying to find if service has endpoint: %v", err)
 				continue
 			}
 			if !ok {

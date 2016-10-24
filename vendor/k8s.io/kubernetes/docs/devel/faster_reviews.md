@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/faster_reviews.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/faster_reviews.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -109,7 +109,7 @@ fast-moving codebase - lock in your changes ASAP, and make merges be someone
 else's problem.
 
 Obviously, we want every PR to be useful on its own, so you'll have to use
-common sense in deciding what can be a PR vs what should be a commit in a larger
+common sense in deciding what can be a PR vs. what should be a commit in a larger
 PR. Rule of thumb - if this commit or set of commits is directly related to
 Feature-X and nothing else, it should probably be part of the Feature-X PR. If
 you can plausibly imagine someone finding value in this commit outside of

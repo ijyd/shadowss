@@ -28,7 +28,7 @@ import (
 
 	fed "k8s.io/kubernetes/federation/apis/federation"
 	fedv1 "k8s.io/kubernetes/federation/apis/federation/v1beta1"
-	fedclientset "k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_4"
+	fedclientset "k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_5"
 	planner "k8s.io/kubernetes/federation/pkg/federation-controller/replicaset/planner"
 	fedutil "k8s.io/kubernetes/federation/pkg/federation-controller/util"
 	"k8s.io/kubernetes/federation/pkg/federation-controller/util/eventsink"
@@ -36,10 +36,9 @@ import (
 	apiv1 "k8s.io/kubernetes/pkg/api/v1"
 	extensionsv1 "k8s.io/kubernetes/pkg/apis/extensions/v1beta1"
 	"k8s.io/kubernetes/pkg/client/cache"
-	kubeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_4"
+	kubeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/client/record"
 	"k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/flowcontrol"
 	"k8s.io/kubernetes/pkg/util/wait"
@@ -57,7 +56,7 @@ var (
 	replicaSetReviewDelay    = 10 * time.Second
 	clusterAvailableDelay    = 20 * time.Second
 	clusterUnavailableDelay  = 60 * time.Second
-	allReplicaSetReviewDealy = 2 * time.Minute
+	allReplicaSetReviewDelay = 2 * time.Minute
 	updateTimeout            = 30 * time.Second
 )
 
@@ -79,7 +78,7 @@ func parseFederationReplicaSetReference(frs *extensionsv1.ReplicaSet) (*fed.Fede
 type ReplicaSetController struct {
 	fedClient fedclientset.Interface
 
-	replicaSetController *framework.Controller
+	replicaSetController *cache.Controller
 	replicaSetStore      cache.StoreToReplicaSetLister
 
 	fedReplicaSetInformer fedutil.FederatedInformer
@@ -118,26 +117,28 @@ func NewReplicaSetController(federationClient fedclientset.Interface) *ReplicaSe
 		eventRecorder: recorder,
 	}
 
-	replicaSetFedInformerFactory := func(cluster *fedv1.Cluster, clientset kubeclientset.Interface) (cache.Store, framework.ControllerInterface) {
-		return framework.NewInformer(
+	replicaSetFedInformerFactory := func(cluster *fedv1.Cluster, clientset kubeclientset.Interface) (cache.Store, cache.ControllerInterface) {
+		return cache.NewInformer(
 			&cache.ListWatch{
 				ListFunc: func(options api.ListOptions) (runtime.Object, error) {
-					return clientset.Extensions().ReplicaSets(apiv1.NamespaceAll).List(options)
+					versionedOptions := fedutil.VersionizeV1ListOptions(options)
+					return clientset.Extensions().ReplicaSets(apiv1.NamespaceAll).List(versionedOptions)
 				},
 				WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-					return clientset.Extensions().ReplicaSets(apiv1.NamespaceAll).Watch(options)
+					versionedOptions := fedutil.VersionizeV1ListOptions(options)
+					return clientset.Extensions().ReplicaSets(apiv1.NamespaceAll).Watch(versionedOptions)
 				},
 			},
 			&extensionsv1.ReplicaSet{},
 			controller.NoResyncPeriodFunc(),
 			fedutil.NewTriggerOnAllChanges(
-				func(obj runtime.Object) { frsc.deliverLocalReplicaSet(obj, allReplicaSetReviewDealy) },
+				func(obj runtime.Object) { frsc.deliverLocalReplicaSet(obj, replicaSetReviewDelay) },
 			),
 		)
 	}
 	clusterLifecycle := fedutil.ClusterLifecycleHandlerFuncs{
 		ClusterAvailable: func(cluster *fedv1.Cluster) {
-			frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, clusterUnavailableDelay)
+			frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, clusterAvailableDelay)
 		},
 		ClusterUnavailable: func(cluster *fedv1.Cluster, _ []interface{}) {
 			frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, clusterUnavailableDelay)
@@ -145,34 +146,38 @@ func NewReplicaSetController(federationClient fedclientset.Interface) *ReplicaSe
 	}
 	frsc.fedReplicaSetInformer = fedutil.NewFederatedInformer(federationClient, replicaSetFedInformerFactory, &clusterLifecycle)
 
-	podFedInformerFactory := func(cluster *fedv1.Cluster, clientset kubeclientset.Interface) (cache.Store, framework.ControllerInterface) {
-		return framework.NewInformer(
+	podFedInformerFactory := func(cluster *fedv1.Cluster, clientset kubeclientset.Interface) (cache.Store, cache.ControllerInterface) {
+		return cache.NewInformer(
 			&cache.ListWatch{
 				ListFunc: func(options api.ListOptions) (runtime.Object, error) {
-					return clientset.Core().Pods(apiv1.NamespaceAll).List(options)
+					versionedOptions := fedutil.VersionizeV1ListOptions(options)
+					return clientset.Core().Pods(apiv1.NamespaceAll).List(versionedOptions)
 				},
 				WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-					return clientset.Core().Pods(apiv1.NamespaceAll).Watch(options)
+					versionedOptions := fedutil.VersionizeV1ListOptions(options)
+					return clientset.Core().Pods(apiv1.NamespaceAll).Watch(versionedOptions)
 				},
 			},
 			&apiv1.Pod{},
 			controller.NoResyncPeriodFunc(),
 			fedutil.NewTriggerOnAllChanges(
 				func(obj runtime.Object) {
-					frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, clusterUnavailableDelay)
+					frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, allReplicaSetReviewDelay)
 				},
 			),
 		)
 	}
 	frsc.fedPodInformer = fedutil.NewFederatedInformer(federationClient, podFedInformerFactory, &fedutil.ClusterLifecycleHandlerFuncs{})
 
-	frsc.replicaSetStore.Store, frsc.replicaSetController = framework.NewInformer(
+	frsc.replicaSetStore.Indexer, frsc.replicaSetController = cache.NewIndexerInformer(
 		&cache.ListWatch{
 			ListFunc: func(options api.ListOptions) (runtime.Object, error) {
-				return frsc.fedClient.Extensions().ReplicaSets(apiv1.NamespaceAll).List(options)
+				versionedOptions := fedutil.VersionizeV1ListOptions(options)
+				return frsc.fedClient.Extensions().ReplicaSets(apiv1.NamespaceAll).List(versionedOptions)
 			},
 			WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-				return frsc.fedClient.Extensions().ReplicaSets(apiv1.NamespaceAll).Watch(options)
+				versionedOptions := fedutil.VersionizeV1ListOptions(options)
+				return frsc.fedClient.Extensions().ReplicaSets(apiv1.NamespaceAll).Watch(versionedOptions)
 			},
 		},
 		&extensionsv1.ReplicaSet{},
@@ -180,6 +185,7 @@ func NewReplicaSetController(federationClient fedclientset.Interface) *ReplicaSe
 		fedutil.NewTriggerOnMetaAndSpecChanges(
 			func(obj runtime.Object) { frsc.deliverFedReplicaSetObj(obj, replicaSetReviewDelay) },
 		),
+		cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
 	)
 
 	frsc.fedUpdater = fedutil.NewFederatedUpdater(frsc.fedReplicaSetInformer,
@@ -195,7 +201,7 @@ func NewReplicaSetController(federationClient fedclientset.Interface) *ReplicaSe
 		},
 		func(client kubeclientset.Interface, obj runtime.Object) error {
 			rs := obj.(*extensionsv1.ReplicaSet)
-			err := client.Extensions().ReplicaSets(rs.Namespace).Delete(rs.Name, &api.DeleteOptions{})
+			err := client.Extensions().ReplicaSets(rs.Namespace).Delete(rs.Name, &apiv1.DeleteOptions{})
 			return err
 		})
 
@@ -222,14 +228,7 @@ func (frsc *ReplicaSetController) Run(workers int, stopCh <-chan struct{}) {
 		go wait.Until(frsc.worker, time.Second, stopCh)
 	}
 
-	go func() {
-		select {
-		case <-time.After(time.Minute):
-			frsc.replicaSetBackoff.GC()
-		case <-stopCh:
-			return
-		}
-	}()
+	fedutil.StartBackoffGC(frsc.replicaSetBackoff, stopCh)
 
 	<-stopCh
 	glog.Infof("Shutting down ReplicaSetController")
@@ -286,7 +285,7 @@ func (frsc *ReplicaSetController) deliverLocalReplicaSet(obj interface{}, durati
 		glog.Errorf("Couldn't get key for object %v: %v", obj, err)
 		return
 	}
-	_, exists, err := frsc.replicaSetStore.Store.GetByKey(key)
+	_, exists, err := frsc.replicaSetStore.Indexer.GetByKey(key)
 	if err != nil {
 		glog.Errorf("Couldn't get federation replicaset %v: %v", key, err)
 		return
@@ -414,7 +413,7 @@ func (frsc *ReplicaSetController) reconcileReplicaSet(key string) (reconciliatio
 	startTime := time.Now()
 	defer glog.V(4).Infof("Finished reconcile replicaset %q (%v)", key, time.Now().Sub(startTime))
 
-	obj, exists, err := frsc.replicaSetStore.Store.GetByKey(key)
+	obj, exists, err := frsc.replicaSetStore.Indexer.GetByKey(key)
 	if err != nil {
 		return statusError, err
 	}
@@ -434,7 +433,7 @@ func (frsc *ReplicaSetController) reconcileReplicaSet(key string) (reconciliatio
 	if err != nil {
 		return statusError, err
 	}
-	podStatus, err := AnalysePods(frs, allPods, time.Now())
+	podStatus, err := AnalysePods(frs.Spec.Selector, allPods, time.Now())
 	current := make(map[string]int64)
 	estimatedCapacity := make(map[string]int64)
 	for _, cluster := range clusters {
@@ -531,7 +530,7 @@ func (frsc *ReplicaSetController) reconcileReplicaSetsOnClusterChange() {
 	if !frsc.isSynced() {
 		frsc.clusterDeliverer.DeliverAfter(allClustersKey, nil, clusterAvailableDelay)
 	}
-	rss := frsc.replicaSetStore.Store.List()
+	rss := frsc.replicaSetStore.Indexer.List()
 	for _, rs := range rss {
 		key, _ := controller.KeyFunc(rs)
 		frsc.deliverReplicaSetByKey(key, 0, false)

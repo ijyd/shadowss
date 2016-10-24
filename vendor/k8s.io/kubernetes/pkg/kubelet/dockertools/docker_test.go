@@ -158,7 +158,7 @@ func TestContainerNaming(t *testing.T) {
 }
 
 func TestMatchImageTagOrSHA(t *testing.T) {
-	for _, testCase := range []struct {
+	for i, testCase := range []struct {
 		Inspected dockertypes.ImageInspect
 		Image     string
 		Output    bool
@@ -209,27 +209,109 @@ func TestMatchImageTagOrSHA(t *testing.T) {
 			Image:  "myimage@sha256:2208",
 			Output: false,
 		},
+		{
+			// mismatched ID is ignored
+			Inspected: dockertypes.ImageInspect{
+				ID: "sha256:2208f7a29005d226d1ee33a63e33af1f47af6156c740d7d23c7948e8d282d53d",
+			},
+			Image:  "myimage@sha256:0000f7a29005d226d1ee33a63e33af1f47af6156c740d7d23c7948e8d282d53d",
+			Output: false,
+		},
+		{
+			// invalid digest is ignored
+			Inspected: dockertypes.ImageInspect{
+				ID: "sha256:unparseable",
+			},
+			Image:  "myimage@sha256:unparseable",
+			Output: false,
+		},
+		{
+			// v1 schema images can be pulled in one format and returned in another
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{"centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: true,
+		},
+		{
+			// RepoDigest match is is required
+			Inspected: dockertypes.ImageInspect{
+				ID:          "",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:000084acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: false,
+		},
+		{
+			// RepoDigest match is allowed
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: true,
+		},
+		{
+			// RepoDigest and ID are checked
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: true,
+		},
+		{
+			// unparseable RepoDigests are skipped
+			Inspected: dockertypes.ImageInspect{
+				ID: "sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{
+					"centos/ruby-23-centos7@sha256:unparseable",
+					"docker.io/centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+				},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: true,
+		},
+		{
+			// unparseable RepoDigest is ignored
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:unparseable"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:940584acbbfb0347272112d2eb95574625c0c60b4e2fdadb139de5859cf754bf",
+			Output: false,
+		},
+		{
+			// unparseable image digest is ignored
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:9bbdf247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:unparseable"},
+			},
+			Image:  "centos/ruby-23-centos7@sha256:unparseable",
+			Output: false,
+		},
+		{
+			// prefix match is rejected for ID and RepoDigest
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:unparseable",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:unparseable"},
+			},
+			Image:  "sha256:unparseable",
+			Output: false,
+		},
+		{
+			// possible SHA prefix match is rejected for ID and RepoDigest because it is not in the named format
+			Inspected: dockertypes.ImageInspect{
+				ID:          "sha256:0000f247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227",
+				RepoDigests: []string{"docker.io/centos/ruby-23-centos7@sha256:0000f247c91345f0789c10f50a57e36a667af1189687ad1de88a6243d05a2227"},
+			},
+			Image:  "sha256:0000",
+			Output: false,
+		},
 	} {
 		match := matchImageTagOrSHA(testCase.Inspected, testCase.Image)
-		assert.Equal(t, testCase.Output, match, testCase.Image+" is not a match")
-	}
-}
-
-func TestApplyDefaultImageTag(t *testing.T) {
-	for _, testCase := range []struct {
-		Input  string
-		Output string
-	}{
-		{Input: "root", Output: "root:latest"},
-		{Input: "root:tag", Output: "root:tag"},
-		{Input: "root@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", Output: "root@sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-	} {
-		image, err := applyDefaultImageTag(testCase.Input)
-		if err != nil {
-			t.Errorf("applyDefaultTag(%s) failed: %v", testCase.Input, err)
-		} else if image != testCase.Output {
-			t.Errorf("Expected image reference: %q, got %q", testCase.Output, image)
-		}
+		assert.Equal(t, testCase.Output, match, testCase.Image+fmt.Sprintf(" is not a match (%d)", i))
 	}
 }
 
@@ -238,11 +320,11 @@ func TestPullWithNoSecrets(t *testing.T) {
 		imageName     string
 		expectedImage string
 	}{
-		{"ubuntu", "ubuntu:latest using {}"},
+		{"ubuntu", "ubuntu using {}"},
 		{"ubuntu:2342", "ubuntu:2342 using {}"},
 		{"ubuntu:latest", "ubuntu:latest using {}"},
 		{"foo/bar:445566", "foo/bar:445566 using {}"},
-		{"registry.example.com:5000/foobar", "registry.example.com:5000/foobar:latest using {}"},
+		{"registry.example.com:5000/foobar", "registry.example.com:5000/foobar using {}"},
 		{"registry.example.com:5000/foobar:5342", "registry.example.com:5000/foobar:5342 using {}"},
 		{"registry.example.com:5000/foobar:latest", "registry.example.com:5000/foobar:latest using {}"},
 	}
@@ -330,7 +412,7 @@ func TestPullWithSecrets(t *testing.T) {
 			"ubuntu",
 			[]api.Secret{},
 			credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{}),
-			[]string{"ubuntu:latest using {}"},
+			[]string{"ubuntu using {}"},
 		},
 		"default keyring secrets": {
 			"ubuntu",
@@ -338,7 +420,7 @@ func TestPullWithSecrets(t *testing.T) {
 			credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
 				"index.docker.io/v1/": {Username: "built-in", Password: "password", Email: "email", Provider: nil},
 			}),
-			[]string{`ubuntu:latest using {"username":"built-in","password":"password","email":"email"}`},
+			[]string{`ubuntu using {"username":"built-in","password":"password","email":"email"}`},
 		},
 		"default keyring secrets unused": {
 			"ubuntu",
@@ -346,7 +428,7 @@ func TestPullWithSecrets(t *testing.T) {
 			credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
 				"extraneous": {Username: "built-in", Password: "password", Email: "email", Provider: nil},
 			}),
-			[]string{`ubuntu:latest using {}`},
+			[]string{`ubuntu using {}`},
 		},
 		"builtin keyring secrets, but use passed": {
 			"ubuntu",
@@ -354,7 +436,7 @@ func TestPullWithSecrets(t *testing.T) {
 			credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
 				"index.docker.io/v1/": {Username: "built-in", Password: "password", Email: "email", Provider: nil},
 			}),
-			[]string{`ubuntu:latest using {"username":"passed-user","password":"passed-password","email":"passed-email"}`},
+			[]string{`ubuntu using {"username":"passed-user","password":"passed-password","email":"passed-email"}`},
 		},
 		"builtin keyring secrets, but use passed with new docker config": {
 			"ubuntu",
@@ -362,7 +444,7 @@ func TestPullWithSecrets(t *testing.T) {
 			credentialprovider.DockerConfig(map[string]credentialprovider.DockerConfigEntry{
 				"index.docker.io/v1/": {Username: "built-in", Password: "password", Email: "email", Provider: nil},
 			}),
-			[]string{`ubuntu:latest using {"username":"passed-user","password":"passed-password","email":"passed-email"}`},
+			[]string{`ubuntu using {"username":"passed-user","password":"passed-password","email":"passed-email"}`},
 		},
 	}
 	for i, test := range tests {

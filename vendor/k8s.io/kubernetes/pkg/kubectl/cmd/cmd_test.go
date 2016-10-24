@@ -33,6 +33,8 @@ import (
 	"k8s.io/kubernetes/pkg/api/testapi"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/api/validation"
+	"k8s.io/kubernetes/pkg/apimachinery/registered"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/client/typed/discovery"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -59,9 +61,22 @@ func defaultHeader() http.Header {
 
 func defaultClientConfig() *restclient.Config {
 	return &restclient.Config{
+		APIPath: "/api",
 		ContentConfig: restclient.ContentConfig{
-			ContentType:  runtime.ContentTypeJSON,
-			GroupVersion: testapi.Default.GroupVersion(),
+			NegotiatedSerializer: api.Codecs,
+			ContentType:          runtime.ContentTypeJSON,
+			GroupVersion:         &registered.GroupOrDie(api.GroupName).GroupVersion,
+		},
+	}
+}
+
+func defaultClientConfigForVersion(version *unversioned.GroupVersion) *restclient.Config {
+	return &restclient.Config{
+		APIPath: "/api",
+		ContentConfig: restclient.ContentConfig{
+			NegotiatedSerializer: api.Codecs,
+			ContentType:          runtime.ContentTypeJSON,
+			GroupVersion:         version,
 		},
 	}
 }
@@ -118,7 +133,7 @@ func versionErrIfFalse(b bool) error {
 	return versionErr
 }
 
-var validVersion = testapi.Default.GroupVersion().Version
+var validVersion = registered.GroupOrDie(api.GroupName).GroupVersion.Version
 var internalGV = unversioned.GroupVersion{Group: "apitest", Version: runtime.APIVersionInternal}
 var unlikelyGV = unversioned.GroupVersion{Group: "apitest", Version: "unlikelyversion"}
 var validVersionGV = unversioned.GroupVersion{Group: "apitest", Version: validVersion}
@@ -166,7 +181,7 @@ func (t *testPrinter) HandledResources() []string {
 	return []string{}
 }
 
-func (t *testPrinter) FinishPrint(output io.Writer, res string) error {
+func (t *testPrinter) AfterPrint(output io.Writer, res string) error {
 	return nil
 }
 
@@ -206,7 +221,7 @@ func NewTestFactory() (*cmdutil.Factory, *testFactory, runtime.Codec, runtime.Ne
 		runtime.SerializerInfo{Serializer: codec},
 		runtime.StreamSerializerInfo{})
 	return &cmdutil.Factory{
-		Object: func(discovery bool) (meta.RESTMapper, runtime.ObjectTyper) {
+		Object: func() (meta.RESTMapper, runtime.ObjectTyper) {
 			priorityRESTMapper := meta.PriorityRESTMapper{
 				Delegate: t.Mapper,
 				ResourcePriority: []unversioned.GroupVersionResource{
@@ -250,7 +265,7 @@ func NewMixedFactory(apiClient resource.RESTClient) (*cmdutil.Factory, *testFact
 	var multiRESTMapper meta.MultiRESTMapper
 	multiRESTMapper = append(multiRESTMapper, t.Mapper)
 	multiRESTMapper = append(multiRESTMapper, testapi.Default.RESTMapper())
-	f.Object = func(discovery bool) (meta.RESTMapper, runtime.ObjectTyper) {
+	f.Object = func() (meta.RESTMapper, runtime.ObjectTyper) {
 		priorityRESTMapper := meta.PriorityRESTMapper{
 			Delegate: multiRESTMapper,
 			ResourcePriority: []unversioned.GroupVersionResource{
@@ -277,7 +292,7 @@ func NewAPIFactory() (*cmdutil.Factory, *testFactory, runtime.Codec, runtime.Neg
 	}
 
 	f := &cmdutil.Factory{
-		Object: func(discovery bool) (meta.RESTMapper, runtime.ObjectTyper) {
+		Object: func() (meta.RESTMapper, runtime.ObjectTyper) {
 			return testapi.Default.RESTMapper(), api.Scheme
 		},
 		UnstructuredObject: func() (meta.RESTMapper, runtime.ObjectTyper, error) {
@@ -285,15 +300,27 @@ func NewAPIFactory() (*cmdutil.Factory, *testFactory, runtime.Codec, runtime.Neg
 			mapper := discovery.NewRESTMapper(groupResources, meta.InterfacesForUnstructured)
 			typer := discovery.NewUnstructuredObjectTyper(groupResources)
 
-			return kubectl.ShortcutExpander{RESTMapper: mapper}, typer, nil
+			return cmdutil.NewShortcutExpander(mapper, nil), typer, nil
 		},
-		Client: func() (*client.Client, error) {
+		ClientSet: func() (*internalclientset.Clientset, error) {
 			// Swap out the HTTP client out of the client with the fake's version.
 			fakeClient := t.Client.(*fake.RESTClient)
-			c := client.NewOrDie(t.ClientConfig)
-			c.Client = fakeClient.Client
-			c.ExtensionsClient.Client = fakeClient.Client
-			return c, t.Err
+			restClient, err := restclient.RESTClientFor(t.ClientConfig)
+			if err != nil {
+				panic(err)
+			}
+			restClient.Client = fakeClient.Client
+			return internalclientset.New(restClient), t.Err
+		},
+		RESTClient: func() (*restclient.RESTClient, error) {
+			// Swap out the HTTP client out of the client with the fake's version.
+			fakeClient := t.Client.(*fake.RESTClient)
+			restClient, err := restclient.RESTClientFor(t.ClientConfig)
+			if err != nil {
+				panic(err)
+			}
+			restClient.Client = fakeClient.Client
+			return restClient, t.Err
 		},
 		ClientForMapping: func(*meta.RESTMapping) (resource.RESTClient, error) {
 			return t.Client, t.Err
@@ -424,7 +451,7 @@ func Example_printReplicationControllerWithNamespace() {
 			ReadyReplicas: 1,
 		},
 	}
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, ctrl, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
@@ -476,7 +503,7 @@ func Example_printMultiContainersReplicationControllerWithWide() {
 			Replicas: 1,
 		},
 	}
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, ctrl, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
@@ -527,7 +554,7 @@ func Example_printReplicationController() {
 			Replicas: 1,
 		},
 	}
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, ctrl, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
@@ -547,7 +574,7 @@ func Example_printPodWithWideFormat() {
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	nodeName := "kubernetes-minion-abcd"
+	nodeName := "kubernetes-node-abcd"
 	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	pod := &api.Pod{
 		ObjectMeta: api.ObjectMeta{
@@ -567,14 +594,14 @@ func Example_printPodWithWideFormat() {
 			PodIP: "10.1.1.3",
 		},
 	}
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, pod, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
 	}
 	// Output:
 	// NAME      READY     STATUS     RESTARTS   AGE       IP         NODE
-	// test1     1/2       podPhase   6          10y       10.1.1.3   kubernetes-minion-abcd
+	// test1     1/2       podPhase   6          10y       10.1.1.3   kubernetes-node-abcd
 }
 
 func Example_printPodWithShowLabels() {
@@ -587,7 +614,7 @@ func Example_printPodWithShowLabels() {
 		NegotiatedSerializer: ns,
 		Client:               nil,
 	}
-	nodeName := "kubernetes-minion-abcd"
+	nodeName := "kubernetes-node-abcd"
 	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	pod := &api.Pod{
 		ObjectMeta: api.ObjectMeta{
@@ -610,7 +637,7 @@ func Example_printPodWithShowLabels() {
 			},
 		},
 	}
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, pod, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
@@ -621,7 +648,7 @@ func Example_printPodWithShowLabels() {
 }
 
 func newAllPhasePodList() *api.PodList {
-	nodeName := "kubernetes-minion-abcd"
+	nodeName := "kubernetes-node-abcd"
 	return &api.PodList{
 		Items: []api.Pod{
 			{
@@ -723,16 +750,25 @@ func Example_printPodHideTerminated() {
 	}
 	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	podList := newAllPhasePodList()
-	mapper, _ := f.Object(false)
-	err := f.PrintObject(cmd, mapper, podList, os.Stdout)
-	if err != nil {
-		fmt.Printf("Unexpected error: %v", err)
+	// filter pods
+	filterFuncs := f.DefaultResourceFilterFunc()
+	filterOpts := f.DefaultResourceFilterOptions(cmd, false)
+	_, filteredPodList, errs := cmdutil.FilterResourceList(podList, filterFuncs, filterOpts)
+	if errs != nil {
+		fmt.Printf("Unexpected filter error: %v\n", errs)
+	}
+	for _, pod := range filteredPodList {
+		mapper, _ := f.Object()
+		err := f.PrintObject(cmd, mapper, pod, os.Stdout)
+		if err != nil {
+			fmt.Printf("Unexpected error: %v", err)
+		}
 	}
 	// Output:
 	// NAME      READY     STATUS    RESTARTS   AGE
 	// test1     1/2       Pending   6          10y
-	// test2     1/2       Running   6          10y
-	// test5     1/2       Unknown   6          10y
+	// test2     1/2       Running   6         10y
+	// test5     1/2       Unknown   6         10y
 }
 
 func Example_printPodShowAll() {
@@ -747,7 +783,7 @@ func Example_printPodShowAll() {
 	}
 	cmd := NewCmdRun(f, os.Stdin, os.Stdout, os.Stderr)
 	podList := newAllPhasePodList()
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, podList, os.Stdout)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)
@@ -820,7 +856,7 @@ func Example_printServiceWithNamespacesAndLabels() {
 	ld := strings.NewLineDelimiter(os.Stdout, "|")
 	defer ld.Flush()
 
-	mapper, _ := f.Object(false)
+	mapper, _ := f.Object()
 	err := f.PrintObject(cmd, mapper, svc, ld)
 	if err != nil {
 		fmt.Printf("Unexpected error: %v", err)

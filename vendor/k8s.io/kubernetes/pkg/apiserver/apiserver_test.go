@@ -39,14 +39,14 @@ import (
 	"k8s.io/kubernetes/pkg/api/rest"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/api/v1"
+	"k8s.io/kubernetes/pkg/apiserver/filters"
+	"k8s.io/kubernetes/pkg/apiserver/request"
 	apiservertesting "k8s.io/kubernetes/pkg/apiserver/testing"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util"
 	"k8s.io/kubernetes/pkg/util/diff"
 	"k8s.io/kubernetes/pkg/util/sets"
-	"k8s.io/kubernetes/pkg/version"
 	"k8s.io/kubernetes/pkg/watch"
 	"k8s.io/kubernetes/pkg/watch/versioned"
 	"k8s.io/kubernetes/plugin/pkg/admission/admit"
@@ -254,10 +254,6 @@ func handleLinker(storage map[string]rest.Storage, selfLinker runtime.SelfLinker
 	return handleInternal(storage, admissionControl, selfLinker)
 }
 
-func newTestRequestInfoResolver() *RequestInfoResolver {
-	return &RequestInfoResolver{sets.NewString("api", "apis"), sets.NewString("api")}
-}
-
 func handleInternal(storage map[string]rest.Storage, admissionControl admission.Interface, selfLinker runtime.SelfLinker) http.Handler {
 	container := restful.NewContainer()
 	container.Router(restful.CurlyRouter{})
@@ -265,8 +261,6 @@ func handleInternal(storage map[string]rest.Storage, admissionControl admission.
 
 	template := APIGroupVersion{
 		Storage: storage,
-
-		RequestInfoResolver: newTestRequestInfoResolver(),
 
 		Creater:   api.Scheme,
 		Convertor: api.Scheme,
@@ -316,8 +310,6 @@ func handleInternal(storage map[string]rest.Storage, admissionControl admission.
 			panic(fmt.Sprintf("unable to install container %s: %v", group.GroupVersion, err))
 		}
 	}
-
-	InstallVersionHandler(mux, container)
 
 	return &defaultAPIServer{mux, container}
 }
@@ -865,33 +857,6 @@ func TestUnimplementedRESTStorage(t *testing.T) {
 	}
 }
 
-func TestVersion(t *testing.T) {
-	handler := handle(map[string]rest.Storage{})
-	server := httptest.NewServer(handler)
-	defer server.Close()
-	client := http.Client{}
-
-	request, err := http.NewRequest("GET", server.URL+"/version", nil)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	response, err := client.Do(request)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	var info version.Info
-	err = json.NewDecoder(response.Body).Decode(&info)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	if !reflect.DeepEqual(version.Get(), info) {
-		t.Errorf("Expected %#v, Got %#v", version.Get(), info)
-	}
-}
-
 func TestList(t *testing.T) {
 	testCases := []struct {
 		url       string
@@ -1262,9 +1227,8 @@ func TestMetadata(t *testing.T) {
 	if matches["text/plain,application/json,application/yaml,application/vnd.kubernetes.protobuf"] == 0 ||
 		matches["application/json,application/json;stream=watch,application/vnd.kubernetes.protobuf,application/vnd.kubernetes.protobuf;stream=watch"] == 0 ||
 		matches["application/json,application/yaml,application/vnd.kubernetes.protobuf"] == 0 ||
-		matches["application/json"] == 0 ||
 		matches["*/*"] == 0 ||
-		len(matches) != 5 {
+		len(matches) != 4 {
 		t.Errorf("unexpected mime types: %v", matches)
 	}
 }
@@ -2423,14 +2387,13 @@ func TestCreateChecksDecode(t *testing.T) {
 func TestUpdateREST(t *testing.T) {
 	makeGroup := func(storage map[string]rest.Storage) *APIGroupVersion {
 		return &APIGroupVersion{
-			Storage:             storage,
-			Root:                "/" + prefix,
-			RequestInfoResolver: newTestRequestInfoResolver(),
-			Creater:             api.Scheme,
-			Convertor:           api.Scheme,
-			Copier:              api.Scheme,
-			Typer:               api.Scheme,
-			Linker:              selfLinker,
+			Storage:   storage,
+			Root:      "/" + prefix,
+			Creater:   api.Scheme,
+			Convertor: api.Scheme,
+			Copier:    api.Scheme,
+			Typer:     api.Scheme,
+			Linker:    selfLinker,
 
 			Admit:   admissionControl,
 			Context: requestContextMapper,
@@ -2509,13 +2472,12 @@ func TestParentResourceIsRequired(t *testing.T) {
 		Storage: map[string]rest.Storage{
 			"simple/sub": storage,
 		},
-		Root:                "/" + prefix,
-		RequestInfoResolver: newTestRequestInfoResolver(),
-		Creater:             api.Scheme,
-		Convertor:           api.Scheme,
-		Copier:              api.Scheme,
-		Typer:               api.Scheme,
-		Linker:              selfLinker,
+		Root:      "/" + prefix,
+		Creater:   api.Scheme,
+		Convertor: api.Scheme,
+		Copier:    api.Scheme,
+		Typer:     api.Scheme,
+		Linker:    selfLinker,
 
 		Admit:   admissionControl,
 		Context: requestContextMapper,
@@ -2541,13 +2503,12 @@ func TestParentResourceIsRequired(t *testing.T) {
 			"simple":     &SimpleRESTStorage{},
 			"simple/sub": storage,
 		},
-		Root:                "/" + prefix,
-		RequestInfoResolver: newTestRequestInfoResolver(),
-		Creater:             api.Scheme,
-		Convertor:           api.Scheme,
-		Copier:              api.Scheme,
-		Typer:               api.Scheme,
-		Linker:              selfLinker,
+		Root:      "/" + prefix,
+		Creater:   api.Scheme,
+		Convertor: api.Scheme,
+		Copier:    api.Scheme,
+		Typer:     api.Scheme,
+		Linker:    selfLinker,
 
 		Admit:   admissionControl,
 		Context: requestContextMapper,
@@ -2985,7 +2946,7 @@ func (m *marshalError) MarshalJSON() ([]byte, error) {
 
 func TestWriteRAWJSONMarshalError(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		writeRawJSON(http.StatusOK, &marshalError{errors.New("Undecodable")}, w)
+		WriteRawJSON(http.StatusOK, &marshalError{errors.New("Undecodable")}, w)
 	}))
 	defer server.Close()
 	client := http.Client{}
@@ -3023,80 +2984,6 @@ func TestCreateTimeout(t *testing.T) {
 	itemOut := expectApiStatus(t, "POST", server.URL+"/"+prefix+"/"+testGroupVersion.Group+"/"+testGroupVersion.Version+"/namespaces/default/foo?timeout=4ms", data, apierrs.StatusServerTimeout)
 	if itemOut.Status != unversioned.StatusFailure || itemOut.Reason != unversioned.StatusReasonTimeout {
 		t.Errorf("Unexpected status %#v", itemOut)
-	}
-}
-
-func TestCORSAllowedOrigins(t *testing.T) {
-	table := []struct {
-		allowedOrigins []string
-		origin         string
-		allowed        bool
-	}{
-		{[]string{}, "example.com", false},
-		{[]string{"example.com"}, "example.com", true},
-		{[]string{"example.com"}, "not-allowed.com", false},
-		{[]string{"not-matching.com", "example.com"}, "example.com", true},
-		{[]string{".*"}, "example.com", true},
-	}
-
-	for _, item := range table {
-		allowedOriginRegexps, err := util.CompileRegexps(item.allowedOrigins)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-
-		handler := CORS(
-			handle(map[string]rest.Storage{}),
-			allowedOriginRegexps, nil, nil, "true",
-		)
-		server := httptest.NewServer(handler)
-		defer server.Close()
-		client := http.Client{}
-
-		request, err := http.NewRequest("GET", server.URL+"/version", nil)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-		request.Header.Set("Origin", item.origin)
-
-		response, err := client.Do(request)
-		if err != nil {
-			t.Errorf("unexpected error: %v", err)
-		}
-
-		if item.allowed {
-			if !reflect.DeepEqual(item.origin, response.Header.Get("Access-Control-Allow-Origin")) {
-				t.Errorf("Expected %#v, Got %#v", item.origin, response.Header.Get("Access-Control-Allow-Origin"))
-			}
-
-			if response.Header.Get("Access-Control-Allow-Credentials") == "" {
-				t.Errorf("Expected Access-Control-Allow-Credentials header to be set")
-			}
-
-			if response.Header.Get("Access-Control-Allow-Headers") == "" {
-				t.Errorf("Expected Access-Control-Allow-Headers header to be set")
-			}
-
-			if response.Header.Get("Access-Control-Allow-Methods") == "" {
-				t.Errorf("Expected Access-Control-Allow-Methods header to be set")
-			}
-		} else {
-			if response.Header.Get("Access-Control-Allow-Origin") != "" {
-				t.Errorf("Expected Access-Control-Allow-Origin header to not be set")
-			}
-
-			if response.Header.Get("Access-Control-Allow-Credentials") != "" {
-				t.Errorf("Expected Access-Control-Allow-Credentials header to not be set")
-			}
-
-			if response.Header.Get("Access-Control-Allow-Headers") != "" {
-				t.Errorf("Expected Access-Control-Allow-Headers header to not be set")
-			}
-
-			if response.Header.Get("Access-Control-Allow-Methods") != "" {
-				t.Errorf("Expected Access-Control-Allow-Methods header to not be set")
-			}
-		}
 	}
 }
 
@@ -3242,8 +3129,6 @@ func TestXGSubresource(t *testing.T) {
 	group := APIGroupVersion{
 		Storage: storage,
 
-		RequestInfoResolver: newTestRequestInfoResolver(),
-
 		Creater:   api.Scheme,
 		Convertor: api.Scheme,
 		Copier:    api.Scheme,
@@ -3270,10 +3155,7 @@ func TestXGSubresource(t *testing.T) {
 		panic(fmt.Sprintf("unable to install container %s: %v", group.GroupVersion, err))
 	}
 
-	InstallVersionHandler(mux, container)
-
-	handler := defaultAPIServer{mux, container}
-	server := httptest.NewServer(handler)
+	server := newTestServer(defaultAPIServer{mux, container})
 	defer server.Close()
 
 	resp, err := http.Get(server.URL + "/" + prefix + "/" + testGroupVersion.Group + "/" + testGroupVersion.Version + "/namespaces/default/simple/" + itemID + "/subsimple")
@@ -3361,4 +3243,17 @@ func BenchmarkUpdateProtobuf(b *testing.B) {
 		response.Body.Close()
 	}
 	b.StopTimer()
+}
+
+func newTestServer(handler http.Handler) *httptest.Server {
+	handler = filters.WithRequestInfo(handler, newTestRequestInfoResolver(), requestContextMapper)
+	handler = api.WithRequestContext(handler, requestContextMapper)
+	return httptest.NewServer(handler)
+}
+
+func newTestRequestInfoResolver() *request.RequestInfoFactory {
+	return &request.RequestInfoFactory{
+		APIPrefixes:          sets.NewString("api", "apis"),
+		GrouplessAPIPrefixes: sets.NewString("api"),
+	}
 }

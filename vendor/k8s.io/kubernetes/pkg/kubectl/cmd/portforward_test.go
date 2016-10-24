@@ -26,9 +26,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"k8s.io/kubernetes/pkg/api"
-	"k8s.io/kubernetes/pkg/api/testapi"
-	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/client/restclient"
+	"k8s.io/kubernetes/pkg/apimachinery/registered"
 	"k8s.io/kubernetes/pkg/client/unversioned/fake"
 )
 
@@ -45,23 +43,22 @@ func (f *fakePortForwarder) ForwardPorts(method string, url *url.URL, opts PortF
 }
 
 func TestPortForward(t *testing.T) {
-	version := testapi.Default.GroupVersion().Version
+	version := registered.GroupOrDie(api.GroupName).GroupVersion.Version
 
 	tests := []struct {
-		name, version, podPath, pfPath, container string
-		pod                                       *api.Pod
-		pfErr                                     bool
+		name                       string
+		podPath, pfPath, container string
+		pod                        *api.Pod
+		pfErr                      bool
 	}{
 		{
 			name:    "pod portforward",
-			version: version,
 			podPath: "/api/" + version + "/namespaces/test/pods/foo",
 			pfPath:  "/api/" + version + "/namespaces/test/pods/foo/portforward",
 			pod:     execPod(),
 		},
 		{
 			name:    "pod portforward error",
-			version: version,
 			podPath: "/api/" + version + "/namespaces/test/pods/foo",
 			pfPath:  "/api/" + version + "/namespaces/test/pods/foo/portforward",
 			pod:     execPod(),
@@ -86,7 +83,7 @@ func TestPortForward(t *testing.T) {
 			}),
 		}
 		tf.Namespace = "test"
-		tf.ClientConfig = &restclient.Config{ContentConfig: restclient.ContentConfig{GroupVersion: &unversioned.GroupVersion{Version: test.version}}}
+		tf.ClientConfig = defaultClientConfig()
 		ff := &fakePortForwarder{}
 		if test.pfErr {
 			ff.pfErr = fmt.Errorf("pf error")
@@ -127,23 +124,21 @@ func TestPortForward(t *testing.T) {
 }
 
 func TestPortForwardWithPFlag(t *testing.T) {
-	version := testapi.Default.GroupVersion().Version
+	version := registered.GroupOrDie(api.GroupName).GroupVersion.Version
 
 	tests := []struct {
-		name, version, podPath, pfPath, container string
-		pod                                       *api.Pod
-		pfErr                                     bool
+		name, podPath, pfPath, container string
+		pod                              *api.Pod
+		pfErr                            bool
 	}{
 		{
 			name:    "pod portforward",
-			version: version,
 			podPath: "/api/" + version + "/namespaces/test/pods/foo",
 			pfPath:  "/api/" + version + "/namespaces/test/pods/foo/portforward",
 			pod:     execPod(),
 		},
 		{
 			name:    "pod portforward error",
-			version: version,
 			podPath: "/api/" + version + "/namespaces/test/pods/foo",
 			pfPath:  "/api/" + version + "/namespaces/test/pods/foo/portforward",
 			pod:     execPod(),
@@ -168,7 +163,7 @@ func TestPortForwardWithPFlag(t *testing.T) {
 			}),
 		}
 		tf.Namespace = "test"
-		tf.ClientConfig = &restclient.Config{ContentConfig: restclient.ContentConfig{GroupVersion: &unversioned.GroupVersion{Version: test.version}}}
+		tf.ClientConfig = defaultClientConfig()
 		ff := &fakePortForwarder{}
 		if test.pfErr {
 			ff.pfErr = fmt.Errorf("pf error")

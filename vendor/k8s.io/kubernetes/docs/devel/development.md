@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/development.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/development.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -90,10 +90,11 @@ source control system). Use `apt-get install mercurial` or `yum install
 mercurial` on Linux, or [brew.sh](http://brew.sh) on OS X, or download directly
 from mercurial.
 
-Install godep (may require sudo):
+Install godep and go-bindata (may require sudo):
 
 ```sh
 go get -u github.com/tools/godep
+go get -u github.com/jteeuwen/go-bindata/go-bindata
 ```
 
 Note:

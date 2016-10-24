@@ -26,11 +26,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"k8s.io/kubernetes/cmd/libs/go2idl/args"
-	"k8s.io/kubernetes/cmd/libs/go2idl/generator"
-	"k8s.io/kubernetes/cmd/libs/go2idl/namer"
-	"k8s.io/kubernetes/cmd/libs/go2idl/parser"
-	"k8s.io/kubernetes/cmd/libs/go2idl/types"
+	"k8s.io/gengo/args"
+	"k8s.io/gengo/generator"
+	"k8s.io/gengo/namer"
+	"k8s.io/gengo/parser"
+	"k8s.io/gengo/types"
 
 	flag "github.com/spf13/pflag"
 )
@@ -78,6 +78,7 @@ func New() *Generator {
 			`k8s.io/kubernetes/federation/apis/federation/v1beta1`,
 			`k8s.io/kubernetes/pkg/apis/certificates/v1alpha1`,
 			`k8s.io/kubernetes/pkg/apis/imagepolicy/v1alpha1`,
+			`k8s.io/kubernetes/pkg/apis/storage/v1beta1`,
 		}, ","),
 		DropEmbeddedFields: "k8s.io/kubernetes/pkg/api/unversioned.TypeMeta",
 	}

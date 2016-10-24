@@ -55,7 +55,7 @@ MASTER_USER="${MASTER_USER:-vagrant}"
 MASTER_PASSWD="${MASTER_PASSWD:-vagrant}"
 
 # Admission Controllers to invoke prior to persisting objects in cluster
-# If we included ResourceQuota, we should keep it at the end of the list to prevent incremeting quota usage prematurely.
+# If we included ResourceQuota, we should keep it at the end of the list to prevent incrementing quota usage prematurely.
 ADMISSION_CONTROL=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
 
 # Optional: Enable node logging.
@@ -105,6 +105,9 @@ if [ "${NETWORK_PROVIDER}" == "kubenet" ]; then
   CLUSTER_IP_RANGE="${CONTAINER_SUBNET}"
 fi
 
+# If enabled kube-controller-manager will be started with the --enable-hostpath-provisioner flag
+ENABLE_HOSTPATH_PROVISIONER="${ENABLE_HOSTPATH_PROVISIONER:-true}"
+
 # OpenContrail networking plugin specific settings
 OPENCONTRAIL_TAG="${OPENCONTRAIL_TAG:-R2.20}"
 OPENCONTRAIL_KUBERNETES_TAG="${OPENCONTRAIL_KUBERNETES_TAG:-master}"
@@ -115,3 +118,6 @@ E2E_STORAGE_TEST_ENVIRONMENT=${KUBE_E2E_STORAGE_TEST_ENVIRONMENT:-false}
 
 # Default fallback NETWORK_IF_NAME, will be used in case when no 'VAGRANT-BEGIN' comments were defined in network-script
 export DEFAULT_NETWORK_IF_NAME="eth0"
+
+# Evict pods whenever compute resource availability on the nodes gets below a threshold.
+EVICTION_HARD="${EVICTION_HARD:-memory.available<100Mi,nodefs.available<10%}"

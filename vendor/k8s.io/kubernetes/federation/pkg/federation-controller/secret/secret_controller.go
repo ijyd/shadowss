@@ -18,20 +18,18 @@ package secret
 
 import (
 	"fmt"
-	"reflect"
 	"time"
 
 	federation_api "k8s.io/kubernetes/federation/apis/federation/v1beta1"
-	federation_release_1_4 "k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_4"
+	federationclientset "k8s.io/kubernetes/federation/client/clientset_generated/federation_release_1_5"
 	"k8s.io/kubernetes/federation/pkg/federation-controller/util"
 	"k8s.io/kubernetes/federation/pkg/federation-controller/util/eventsink"
 	"k8s.io/kubernetes/pkg/api"
 	api_v1 "k8s.io/kubernetes/pkg/api/v1"
 	"k8s.io/kubernetes/pkg/client/cache"
-	kube_release_1_4 "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_4"
+	kubeclientset "k8s.io/kubernetes/pkg/client/clientset_generated/release_1_5"
 	"k8s.io/kubernetes/pkg/client/record"
 	"k8s.io/kubernetes/pkg/controller"
-	"k8s.io/kubernetes/pkg/controller/framework"
 	pkg_runtime "k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/flowcontrol"
 	"k8s.io/kubernetes/pkg/watch"
@@ -44,12 +42,12 @@ const (
 )
 
 type SecretController struct {
-	// For triggering single secret reconcilation. This is used when there is an
+	// For triggering single secret reconciliation. This is used when there is an
 	// add/update/delete operation on a secret in either federated API server or
 	// in some member of the federation.
 	secretDeliverer *util.DelayingDeliverer
 
-	// For triggering all secrets reconcilation. This is used when
+	// For triggering all secrets reconciliation. This is used when
 	// a new cluster becomes available.
 	clusterDeliverer *util.DelayingDeliverer
 
@@ -60,10 +58,10 @@ type SecretController struct {
 	// Definitions of secrets that should be federated.
 	secretInformerStore cache.Store
 	// Informer controller for secrets that should be federated.
-	secretInformerController framework.ControllerInterface
+	secretInformerController cache.ControllerInterface
 
 	// Client to federated api server.
-	federatedApiClient federation_release_1_4.Interface
+	federatedApiClient federationclientset.Interface
 
 	// Backoff manager for secrets
 	secretBackoff *flowcontrol.Backoff
@@ -78,7 +76,7 @@ type SecretController struct {
 }
 
 // NewSecretController returns a new secret controller
-func NewSecretController(client federation_release_1_4.Interface) *SecretController {
+func NewSecretController(client federationclientset.Interface) *SecretController {
 	broadcaster := record.NewBroadcaster()
 	broadcaster.StartRecordingToSink(eventsink.NewFederatedEventSink(client))
 	recorder := broadcaster.NewRecorder(api.EventSource{Component: "federated-secrets-controller"})
@@ -93,18 +91,20 @@ func NewSecretController(client federation_release_1_4.Interface) *SecretControl
 		eventRecorder:         recorder,
 	}
 
-	// Build delivereres for triggering reconcilations.
+	// Build delivereres for triggering reconciliations.
 	secretcontroller.secretDeliverer = util.NewDelayingDeliverer()
 	secretcontroller.clusterDeliverer = util.NewDelayingDeliverer()
 
 	// Start informer in federated API servers on secrets that should be federated.
-	secretcontroller.secretInformerStore, secretcontroller.secretInformerController = framework.NewInformer(
+	secretcontroller.secretInformerStore, secretcontroller.secretInformerController = cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(options api.ListOptions) (pkg_runtime.Object, error) {
-				return client.Core().Secrets(api_v1.NamespaceAll).List(options)
+				versionedOptions := util.VersionizeV1ListOptions(options)
+				return client.Core().Secrets(api_v1.NamespaceAll).List(versionedOptions)
 			},
 			WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-				return client.Core().Secrets(api_v1.NamespaceAll).Watch(options)
+				versionedOptions := util.VersionizeV1ListOptions(options)
+				return client.Core().Secrets(api_v1.NamespaceAll).Watch(versionedOptions)
 			},
 		},
 		&api_v1.Secret{},
@@ -114,20 +114,22 @@ func NewSecretController(client federation_release_1_4.Interface) *SecretControl
 	// Federated informer on secrets in members of federation.
 	secretcontroller.secretFederatedInformer = util.NewFederatedInformer(
 		client,
-		func(cluster *federation_api.Cluster, targetClient kube_release_1_4.Interface) (cache.Store, framework.ControllerInterface) {
-			return framework.NewInformer(
+		func(cluster *federation_api.Cluster, targetClient kubeclientset.Interface) (cache.Store, cache.ControllerInterface) {
+			return cache.NewInformer(
 				&cache.ListWatch{
 					ListFunc: func(options api.ListOptions) (pkg_runtime.Object, error) {
-						return targetClient.Core().Secrets(api_v1.NamespaceAll).List(options)
+						versionedOptions := util.VersionizeV1ListOptions(options)
+						return targetClient.Core().Secrets(api_v1.NamespaceAll).List(versionedOptions)
 					},
 					WatchFunc: func(options api.ListOptions) (watch.Interface, error) {
-						return targetClient.Core().Secrets(api_v1.NamespaceAll).Watch(options)
+						versionedOptions := util.VersionizeV1ListOptions(options)
+						return targetClient.Core().Secrets(api_v1.NamespaceAll).Watch(versionedOptions)
 					},
 				},
 				&api_v1.Secret{},
 				controller.NoResyncPeriodFunc(),
-				// Trigger reconcilation whenever something in federated cluster is changed. In most cases it
-				// would be just confirmation that some secret opration suceeded.
+				// Trigger reconciliation whenever something in federated cluster is changed. In most cases it
+				// would be just confirmation that some secret opration succeeded.
 				util.NewTriggerOnAllChanges(
 					func(obj pkg_runtime.Object) {
 						secretcontroller.deliverSecretObj(obj, secretcontroller.secretReviewDelay, false)
@@ -145,19 +147,19 @@ func NewSecretController(client federation_release_1_4.Interface) *SecretControl
 
 	// Federated updeater along with Create/Update/Delete operations.
 	secretcontroller.federatedUpdater = util.NewFederatedUpdater(secretcontroller.secretFederatedInformer,
-		func(client kube_release_1_4.Interface, obj pkg_runtime.Object) error {
+		func(client kubeclientset.Interface, obj pkg_runtime.Object) error {
 			secret := obj.(*api_v1.Secret)
 			_, err := client.Core().Secrets(secret.Namespace).Create(secret)
 			return err
 		},
-		func(client kube_release_1_4.Interface, obj pkg_runtime.Object) error {
+		func(client kubeclientset.Interface, obj pkg_runtime.Object) error {
 			secret := obj.(*api_v1.Secret)
 			_, err := client.Core().Secrets(secret.Namespace).Update(secret)
 			return err
 		},
-		func(client kube_release_1_4.Interface, obj pkg_runtime.Object) error {
+		func(client kubeclientset.Interface, obj pkg_runtime.Object) error {
 			secret := obj.(*api_v1.Secret)
-			err := client.Core().Secrets(secret.Namespace).Delete(secret.Name, &api.DeleteOptions{})
+			err := client.Core().Secrets(secret.Namespace).Delete(secret.Name, &api_v1.DeleteOptions{})
 			return err
 		})
 	return secretcontroller
@@ -177,14 +179,7 @@ func (secretcontroller *SecretController) Run(stopChan <-chan struct{}) {
 	secretcontroller.clusterDeliverer.StartWithHandler(func(_ *util.DelayingDelivererItem) {
 		secretcontroller.reconcileSecretsOnClusterChange()
 	})
-	go func() {
-		select {
-		case <-time.After(time.Minute):
-			secretcontroller.secretBackoff.GC()
-		case <-stopChan:
-			return
-		}
-	}()
+	util.StartBackoffGC(secretcontroller.secretBackoff, stopChan)
 }
 
 func getSecretKey(namespace, name string) string {
@@ -216,7 +211,7 @@ func (secretcontroller *SecretController) deliverSecret(namespace string, name s
 }
 
 // Check whether all data stores are in sync. False is returned if any of the informer/stores is not yet
-// synced with the coresponding api server.
+// synced with the corresponding api server.
 func (secretcontroller *SecretController) isSynced() bool {
 	if !secretcontroller.secretFederatedInformer.ClustersSynced() {
 		glog.V(2).Infof("Cluster list not synced")
@@ -233,7 +228,7 @@ func (secretcontroller *SecretController) isSynced() bool {
 	return true
 }
 
-// The function triggers reconcilation of all federated secrets.
+// The function triggers reconciliation of all federated secrets.
 func (secretcontroller *SecretController) reconcileSecretsOnClusterChange() {
 	if !secretcontroller.isSynced() {
 		secretcontroller.clusterDeliverer.DeliverAt(allClustersKey, nil, time.Now().Add(secretcontroller.clusterAvailableDelay))
@@ -300,9 +295,7 @@ func (secretcontroller *SecretController) reconcileSecret(namespace string, secr
 			clusterSecret := clusterSecretObj.(*api_v1.Secret)
 
 			// Update existing secret, if needed.
-			if !util.ObjectMetaEquivalent(desiredSecret.ObjectMeta, clusterSecret.ObjectMeta) ||
-				!reflect.DeepEqual(desiredSecret.Data, clusterSecret.Data) ||
-				!reflect.DeepEqual(desiredSecret.Type, clusterSecret.Type) {
+			if !util.SecretEquivalent(*desiredSecret, *clusterSecret) {
 
 				secretcontroller.eventRecorder.Eventf(baseSecret, api.EventTypeNormal, "UpdateInCluster",
 					"Updating secret in cluster %s", cluster.Name)

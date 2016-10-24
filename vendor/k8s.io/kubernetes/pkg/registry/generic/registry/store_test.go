@@ -21,6 +21,7 @@ import (
 	"path"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -33,12 +34,12 @@ import (
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
+	"k8s.io/kubernetes/pkg/registry/core/pod"
 	"k8s.io/kubernetes/pkg/registry/generic"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/selection"
 	"k8s.io/kubernetes/pkg/storage"
 	etcdstorage "k8s.io/kubernetes/pkg/storage/etcd"
-	"k8s.io/kubernetes/pkg/storage/etcd/etcdtest"
 	etcdtesting "k8s.io/kubernetes/pkg/storage/etcd/testing"
 	"k8s.io/kubernetes/pkg/storage/storagebackend/factory"
 	storagetesting "k8s.io/kubernetes/pkg/storage/testing"
@@ -46,6 +47,16 @@ import (
 	"k8s.io/kubernetes/pkg/util/validation/field"
 	"k8s.io/kubernetes/pkg/util/wait"
 )
+
+type testGracefulStrategy struct {
+	testRESTStrategy
+}
+
+func (t testGracefulStrategy) CheckGracefulDelete(ctx api.Context, obj runtime.Object, options *api.DeleteOptions) bool {
+	return true
+}
+
+var _ rest.RESTGracefulDeleteStrategy = testGracefulStrategy{}
 
 type testOrphanDeleteStrategy struct {
 	*testRESTStrategy
@@ -95,14 +106,14 @@ func NewTestGenericStoreRegistry(t *testing.T) (factory.DestroyFunc, *Store) {
 
 // matchPodName returns selection predicate that matches any pod with name in the set.
 // Makes testing simpler.
-func matchPodName(names ...string) *generic.SelectionPredicate {
+func matchPodName(names ...string) storage.SelectionPredicate {
 	// Note: even if pod name is a field, we have to use labels,
 	// because field selector doesn't support "IN" operator.
 	l, err := labels.NewRequirement("name", selection.In, sets.NewString(names...))
 	if err != nil {
 		panic("Labels requirement must validate successfully")
 	}
-	return &generic.SelectionPredicate{
+	return storage.SelectionPredicate{
 		Label: labels.Everything().Add(*l),
 		Field: fields.Everything(),
 		GetAttrs: func(obj runtime.Object) (label labels.Set, field fields.Set, err error) {
@@ -112,8 +123,8 @@ func matchPodName(names ...string) *generic.SelectionPredicate {
 	}
 }
 
-func matchEverything() *generic.SelectionPredicate {
-	return &generic.SelectionPredicate{
+func matchEverything() storage.SelectionPredicate {
+	return storage.SelectionPredicate{
 		Label: labels.Everything(),
 		Field: fields.Everything(),
 		GetAttrs: func(obj runtime.Object) (label labels.Set, field fields.Set, err error) {
@@ -137,7 +148,7 @@ func TestStoreList(t *testing.T) {
 
 	table := map[string]struct {
 		in      *api.PodList
-		m       *generic.SelectionPredicate
+		m       storage.SelectionPredicate
 		out     runtime.Object
 		context api.Context
 	}{
@@ -261,6 +272,7 @@ func TestStoreListResourceVersion(t *testing.T) {
 }
 
 func TestStoreCreate(t *testing.T) {
+	gracefulPeriod := int64(50)
 	podA := &api.Pod{
 		ObjectMeta: api.ObjectMeta{Name: "foo", Namespace: "test"},
 		Spec:       api.PodSpec{NodeName: "machine"},
@@ -273,6 +285,8 @@ func TestStoreCreate(t *testing.T) {
 	testContext := api.WithNamespace(api.NewContext(), "test")
 	destroyFunc, registry := NewTestGenericStoreRegistry(t)
 	defer destroyFunc()
+	// re-define delete strategy to have graceful delete capability
+	registry.DeleteStrategy = pod.Strategy
 
 	// create the object
 	objA, err := registry.Create(testContext, podA)
@@ -295,6 +309,31 @@ func TestStoreCreate(t *testing.T) {
 	_, err = registry.Create(testContext, podB)
 	if !errors.IsAlreadyExists(err) {
 		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// verify graceful delete capability is defined
+	_, ok := registry.DeleteStrategy.(rest.RESTGracefulDeleteStrategy)
+	if !ok {
+		t.Fatalf("No graceful capability set.")
+	}
+
+	// now delete pod with graceful period set
+	delOpts := &api.DeleteOptions{GracePeriodSeconds: &gracefulPeriod}
+	_, err = registry.Delete(testContext, podA.Name, delOpts)
+	if err != nil {
+		t.Fatalf("Failed to delete pod gracefully. Unexpected error: %v", err)
+	}
+
+	// try to create before graceful deletion period is over
+	_, err = registry.Create(testContext, podA)
+	if err == nil || !errors.IsAlreadyExists(err) {
+		t.Fatalf("Expected 'already exists' error from storage, but got %v", err)
+	}
+
+	// check the 'alredy exists' msg was edited
+	msg := &err.(*errors.StatusError).ErrStatus.Message
+	if !strings.Contains(*msg, "object is being deleted:") {
+		t.Errorf("Unexpected error without the 'object is being deleted:' in message: %v", err)
 	}
 }
 
@@ -578,10 +617,8 @@ func TestStoreDelete(t *testing.T) {
 	}
 }
 
-func TestStoreHandleFinalizers(t *testing.T) {
-	EnableGarbageCollector = true
+func TestGracefulStoreHandleFinalizers(t *testing.T) {
 	initialGeneration := int64(1)
-	defer func() { EnableGarbageCollector = false }()
 	podWithFinalizer := &api.Pod{
 		ObjectMeta: api.ObjectMeta{Name: "foo", Finalizers: []string{"foo.com/x"}, Generation: initialGeneration},
 		Spec:       api.PodSpec{NodeName: "machine"},
@@ -589,6 +626,66 @@ func TestStoreHandleFinalizers(t *testing.T) {
 
 	testContext := api.WithNamespace(api.NewContext(), "test")
 	destroyFunc, registry := NewTestGenericStoreRegistry(t)
+	registry.EnableGarbageCollection = true
+	defaultDeleteStrategy := testRESTStrategy{api.Scheme, api.SimpleNameGenerator, true, false, true}
+	registry.DeleteStrategy = testGracefulStrategy{defaultDeleteStrategy}
+	defer destroyFunc()
+	// create pod
+	_, err := registry.Create(testContext, podWithFinalizer)
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	// delete the pod with grace period=0, the pod should still exist because it has a finalizer
+	_, err = registry.Delete(testContext, podWithFinalizer.Name, api.NewDeleteOptions(0))
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	_, err = registry.Get(testContext, podWithFinalizer.Name)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	updatedPodWithFinalizer := &api.Pod{
+		ObjectMeta: api.ObjectMeta{Name: "foo", Finalizers: []string{"foo.com/x"}, ResourceVersion: podWithFinalizer.ObjectMeta.ResourceVersion},
+		Spec:       api.PodSpec{NodeName: "machine"},
+	}
+	_, _, err = registry.Update(testContext, updatedPodWithFinalizer.ObjectMeta.Name, rest.DefaultUpdatedObjectInfo(updatedPodWithFinalizer, api.Scheme))
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	// the object should still exist, because it still has a finalizer
+	_, err = registry.Get(testContext, podWithFinalizer.Name)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	podWithNoFinalizer := &api.Pod{
+		ObjectMeta: api.ObjectMeta{Name: "foo", ResourceVersion: podWithFinalizer.ObjectMeta.ResourceVersion},
+		Spec:       api.PodSpec{NodeName: "anothermachine"},
+	}
+	_, _, err = registry.Update(testContext, podWithFinalizer.ObjectMeta.Name, rest.DefaultUpdatedObjectInfo(podWithNoFinalizer, api.Scheme))
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+	// the pod should be removed, because its finalizer is removed
+	_, err = registry.Get(testContext, podWithFinalizer.Name)
+	if !errors.IsNotFound(err) {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+}
+
+func TestNonGracefulStoreHandleFinalizers(t *testing.T) {
+	initialGeneration := int64(1)
+	podWithFinalizer := &api.Pod{
+		ObjectMeta: api.ObjectMeta{Name: "foo", Finalizers: []string{"foo.com/x"}, Generation: initialGeneration},
+		Spec:       api.PodSpec{NodeName: "machine"},
+	}
+
+	testContext := api.WithNamespace(api.NewContext(), "test")
+	destroyFunc, registry := NewTestGenericStoreRegistry(t)
+	registry.EnableGarbageCollection = true
 	defer destroyFunc()
 	// create pod
 	_, err := registry.Create(testContext, podWithFinalizer)
@@ -648,7 +745,7 @@ func TestStoreHandleFinalizers(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	// the pod should be removed, because it's finalizer is removed
+	// the pod should be removed, because its finalizer is removed
 	_, err = registry.Get(testContext, podWithFinalizer.Name)
 	if !errors.IsNotFound(err) {
 		t.Errorf("Unexpected error: %v", err)
@@ -656,9 +753,7 @@ func TestStoreHandleFinalizers(t *testing.T) {
 }
 
 func TestStoreDeleteWithOrphanDependents(t *testing.T) {
-	EnableGarbageCollector = true
 	initialGeneration := int64(1)
-	defer func() { EnableGarbageCollector = false }()
 	podWithOrphanFinalizer := func(name string) *api.Pod {
 		return &api.Pod{
 			ObjectMeta: api.ObjectMeta{Name: name, Finalizers: []string{"foo.com/x", api.FinalizerOrphan, "bar.com/y"}, Generation: initialGeneration},
@@ -885,6 +980,7 @@ func TestStoreDeleteWithOrphanDependents(t *testing.T) {
 
 	testContext := api.WithNamespace(api.NewContext(), "test")
 	destroyFunc, registry := NewTestGenericStoreRegistry(t)
+	registry.EnableGarbageCollection = true
 	defer destroyFunc()
 
 	for _, tc := range testcases {
@@ -1045,7 +1141,7 @@ func TestStoreWatch(t *testing.T) {
 	noNamespaceContext := api.NewContext()
 
 	table := map[string]struct {
-		selectPred *generic.SelectionPredicate
+		selectPred storage.SelectionPredicate
 		context    api.Context
 	}{
 		"single": {
@@ -1097,12 +1193,16 @@ func TestStoreWatch(t *testing.T) {
 
 func newTestGenericStoreRegistry(t *testing.T, hasCacheEnabled bool) (factory.DestroyFunc, *Store) {
 	podPrefix := "/pods"
-	server := etcdtesting.NewEtcdTestClientServer(t)
+	server, sc := etcdtesting.NewUnsecuredEtcd3TestClientServer(t)
 	strategy := &testRESTStrategy{api.Scheme, api.SimpleNameGenerator, true, false, true}
 
-	codec := testapi.Default.StorageCodec()
-	s := etcdstorage.NewEtcdStorage(server.Client, codec, etcdtest.PathPrefix(), false, etcdtest.DeserializationCacheSize)
+	sc.Codec = testapi.Default.StorageCodec()
+	s, dFunc, err := factory.Create(*sc)
+	if err != nil {
+		t.Fatalf("Error creating storage: %v", err)
+	}
 	destroyFunc := func() {
+		dFunc()
 		server.Terminate(t)
 	}
 	if hasCacheEnabled {
@@ -1114,7 +1214,7 @@ func newTestGenericStoreRegistry(t *testing.T, hasCacheEnabled bool) (factory.De
 			ResourcePrefix: podPrefix,
 			KeyFunc:        func(obj runtime.Object) (string, error) { return storage.NoNamespaceKeyFunc(podPrefix, obj) },
 			NewListFunc:    func() runtime.Object { return &api.PodList{} },
-			Codec:          codec,
+			Codec:          sc.Codec,
 		}
 		cacher := storage.NewCacherFromConfig(config)
 		d := destroyFunc
@@ -1142,8 +1242,8 @@ func newTestGenericStoreRegistry(t *testing.T, hasCacheEnabled bool) (factory.De
 			return path.Join(podPrefix, id), nil
 		},
 		ObjectNameFunc: func(obj runtime.Object) (string, error) { return obj.(*api.Pod).Name, nil },
-		PredicateFunc: func(label labels.Selector, field fields.Selector) *generic.SelectionPredicate {
-			return &generic.SelectionPredicate{
+		PredicateFunc: func(label labels.Selector, field fields.Selector) storage.SelectionPredicate {
+			return storage.SelectionPredicate{
 				Label: label,
 				Field: field,
 				GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {

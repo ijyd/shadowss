@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/flaky-tests.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/flaky-tests.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -68,6 +68,15 @@ discoverable from the issue.
    tests that Google runs) the GCS link is mandatory! The Jenkins test result
    link is nice but strictly optional: not only does it expire more quickly,
    it's not accessible to non-Googlers.
+
+## Finding filed flaky test cases
+
+Find flaky tests issues on GitHub under the [kind/flake issue label][flake].
+There are significant numbers of flaky tests reported on a regular basis and P2
+flakes are under-investigated. Fixing flakes is a quick way to gain expertise
+and community goodwill.
+
+[flake]: https://github.com/kubernetes/kubernetes/issues?q=is%3Aopen+is%3Aissue+label%3Akind%2Fflake
 
 ## Expectations when a flaky test is assigned to you
 

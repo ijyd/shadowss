@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/design/resource-qos.md).
+[here](http://releases.k8s.io/release-1.4/docs/design/resource-qos.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -226,9 +226,10 @@ Pod OOM score configuration
 
 *Pod infra containers* or *Special Pod init process*
   - OOM_SCORE_ADJ: -998
+
 *Kubelet, Docker*
   - OOM_SCORE_ADJ: -999 (won’t be OOM killed)
-  - Hack, because these critical tasks might die if they conflict with guaranteed containers. in the future, we should place all user-pods into a separate cgroup, and set a limit on the memory they can consume.
+  - Hack, because these critical tasks might die if they conflict with guaranteed containers. In the future, we should place all user-pods into a separate cgroup, and set a limit on the memory they can consume.
 
 ## Known issues and possible improvements
 

@@ -35,7 +35,6 @@ import (
 	"k8s.io/kubernetes/pkg/kubectl"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/cmd/util/editor"
-	"k8s.io/kubernetes/pkg/kubectl/cmd/util/jsonmerge"
 	"k8s.io/kubernetes/pkg/kubectl/resource"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/crlf"
@@ -79,17 +78,10 @@ var (
 		  kubectl edit svc/docker-registry --output-version=v1 -o json`)
 )
 
-// EditOptions is the start of the data required to perform the operation.  As new fields are added, add them here instead of
-// referencing the cmd.Flags()
-type EditOptions struct {
-	Filenames []string
-	Recursive bool
-}
-
 var errExit = fmt.Errorf("exit directly")
 
 func NewCmdEdit(f *cmdutil.Factory, out, errOut io.Writer) *cobra.Command {
-	options := &EditOptions{}
+	options := &resource.FilenameOptions{}
 
 	// retrieve a list of handled resources from printer as valid args
 	validArgs, argAliases := []string{}, []string{}
@@ -117,9 +109,8 @@ func NewCmdEdit(f *cmdutil.Factory, out, errOut io.Writer) *cobra.Command {
 		ValidArgs:  validArgs,
 		ArgAliases: argAliases,
 	}
-	usage := "Filename, directory, or URL to file to use to edit the resource"
-	kubectl.AddJsonFilenameFlag(cmd, &options.Filenames, usage)
-	cmdutil.AddRecursiveFlag(cmd, &options.Recursive)
+	usage := "to use to edit the resource"
+	cmdutil.AddFilenameOptionFlags(cmd, options, usage)
 	cmdutil.AddValidateFlags(cmd)
 	cmd.Flags().StringP("output", "o", "yaml", "Output format. One of: yaml|json.")
 	cmd.Flags().String("output-version", "", "Output the formatted object with the given group version (for ex: 'extensions/v1beta1').")
@@ -130,16 +121,19 @@ func NewCmdEdit(f *cmdutil.Factory, out, errOut io.Writer) *cobra.Command {
 	return cmd
 }
 
-func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args []string, options *EditOptions) error {
+func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args []string, options *resource.FilenameOptions) error {
 	var printer kubectl.ResourcePrinter
 	var ext string
+	var addHeader bool
 	switch format := cmdutil.GetFlagString(cmd, "output"); format {
 	case "json":
 		printer = &kubectl.JSONPrinter{}
 		ext = ".json"
+		addHeader = false
 	case "yaml":
 		printer = &kubectl.YAMLPrinter{}
 		ext = ".yaml"
+		addHeader = true
 	default:
 		return cmdutil.UsageError(cmd, "The flag 'output' must be one of yaml|json")
 	}
@@ -149,7 +143,7 @@ func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args
 		return err
 	}
 
-	mapper, typer := f.Object(cmdutil.GetIncludeThirdPartyAPIs(cmd))
+	mapper, typer := f.Object()
 	resourceMapper := &resource.Mapper{
 		ObjectTyper:  typer,
 		RESTMapper:   mapper,
@@ -165,7 +159,7 @@ func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args
 
 	r := resource.NewBuilder(mapper, typer, resource.ClientMapperFunc(f.ClientForMapping), f.Decoder(true)).
 		NamespaceParam(cmdNamespace).DefaultNamespace().
-		FilenameParam(enforceNamespace, options.Recursive, options.Filenames...).
+		FilenameParam(enforceNamespace, options).
 		ResourceTypeOrNameArgs(true, args...).
 		ContinueOnError().
 		Flatten().
@@ -218,7 +212,9 @@ func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args
 				w = crlf.NewCRLFWriter(w)
 			}
 
-			results.header.writeTo(w)
+			if addHeader {
+				results.header.writeTo(w)
+			}
 
 			if !containsError {
 				if err := printer.PrintObj(objToEdit, w); err != nil {
@@ -383,36 +379,29 @@ func RunEdit(f *cmdutil.Factory, out, errOut io.Writer, cmd *cobra.Command, args
 
 				if reflect.DeepEqual(originalJS, editedJS) {
 					// no edit, so just skip it.
-					cmdutil.PrintSuccess(mapper, false, out, info.Mapping.Resource, info.Name, "skipped")
+					cmdutil.PrintSuccess(mapper, false, out, info.Mapping.Resource, info.Name, false, "skipped")
 					return nil
 				}
 
-				patch, err := strategicpatch.CreateStrategicMergePatch(originalJS, editedJS, currOriginalObj)
-				// TODO: change all jsonmerge to strategicpatch
-				// for checking preconditions
-				preconditions := []jsonmerge.PreconditionFunc{}
+				preconditions := []strategicpatch.PreconditionFunc{strategicpatch.RequireKeyUnchanged("apiVersion"),
+					strategicpatch.RequireKeyUnchanged("kind"), strategicpatch.RequireMetadataKeyUnchanged("name")}
+				patch, err := strategicpatch.CreateTwoWayMergePatch(originalJS, editedJS, currOriginalObj, preconditions...)
 				if err != nil {
 					glog.V(4).Infof("Unable to calculate diff, no merge is possible: %v", err)
+					if strategicpatch.IsPreconditionFailed(err) {
+						return preservedFile(nil, file, errOut)
+					}
 					return err
-				} else {
-					preconditions = append(preconditions, jsonmerge.RequireKeyUnchanged("apiVersion"))
-					preconditions = append(preconditions, jsonmerge.RequireKeyUnchanged("kind"))
-					preconditions = append(preconditions, jsonmerge.RequireMetadataKeyUnchanged("name"))
-					results.version = defaultVersion
 				}
 
-				if hold, msg := jsonmerge.TestPreconditionsHold(patch, preconditions); !hold {
-					fmt.Fprintf(errOut, "error: %s", msg)
-					return preservedFile(nil, file, errOut)
-				}
-
+				results.version = defaultVersion
 				patched, err := resource.NewHelper(info.Client, info.Mapping).Patch(info.Namespace, info.Name, api.StrategicMergePatchType, patch)
 				if err != nil {
 					fmt.Fprintln(out, results.addError(err, info))
 					return nil
 				}
 				info.Refresh(patched, true)
-				cmdutil.PrintSuccess(mapper, false, out, info.Mapping.Resource, info.Name, "edited")
+				cmdutil.PrintSuccess(mapper, false, out, info.Mapping.Resource, info.Name, false, "edited")
 				return nil
 			})
 			if err != nil {

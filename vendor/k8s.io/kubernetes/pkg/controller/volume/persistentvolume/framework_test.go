@@ -33,13 +33,13 @@ import (
 	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/testapi"
 	"k8s.io/kubernetes/pkg/api/unversioned"
-	"k8s.io/kubernetes/pkg/apis/extensions"
+	"k8s.io/kubernetes/pkg/apis/storage"
 	"k8s.io/kubernetes/pkg/client/cache"
 	clientset "k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset/fake"
 	"k8s.io/kubernetes/pkg/client/record"
+	fcache "k8s.io/kubernetes/pkg/client/testing/cache"
 	"k8s.io/kubernetes/pkg/client/testing/core"
-	"k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/conversion"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/types"
@@ -95,7 +95,7 @@ type controllerTest struct {
 type testCall func(ctrl *PersistentVolumeController, reactor *volumeReactor, test controllerTest) error
 
 const testNamespace = "default"
-const mockPluginName = "MockVolumePlugin"
+const mockPluginName = "kubernetes.io/mock-volume"
 
 var versionConflictError = errors.New("VersionError")
 var novolumes []*api.PersistentVolume
@@ -125,8 +125,8 @@ type volumeReactor struct {
 	changedObjects       []interface{}
 	changedSinceLastSync int
 	ctrl                 *PersistentVolumeController
-	volumeSource         *framework.FakePVControllerSource
-	claimSource          *framework.FakePVCControllerSource
+	volumeSource         *fcache.FakePVControllerSource
+	claimSource          *fcache.FakePVCControllerSource
 	lock                 sync.Mutex
 	errors               []reactorError
 }
@@ -571,7 +571,7 @@ func (r *volumeReactor) addClaimEvent(claim *api.PersistentVolumeClaim) {
 	r.claimSource.Add(claim)
 }
 
-func newVolumeReactor(client *fake.Clientset, ctrl *PersistentVolumeController, volumeSource *framework.FakePVControllerSource, claimSource *framework.FakePVCControllerSource, errors []reactorError) *volumeReactor {
+func newVolumeReactor(client *fake.Clientset, ctrl *PersistentVolumeController, volumeSource *fcache.FakePVControllerSource, claimSource *fcache.FakePVCControllerSource, errors []reactorError) *volumeReactor {
 	reactor := &volumeReactor{
 		volumes:      make(map[string]*api.PersistentVolume),
 		claims:       make(map[string]*api.PersistentVolumeClaim),
@@ -586,27 +586,26 @@ func newVolumeReactor(client *fake.Clientset, ctrl *PersistentVolumeController, 
 
 func newTestController(kubeClient clientset.Interface, volumeSource, claimSource, classSource cache.ListerWatcher, enableDynamicProvisioning bool) *PersistentVolumeController {
 	if volumeSource == nil {
-		volumeSource = framework.NewFakePVControllerSource()
+		volumeSource = fcache.NewFakePVControllerSource()
 	}
 	if claimSource == nil {
-		claimSource = framework.NewFakePVCControllerSource()
+		claimSource = fcache.NewFakePVCControllerSource()
 	}
 	if classSource == nil {
-		classSource = framework.NewFakeControllerSource()
+		classSource = fcache.NewFakeControllerSource()
 	}
-	ctrl := NewPersistentVolumeController(
-		kubeClient,
-		5*time.Second,        // sync period
-		nil,                  // alpha provisioner
-		[]vol.VolumePlugin{}, // recyclers
-		nil,                  // cloud
-		"",
-		volumeSource,
-		claimSource,
-		classSource,
-		record.NewFakeRecorder(1000), // event recorder
-		enableDynamicProvisioning,
-	)
+
+	params := ControllerParameters{
+		KubeClient:                kubeClient,
+		SyncPeriod:                5 * time.Second,
+		VolumePlugins:             []vol.VolumePlugin{},
+		VolumeSource:              volumeSource,
+		ClaimSource:               claimSource,
+		ClassSource:               classSource,
+		EventRecorder:             record.NewFakeRecorder(1000),
+		EnableDynamicProvisioning: enableDynamicProvisioning,
+	}
+	ctrl := NewController(params)
 
 	// Speed up the test
 	ctrl.createProvisionedPVInterval = 5 * time.Millisecond
@@ -905,7 +904,7 @@ func evaluateTestResults(ctrl *PersistentVolumeController, reactor *volumeReacto
 // 2. Call the tested function (syncClaim/syncVolume) via
 //    controllerTest.testCall *once*.
 // 3. Compare resulting volumes and claims with expected volumes and claims.
-func runSyncTests(t *testing.T, tests []controllerTest, storageClasses []*extensions.StorageClass) {
+func runSyncTests(t *testing.T, tests []controllerTest, storageClasses []*storage.StorageClass) {
 	for _, test := range tests {
 		glog.V(4).Infof("starting test %q", test.name)
 
@@ -961,7 +960,7 @@ func runSyncTests(t *testing.T, tests []controllerTest, storageClasses []*extens
 // 5. When 3. does not do any changes, finish the tests and compare final set
 //    of volumes/claims with expected claims/volumes and report differences.
 // Some limit of calls in enforced to prevent endless loops.
-func runMultisyncTests(t *testing.T, tests []controllerTest, storageClasses []*extensions.StorageClass, defaultStorageClass string) {
+func runMultisyncTests(t *testing.T, tests []controllerTest, storageClasses []*storage.StorageClass, defaultStorageClass string) {
 	for _, test := range tests {
 		glog.V(4).Infof("starting multisync test %q", test.name)
 
@@ -1205,7 +1204,7 @@ func (plugin *mockVolumePlugin) GetMetrics() (*vol.Metrics, error) {
 
 // Recycler interfaces
 
-func (plugin *mockVolumePlugin) NewRecycler(pvName string, spec *vol.Spec) (vol.Recycler, error) {
+func (plugin *mockVolumePlugin) NewRecycler(pvName string, spec *vol.Spec, eventRecorder vol.RecycleEventRecorder) (vol.Recycler, error) {
 	if len(plugin.recycleCalls) > 0 {
 		// mockVolumePlugin directly implements Recycler interface
 		glog.V(4).Infof("mock plugin NewRecycler called, returning mock recycler")

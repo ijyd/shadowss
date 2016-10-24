@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/proposals/templates.md).
+[here](http://releases.k8s.io/release-1.4/docs/proposals/templates.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -590,7 +590,7 @@ renaming parameters seems less likely than changing field paths.
 
 Openshift defines templates as a first class resource so they can be created/retrieved/etc via standard tools.  This allows client tools to list available templates (available in the openshift cluster), allows existing resource security controls to be applied to templates, and generally provides a more integrated feel to templates.  However there is no explicit requirement that for k8s to adopt templates, it must also adopt storing them in the cluster.
 
-### Processing templates (server vs client)
+### Processing templates (server vs. client)
 
 Openshift handles template processing via a server endpoint which consumes a template object from the client and returns the list of objects
 produced by processing the template.  It is also possible to handle the entire template processing flow via the client, but this was deemed

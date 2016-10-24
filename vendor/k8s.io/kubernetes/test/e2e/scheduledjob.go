@@ -24,7 +24,6 @@ import (
 	. "github.com/onsi/gomega"
 
 	"k8s.io/kubernetes/pkg/api"
-	apierrs "k8s.io/kubernetes/pkg/api/errors"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/apis/batch"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
@@ -38,20 +37,16 @@ const (
 	scheduledJobTimeout = 5 * time.Minute
 )
 
+var (
+	ScheduledJobGroupVersionResource = unversioned.GroupVersionResource{Group: batch.GroupName, Version: "v2alpha1", Resource: "scheduledjobs"}
+	BatchV2Alpha1GroupVersion        = unversioned.GroupVersion{Group: batch.GroupName, Version: "v2alpha1"}
+)
+
 var _ = framework.KubeDescribe("ScheduledJob", func() {
-	options := framework.FrameworkOptions{
-		ClientQPS:    20,
-		ClientBurst:  50,
-		GroupVersion: &unversioned.GroupVersion{Group: batch.GroupName, Version: "v2alpha1"},
-	}
-	f := framework.NewFramework("scheduledjob", options, nil)
+	f := framework.NewDefaultGroupVersionFramework("scheduledjob", BatchV2Alpha1GroupVersion)
 
 	BeforeEach(func() {
-		if _, err := f.Client.Batch().ScheduledJobs(f.Namespace.Name).List(api.ListOptions{}); err != nil {
-			if apierrs.IsNotFound(err) {
-				framework.Skipf("Could not find ScheduledJobs resource, skipping test: %#v", err)
-			}
-		}
+		framework.SkipIfMissingResource(f.ClientPool, ScheduledJobGroupVersionResource, f.Namespace.Name)
 	})
 
 	// multiple jobs running at once
@@ -275,8 +270,11 @@ func waitForJobReplaced(c *client.Client, ns, previousJobName string) error {
 		if err != nil {
 			return false, err
 		}
-		if len(jobs.Items) != 1 {
-			return false, fmt.Errorf("More than one job is running")
+		if len(jobs.Items) > 1 {
+			return false, fmt.Errorf("More than one job is running %+v", jobs.Items)
+		} else if len(jobs.Items) == 0 {
+			framework.Logf("Warning: Found 0 jobs in namespace %v", ns)
+			return false, nil
 		}
 		return jobs.Items[0].Name != previousJobName, nil
 	})

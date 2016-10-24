@@ -103,7 +103,7 @@ var _ = framework.KubeDescribe("Job", func() {
 
 		By("Ensuring job shows many failures")
 		err = wait.Poll(framework.Poll, jobTimeout, func() (bool, error) {
-			curr, err := f.Client.Extensions().Jobs(f.Namespace.Name).Get(job.Name)
+			curr, err := getJob(f.Client, f.Namespace.Name, job.Name)
 			if err != nil {
 				return false, err
 			}
@@ -124,7 +124,7 @@ var _ = framework.KubeDescribe("Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("scale job up")
-		scaler, err := kubectl.ScalerFor(batch.Kind("Job"), f.Client)
+		scaler, err := kubectl.ScalerFor(batch.Kind("Job"), f.ClientSet)
 		Expect(err).NotTo(HaveOccurred())
 		waitForScale := kubectl.NewRetryParams(5*time.Second, 1*time.Minute)
 		waitForReplicas := kubectl.NewRetryParams(5*time.Second, 5*time.Minute)
@@ -149,7 +149,7 @@ var _ = framework.KubeDescribe("Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("scale job down")
-		scaler, err := kubectl.ScalerFor(batch.Kind("Job"), f.Client)
+		scaler, err := kubectl.ScalerFor(batch.Kind("Job"), f.ClientSet)
 		Expect(err).NotTo(HaveOccurred())
 		waitForScale := kubectl.NewRetryParams(5*time.Second, 1*time.Minute)
 		waitForReplicas := kubectl.NewRetryParams(5*time.Second, 5*time.Minute)
@@ -172,14 +172,14 @@ var _ = framework.KubeDescribe("Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("delete a job")
-		reaper, err := kubectl.ReaperFor(batch.Kind("Job"), f.Client)
+		reaper, err := kubectl.ReaperFor(batch.Kind("Job"), f.ClientSet)
 		Expect(err).NotTo(HaveOccurred())
 		timeout := 1 * time.Minute
 		err = reaper.Stop(f.Namespace.Name, job.Name, timeout, api.NewDeleteOptions(0))
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Ensuring job was deleted")
-		_, err = f.Client.Extensions().Jobs(f.Namespace.Name).Get(job.Name)
+		_, err = getJob(f.Client, f.Namespace.Name, job.Name)
 		Expect(err).To(HaveOccurred())
 		Expect(errors.IsNotFound(err)).To(BeTrue())
 	})
@@ -193,7 +193,18 @@ var _ = framework.KubeDescribe("Job", func() {
 		Expect(err).NotTo(HaveOccurred())
 
 		By("Ensuring job was failed")
-		err = waitForJobFail(f.Client, f.Namespace.Name, job.Name)
+		err = waitForJobFail(f.Client, f.Namespace.Name, job.Name, 20*time.Second)
+		if err == wait.ErrWaitTimeout {
+			job, err = getJob(f.Client, f.Namespace.Name, job.Name)
+			Expect(err).NotTo(HaveOccurred())
+			// the job stabilized and won't be synced until modification or full
+			// resync happens, we don't want to wait for the latter so we force
+			// sync modifying it
+			job.Spec.Parallelism = &completions
+			job, err = updateJob(f.Client, f.Namespace.Name, job)
+			Expect(err).NotTo(HaveOccurred())
+			err = waitForJobFail(f.Client, f.Namespace.Name, job.Name, jobTimeout)
+		}
 		Expect(err).NotTo(HaveOccurred())
 	})
 })
@@ -261,8 +272,16 @@ func newTestJob(behavior, name string, rPol api.RestartPolicy, parallelism, comp
 	return job
 }
 
+func getJob(c *client.Client, ns, name string) (*batch.Job, error) {
+	return c.Extensions().Jobs(ns).Get(name)
+}
+
 func createJob(c *client.Client, ns string, job *batch.Job) (*batch.Job, error) {
 	return c.Extensions().Jobs(ns).Create(job)
+}
+
+func updateJob(c *client.Client, ns string, job *batch.Job) (*batch.Job, error) {
+	return c.Extensions().Jobs(ns).Update(job)
 }
 
 func deleteJob(c *client.Client, ns, name string) error {
@@ -300,8 +319,8 @@ func waitForJobFinish(c *client.Client, ns, jobName string, completions int32) e
 }
 
 // Wait for job fail.
-func waitForJobFail(c *client.Client, ns, jobName string) error {
-	return wait.Poll(framework.Poll, jobTimeout, func() (bool, error) {
+func waitForJobFail(c *client.Client, ns, jobName string, timeout time.Duration) error {
+	return wait.Poll(framework.Poll, timeout, func() (bool, error) {
 		curr, err := c.Extensions().Jobs(ns).Get(jobName)
 		if err != nil {
 			return false, err

@@ -25,6 +25,13 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
+function setup-os-params {
+  # Reset core_pattern. On GCI, the default core_pattern pipes the core dumps to
+  # /sbin/crash_reporter which is more restrictive in saving crash dumps. So for
+  # now, set a generic core_pattern that users can work with.
+  echo "core.%e.%p.%t" > /proc/sys/kernel/core_pattern
+}
+
 function config-ip-firewall {
   echo "Configuring IP firewall rules"
   # The GCI image has host firewall which drop most inbound/forwarded packets.
@@ -103,19 +110,18 @@ function setup-logrotate() {
 }
 EOF
 
-  # Configuration for k8s services that redirect logs to /var/log/<service>.log
-  # files. Whenever logrotate is ran, this config will:
+  # Configure log rotation for all logs in /var/log, which is where k8s services
+  # are configured to write their log files. Whenever logrotate is ran, this
+  # config will:
   # * rotate the log file if its size is > 100Mb OR if one day has elapsed
   # * save rotated logs into a gzipped timestamped backup
-  # * log file timestamp (controlled by 'dateformat') includes seconds too. this
+  # * log file timestamp (controlled by 'dateformat') includes seconds too. This
   #   ensures that logrotate can generate unique logfiles during each rotation
   #   (otherwise it skips rotation if 'maxsize' is reached multiple times in a
   #   day).
   # * keep only 5 old (rotated) logs, and will discard older logs.
-  local logrotate_files=( "kube-scheduler" "kube-proxy" "kube-apiserver" "kube-controller-manager" "kube-addons" )
-  for file in "${logrotate_files[@]}" ; do
-    cat > /etc/logrotate.d/${file} <<EOF
-/var/log/${file}.log {
+  cat > /etc/logrotate.d/allvarlogs <<EOF
+/var/log/*.log {
     rotate 5
     copytruncate
     missingok
@@ -128,7 +134,7 @@ EOF
     create 0644 root root
 }
 EOF
-  done
+
 }
 
 # Finds the master PD device; returns it in MASTER_PD_DEVICE
@@ -480,7 +486,10 @@ function start-kubelet {
     if [[ ! -z "${KUBELET_APISERVER:-}" && ! -z "${KUBELET_CERT:-}" && ! -z "${KUBELET_KEY:-}" ]]; then
       flags+=" --api-servers=https://${KUBELET_APISERVER}"
       flags+=" --register-schedulable=false"
-      flags+=" --pod-cidr=10.123.45.0/30"
+      # need at least a /29 pod cidr for now due to #32844
+      # TODO: determine if we still allow non-hostnetwork pods to run on master, clean up master pod setup
+      # WARNING: potential ip range collision with 10.123.45.0/29
+      flags+=" --pod-cidr=10.123.45.0/29"
       reconcile_cidr="false"
     else
       flags+=" --pod-cidr=${MASTER_IP_RANGE}"
@@ -496,7 +505,11 @@ function start-kubelet {
   fi
   # Network plugin
   if [[ -n "${NETWORK_PROVIDER:-}" ]]; then
-    flags+=" --network-plugin-dir=/home/kubernetes/bin"
+    if [[ "${NETWORK_PROVIDER:-}" == "cni" ]]; then
+      flags+=" --cni-bin-dir=/home/kubernetes/bin"
+    else
+      flags+=" --network-plugin-dir=/home/kubernetes/bin"
+    fi
     flags+=" --network-plugin=${NETWORK_PROVIDER}"
   fi
   flags+=" --reconcile-cidr=${reconcile_cidr}"
@@ -517,10 +530,10 @@ function start-kubelet {
     flags+=" --eviction-hard=${EVICTION_HARD}"
   fi
   if [[ "${ALLOCATE_NODE_CIDRS:-}" == "true" ]]; then
-     flags+=" --configure-cbr0=${ALLOCATE_NODE_CIDRS}"
+    flags+=" --configure-cbr0=${ALLOCATE_NODE_CIDRS}"
   fi
   if [[ -n "${FEATURE_GATES:-}" ]]; then
-     flags+=" --feature-gates=${FEATURE_GATES}"
+    flags+=" --feature-gates=${FEATURE_GATES}"
   fi
 
   local -r kubelet_env_file="/etc/default/kubelet"
@@ -577,7 +590,7 @@ function start-kube-proxy {
     params+=" --feature-gates=${FEATURE_GATES}"
   fi
   if [[ -n "${KUBEPROXY_TEST_ARGS:-}" ]]; then
-    params+=" ${KUBE_PROXY_TEST_ARGS}"
+    params+=" ${KUBEPROXY_TEST_ARGS}"
   fi
   sed -i -e "s@{{kubeconfig}}@${kubeconfig}@g" ${src_file}
   sed -i -e "s@{{pillar\['kube_docker_registry'\]}}@${kube_docker_registry}@g" ${src_file}
@@ -1080,10 +1093,23 @@ function start-fluentd {
   fi
 }
 
+# Starts an image-puller - used in test clusters.
+function start-image-puller {
+  echo "Start image-puller"
+  cp "${KUBE_HOME}/kube-manifests/kubernetes/gci-trusty/e2e-image-puller.manifest" \
+    /etc/kubernetes/manifests/
+}
+
+# Starts kube-registry proxy
+function start-kube-registry-proxy {
+  echo "Start kube-registry-proxy"
+  cp "${KUBE_HOME}/kube-manifests/kubernetes/kube-registry-proxy.yaml" /etc/kubernetes/manifests
+}
+
 # Starts a l7 loadbalancing controller for ingress.
 function start-lb-controller {
   if [[ "${ENABLE_L7_LOADBALANCING:-}" == "glbc" ]]; then
-    echo "Starting GCE L7 pod"
+    echo "Start GCE L7 pod"
     prepare-log-file /var/log/glbc.log
     setup-addon-manifests "addons" "cluster-loadbalancing/glbc"
     cp "${KUBE_HOME}/kube-manifests/kubernetes/gci-trusty/glbc.manifest" \
@@ -1094,11 +1120,18 @@ function start-lb-controller {
 # Starts rescheduler.
 function start-rescheduler {
   if [[ "${ENABLE_RESCHEDULER:-}" == "true" ]]; then
-    echo "Starting Rescheduler"
+    echo "Start Rescheduler"
     prepare-log-file /var/log/rescheduler.log
     cp "${KUBE_HOME}/kube-manifests/kubernetes/gci-trusty/rescheduler.manifest" \
        /etc/kubernetes/manifests/
   fi
+}
+
+# Setup working directory for kubelet.
+function setup-kubelet-dir {
+    echo "Making /var/lib/kubelet executable for kubelet"
+    mount -B /var/lib/kubelet /var/lib/kubelet/
+    mount -B -o remount,exec,suid,dev /var/lib/kubelet
 }
 
 function reset-motd {
@@ -1156,8 +1189,10 @@ if [[ -n "${KUBE_USER:-}" ]]; then
   fi
 fi
 
+setup-os-params
 config-ip-firewall
 create-dirs
+setup-kubelet-dir
 ensure-local-ssds
 setup-logrotate
 if [[ "${KUBERNETES_MASTER:-}" == "true" ]]; then
@@ -1188,8 +1223,11 @@ else
   start-kube-proxy
   # Kube-registry-proxy.
   if [[ "${ENABLE_CLUSTER_REGISTRY:-}" == "true" ]]; then
-    cp "${KUBE_HOME}/kube-manifests/kubernetes/kube-registry-proxy.yaml" /etc/kubernetes/manifests
-	fi
+    start-kube-registry-proxy
+  fi
+  if [[ "${PREPULL_E2E_IMAGES:-}" == "true" ]]; then
+    start-image-puller
+  fi
 fi
 start-fluentd
 reset-motd

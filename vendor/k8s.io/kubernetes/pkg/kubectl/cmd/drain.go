@@ -28,7 +28,8 @@ import (
 
 	"k8s.io/kubernetes/pkg/api"
 	"k8s.io/kubernetes/pkg/api/meta"
-	client "k8s.io/kubernetes/pkg/client/unversioned"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
+	"k8s.io/kubernetes/pkg/client/restclient"
 	"k8s.io/kubernetes/pkg/fields"
 	cmdutil "k8s.io/kubernetes/pkg/kubectl/cmd/util"
 	"k8s.io/kubernetes/pkg/kubectl/resource"
@@ -37,7 +38,8 @@ import (
 )
 
 type DrainOptions struct {
-	client             *client.Client
+	client             *internalclientset.Clientset
+	restClient         *restclient.RESTClient
 	factory            *cmdutil.Factory
 	Force              bool
 	GracePeriodSeconds int
@@ -125,13 +127,13 @@ var (
 		Drain node in preparation for maintenance.
 
 		The given node will be marked unschedulable to prevent new pods from arriving.
-		Then drain deletes all pods except mirror pods (which cannot be deleted through
+		The 'drain' deletes all pods except mirror pods (which cannot be deleted through
 		the API server).  If there are DaemonSet-managed pods, drain will not proceed
 		without --ignore-daemonsets, and regardless it will not delete any
 		DaemonSet-managed pods, because those pods would be immediately replaced by the
 		DaemonSet controller, which ignores unschedulable markings.  If there are any
-		pods that are neither mirror pods nor managed--by ReplicationController,
-		ReplicaSet, DaemonSet or Job--, then drain will not delete any pods unless you
+		pods that are neither mirror pods nor managed by ReplicationController,
+		ReplicaSet, DaemonSet or Job, then drain will not delete any pods unless you
 		use --force.
 
 		When you are ready to put the node back into service, use kubectl uncordon, which
@@ -177,18 +179,23 @@ func (o *DrainOptions) SetupDrain(cmd *cobra.Command, args []string) error {
 		return cmdutil.UsageError(cmd, fmt.Sprintf("USAGE: %s [flags]", cmd.Use))
 	}
 
-	if o.client, err = o.factory.Client(); err != nil {
+	if o.client, err = o.factory.ClientSet(); err != nil {
 		return err
 	}
 
-	o.mapper, o.typer = o.factory.Object(false)
+	o.restClient, err = o.factory.RESTClient()
+	if err != nil {
+		return err
+	}
+
+	o.mapper, o.typer = o.factory.Object()
 
 	cmdNamespace, _, err := o.factory.DefaultNamespace()
 	if err != nil {
 		return err
 	}
 
-	r := o.factory.NewBuilder(cmdutil.GetIncludeThirdPartyAPIs(cmd)).
+	r := o.factory.NewBuilder().
 		NamespaceParam(cmdNamespace).DefaultNamespace().
 		ResourceNames("node", args[0]).
 		Do()
@@ -220,20 +227,20 @@ func (o *DrainOptions) RunDrain() error {
 	if err = o.deletePods(pods); err != nil {
 		return err
 	}
-	cmdutil.PrintSuccess(o.mapper, false, o.out, "node", o.nodeInfo.Name, "drained")
+	cmdutil.PrintSuccess(o.mapper, false, o.out, "node", o.nodeInfo.Name, false, "drained")
 	return nil
 }
 
 func (o *DrainOptions) getController(sr *api.SerializedReference) (interface{}, error) {
 	switch sr.Reference.Kind {
 	case "ReplicationController":
-		return o.client.ReplicationControllers(sr.Reference.Namespace).Get(sr.Reference.Name)
+		return o.client.Core().ReplicationControllers(sr.Reference.Namespace).Get(sr.Reference.Name)
 	case "DaemonSet":
-		return o.client.DaemonSets(sr.Reference.Namespace).Get(sr.Reference.Name)
+		return o.client.Extensions().DaemonSets(sr.Reference.Namespace).Get(sr.Reference.Name)
 	case "Job":
-		return o.client.ExtensionsClient.Jobs(sr.Reference.Namespace).Get(sr.Reference.Name)
+		return o.client.Batch().Jobs(sr.Reference.Namespace).Get(sr.Reference.Name)
 	case "ReplicaSet":
-		return o.client.ExtensionsClient.ReplicaSets(sr.Reference.Namespace).Get(sr.Reference.Name)
+		return o.client.Extensions().ReplicaSets(sr.Reference.Namespace).Get(sr.Reference.Name)
 	}
 	return nil, fmt.Errorf("Unknown controller kind %q", sr.Reference.Kind)
 }
@@ -260,6 +267,11 @@ func (o *DrainOptions) getPodCreator(pod api.Pod) (*api.SerializedReference, err
 }
 
 func (o *DrainOptions) unreplicatedFilter(pod api.Pod) (bool, *warning, *fatal) {
+	// any finished pod can be removed
+	if pod.Status.Phase == api.PodSucceeded || pod.Status.Phase == api.PodFailed {
+		return true, nil, nil
+	}
+
 	sr, err := o.getPodCreator(pod)
 	if err != nil {
 		return false, nil, &fatal{err.Error()}
@@ -284,7 +296,7 @@ func (o *DrainOptions) daemonsetFilter(pod api.Pod) (bool, *warning, *fatal) {
 	if sr == nil || sr.Reference.Kind != "DaemonSet" {
 		return true, nil, nil
 	}
-	if _, err := o.client.DaemonSets(sr.Reference.Namespace).Get(sr.Reference.Name); err != nil {
+	if _, err := o.client.Extensions().DaemonSets(sr.Reference.Namespace).Get(sr.Reference.Name); err != nil {
 		return false, nil, &fatal{err.Error()}
 	}
 	if !o.IgnoreDaemonsets {
@@ -335,7 +347,7 @@ func (ps podStatuses) Message() string {
 // getPodsForDeletion returns all the pods we're going to delete.  If there are
 // any pods preventing us from deleting, we return that list in an error.
 func (o *DrainOptions) getPodsForDeletion() (pods []api.Pod, err error) {
-	podList, err := o.client.Pods(api.NamespaceAll).List(api.ListOptions{
+	podList, err := o.client.Core().Pods(api.NamespaceAll).List(api.ListOptions{
 		FieldSelector: fields.SelectorFromSet(fields.Set{"spec.nodeName": o.nodeInfo.Name})})
 	if err != nil {
 		return pods, err
@@ -380,11 +392,11 @@ func (o *DrainOptions) deletePods(pods []api.Pod) error {
 	}
 
 	for _, pod := range pods {
-		err := o.client.Pods(pod.Namespace).Delete(pod.Name, &deleteOptions)
+		err := o.client.Core().Pods(pod.Namespace).Delete(pod.Name, &deleteOptions)
 		if err != nil {
 			return err
 		}
-		cmdutil.PrintSuccess(o.mapper, false, o.out, "pod", pod.Name, "deleted")
+		cmdutil.PrintSuccess(o.mapper, false, o.out, "pod", pod.Name, false, "deleted")
 	}
 
 	return nil
@@ -401,18 +413,18 @@ func (o *DrainOptions) RunCordonOrUncordon(desired bool) error {
 	if o.nodeInfo.Mapping.GroupVersionKind.Kind == "Node" {
 		unsched := reflect.ValueOf(o.nodeInfo.Object).Elem().FieldByName("Spec").FieldByName("Unschedulable")
 		if unsched.Bool() == desired {
-			cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, already(desired))
+			cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, false, already(desired))
 		} else {
-			helper := resource.NewHelper(o.client, o.nodeInfo.Mapping)
+			helper := resource.NewHelper(o.restClient, o.nodeInfo.Mapping)
 			unsched.SetBool(desired)
 			_, err := helper.Replace(cmdNamespace, o.nodeInfo.Name, true, o.nodeInfo.Object)
 			if err != nil {
 				return err
 			}
-			cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, changed(desired))
+			cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, false, changed(desired))
 		}
 	} else {
-		cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, "skipped")
+		cmdutil.PrintSuccess(o.mapper, false, o.out, o.nodeInfo.Mapping.Resource, o.nodeInfo.Name, false, "skipped")
 	}
 
 	return nil

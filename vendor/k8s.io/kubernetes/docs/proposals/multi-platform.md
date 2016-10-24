@@ -18,6 +18,11 @@
 If you are using a released version of Kubernetes, you should
 refer to the docs that go with that version.
 
+<!-- TAG RELEASE_LINK, added by the munger automatically -->
+<strong>
+The latest release of this document can be found
+[here](http://releases.k8s.io/release-1.4/docs/proposals/multi-platform.md).
+
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
 </strong>
@@ -222,7 +227,7 @@ These addons should also be converted to multiple platforms:
 
 ### Conflicts
 
-What should we do if there's a conflict between keeping e.g. `linux/ppc64le` builds vs merging a release blocker?
+What should we do if there's a conflict between keeping e.g. `linux/ppc64le` builds vs. merging a release blocker?
 
 In fact, we faced this problem while this proposal was being written; in [#25243](https://github.com/kubernetes/kubernetes/pull/25243). It is quite obvious that the release blocker is of higher priority.
 

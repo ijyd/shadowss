@@ -29,13 +29,14 @@ import (
 	"k8s.io/kubernetes/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/api/unversioned"
 	"k8s.io/kubernetes/pkg/client/cache"
+	"k8s.io/kubernetes/pkg/client/clientset_generated/internalclientset"
 	client "k8s.io/kubernetes/pkg/client/unversioned"
-	controllerframework "k8s.io/kubernetes/pkg/controller/framework"
 	"k8s.io/kubernetes/pkg/fields"
 	"k8s.io/kubernetes/pkg/labels"
 	"k8s.io/kubernetes/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/sets"
 	utiluuid "k8s.io/kubernetes/pkg/util/uuid"
+	"k8s.io/kubernetes/pkg/util/workqueue"
 	"k8s.io/kubernetes/pkg/watch"
 	"k8s.io/kubernetes/test/e2e/framework"
 
@@ -54,6 +55,7 @@ var MaxContainerFailures = 0
 type DensityTestConfig struct {
 	Configs      []framework.RCConfig
 	Client       *client.Client
+	ClientSet    internalclientset.Interface
 	Namespace    string
 	PollInterval time.Duration
 	PodCount     int
@@ -73,7 +75,7 @@ func density30AddonResourceVerifier(numNodes int) map[string]framework.ResourceC
 	framework.Logf("Setting resource constraings for provider: %s", framework.TestContext.Provider)
 	if framework.ProviderIs("kubemark") {
 		if numNodes <= 5 {
-			apiserverCPU = 0.25
+			apiserverCPU = 0.35
 			apiserverMem = 150 * (1024 * 1024)
 			controllerCPU = 0.1
 			controllerMem = 100 * (1024 * 1024)
@@ -87,7 +89,7 @@ func density30AddonResourceVerifier(numNodes int) map[string]framework.ResourceC
 			schedulerCPU = 0.75
 			schedulerMem = 500 * (1024 * 1024)
 		} else if numNodes <= 500 {
-			apiserverCPU = 2.25
+			apiserverCPU = 2.5
 			apiserverMem = 3400 * (1024 * 1024)
 			controllerCPU = 1.3
 			controllerMem = 1100 * (1024 * 1024)
@@ -137,7 +139,7 @@ func density30AddonResourceVerifier(numNodes int) map[string]framework.ResourceC
 		MemoryConstraint: 20 * (1024 * 1024),
 	}
 	constraints["l7-lb-controller"] = framework.ResourceConstraint{
-		CPUConstraint:    0.1,
+		CPUConstraint:    0.15,
 		MemoryConstraint: 60 * (1024 * 1024),
 	}
 	constraints["influxdb"] = framework.ResourceConstraint{
@@ -188,7 +190,7 @@ func runDensityTest(dtc DensityTestConfig) time.Duration {
 	// eLock is a lock protects the events
 	var eLock sync.Mutex
 	events := make([](*api.Event), 0)
-	_, controller := controllerframework.NewInformer(
+	_, controller := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(options api.ListOptions) (runtime.Object, error) {
 				return dtc.Client.Events(dtc.Namespace).List(options)
@@ -199,7 +201,7 @@ func runDensityTest(dtc DensityTestConfig) time.Duration {
 		},
 		&api.Event{},
 		0,
-		controllerframework.ResourceEventHandlerFuncs{
+		cache.ResourceEventHandlerFuncs{
 			AddFunc: func(obj interface{}) {
 				eLock.Lock()
 				defer eLock.Unlock()
@@ -215,7 +217,7 @@ func runDensityTest(dtc DensityTestConfig) time.Duration {
 	var uLock sync.Mutex
 	updateCount := 0
 	label := labels.SelectorFromSet(labels.Set(map[string]string{"type": "densityPod"}))
-	_, updateController := controllerframework.NewInformer(
+	_, updateController := cache.NewInformer(
 		&cache.ListWatch{
 			ListFunc: func(options api.ListOptions) (runtime.Object, error) {
 				options.LabelSelector = label
@@ -228,7 +230,7 @@ func runDensityTest(dtc DensityTestConfig) time.Duration {
 		},
 		&api.Pod{},
 		0,
-		controllerframework.ResourceEventHandlerFuncs{
+		cache.ResourceEventHandlerFuncs{
 			UpdateFunc: func(_, _ interface{}) {
 				uLock.Lock()
 				defer uLock.Unlock()
@@ -328,7 +330,7 @@ func cleanupDensityTest(dtc DensityTestConfig) {
 				framework.ExpectNoError(err)
 			} else {
 				By("Cleaning up the replication controller and pods")
-				err := framework.DeleteRCAndPods(dtc.Client, dtc.Namespace, rcName)
+				err := framework.DeleteRCAndPods(dtc.Client, dtc.ClientSet, dtc.Namespace, rcName)
 				framework.ExpectNoError(err)
 			}
 		}
@@ -487,7 +489,9 @@ var _ = framework.KubeDescribe("Density", func() {
 				}
 			}
 
-			dConfig := DensityTestConfig{Client: c,
+			dConfig := DensityTestConfig{
+				Client:       c,
+				ClientSet:    f.ClientSet,
 				Configs:      RCConfigs,
 				PodCount:     totalPods,
 				Namespace:    ns,
@@ -533,7 +537,7 @@ var _ = framework.KubeDescribe("Density", func() {
 				}
 
 				additionalPodsPrefix = "density-latency-pod"
-				latencyPodsStore, controller := controllerframework.NewInformer(
+				latencyPodsStore, controller := cache.NewInformer(
 					&cache.ListWatch{
 						ListFunc: func(options api.ListOptions) (runtime.Object, error) {
 							options.LabelSelector = labels.SelectorFromSet(labels.Set{"type": additionalPodsPrefix})
@@ -546,7 +550,7 @@ var _ = framework.KubeDescribe("Density", func() {
 					},
 					&api.Pod{},
 					0,
-					controllerframework.ResourceEventHandlerFuncs{
+					cache.ResourceEventHandlerFuncs{
 						AddFunc: func(obj interface{}) {
 							p, ok := obj.(*api.Pod)
 							Expect(ok).To(Equal(true))
@@ -663,10 +667,11 @@ var _ = framework.KubeDescribe("Density", func() {
 				framework.LogSuspiciousLatency(startupLag, e2eLag, nodeCount, c)
 
 				By("Removing additional replication controllers")
-				for i := 1; i <= nodeCount; i++ {
-					name := additionalPodsPrefix + "-" + strconv.Itoa(i)
-					c.ReplicationControllers(ns).Delete(name, nil)
+				deleteRC := func(i int) {
+					name := additionalPodsPrefix + "-" + strconv.Itoa(i+1)
+					framework.ExpectNoError(framework.DeleteRCAndWaitForGC(c, ns, name))
 				}
+				workqueue.Parallelize(16, nodeCount, deleteRC)
 			}
 
 			cleanupDensityTest(dConfig)
@@ -704,7 +709,9 @@ var _ = framework.KubeDescribe("Density", func() {
 				Silent:               true,
 			}
 		}
-		dConfig := DensityTestConfig{Client: c,
+		dConfig := DensityTestConfig{
+			Client:       c,
+			ClientSet:    f.ClientSet,
 			Configs:      RCConfigs,
 			PodCount:     totalPods,
 			Namespace:    ns,

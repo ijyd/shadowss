@@ -1,3 +1,0 @@
-ETCD_URL=http://etcd3:2379
-MYSQL_URL=sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel
-PROXY_SERVER_ARGS_ETCD=http://192.168.60.128:2379

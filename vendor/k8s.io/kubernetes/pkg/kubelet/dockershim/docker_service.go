@@ -25,6 +25,7 @@ import (
 	runtimeApi "k8s.io/kubernetes/pkg/kubelet/api/v1alpha1/runtime"
 	kubecontainer "k8s.io/kubernetes/pkg/kubelet/container"
 	"k8s.io/kubernetes/pkg/kubelet/dockertools"
+	"k8s.io/kubernetes/pkg/util/term"
 )
 
 const (
@@ -47,11 +48,17 @@ const (
 	containerTypeLabelKey       = "io.kubernetes.docker.type"
 	containerTypeLabelSandbox   = "podsandbox"
 	containerTypeLabelContainer = "container"
+	sandboxIDLabelKey           = "io.kubernetes.sandbox.id"
 )
 
-func NewDockerSevice(client dockertools.DockerInterface) DockerLegacyService {
+var internalLabelKeys []string = []string{containerTypeLabelKey, sandboxIDLabelKey}
+
+// NOTE: Anything passed to DockerService should be eventually handled in another way when we switch to running the shim as a different process.
+func NewDockerService(client dockertools.DockerInterface, seccompProfileRoot string, podSandboxImage string) DockerLegacyService {
 	return &dockerService{
-		client: dockertools.NewInstrumentedDockerInterface(client),
+		seccompProfileRoot: seccompProfileRoot,
+		client:             dockertools.NewInstrumentedDockerInterface(client),
+		podSandboxImage:    podSandboxImage,
 	}
 }
 
@@ -65,25 +72,33 @@ type DockerLegacyService interface {
 	// Supporting legacy methods for docker.
 	GetContainerLogs(pod *api.Pod, containerID kubecontainer.ContainerID, logOptions *api.PodLogOptions, stdout, stderr io.Writer) (err error)
 	kubecontainer.ContainerAttacher
-	PortForward(pod *kubecontainer.Pod, port uint16, stream io.ReadWriteCloser) error
+	PortForward(sandboxID string, port uint16, stream io.ReadWriteCloser) error
+
+	// TODO: Remove this once exec is properly defined in CRI.
+	ExecInContainer(containerID kubecontainer.ContainerID, cmd []string, stdin io.Reader, stdout, stderr io.WriteCloser, tty bool, resize <-chan term.Size) error
 }
 
 type dockerService struct {
-	client dockertools.DockerInterface
+	seccompProfileRoot string
+	client             dockertools.DockerInterface
+	podSandboxImage    string
 }
 
 // Version returns the runtime name, runtime version and runtime API version
-func (ds *dockerService) Version(apiVersion string) (*runtimeApi.VersionResponse, error) {
+func (ds *dockerService) Version(_ string) (*runtimeApi.VersionResponse, error) {
 	v, err := ds.client.Version()
 	if err != nil {
 		return nil, fmt.Errorf("docker: failed to get docker version: %v", err)
 	}
 	runtimeAPIVersion := kubeAPIVersion
 	name := dockerRuntimeName
+	// Docker API version (e.g., 1.23) is not semver compatible. Add a ".0"
+	// suffix to remedy this.
+	apiVersion := fmt.Sprintf("%s.0", v.APIVersion)
 	return &runtimeApi.VersionResponse{
 		Version:           &runtimeAPIVersion,
 		RuntimeName:       &name,
 		RuntimeVersion:    &v.Version,
-		RuntimeApiVersion: &v.APIVersion,
+		RuntimeApiVersion: &apiVersion,
 	}, nil
 }

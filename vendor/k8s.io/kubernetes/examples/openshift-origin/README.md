@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/examples/openshift-origin/README.md).
+[here](http://releases.k8s.io/release-1.4/examples/openshift-origin/README.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -59,7 +59,7 @@ $ vi cluster/saltbase/pillar/privilege.sls
 allow_privileged: true
 ```
 
-Now spin up a cluster using your preferred KUBERNETES_PROVIDER. Remember that `kube-up.sh` may start other pods on your minion nodes, so ensure that you have enough resources to run the five pods for this example.
+Now spin up a cluster using your preferred KUBERNETES_PROVIDER. Remember that `kube-up.sh` may start other pods on your nodes, so ensure that you have enough resources to run the five pods for this example.
 
 
 ```sh

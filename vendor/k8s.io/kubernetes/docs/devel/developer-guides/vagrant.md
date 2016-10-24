@@ -21,7 +21,7 @@ refer to the docs that go with that version.
 <!-- TAG RELEASE_LINK, added by the munger automatically -->
 <strong>
 The latest release of this document can be found
-[here](http://releases.k8s.io/release-1.3/docs/devel/developer-guides/vagrant.md).
+[here](http://releases.k8s.io/release-1.4/docs/devel/developer-guides/vagrant.md).
 
 Documentation for other releases can be found at
 [releases.k8s.io](http://releases.k8s.io).
@@ -371,8 +371,8 @@ provisioned.
 
 #### I have Vagrant up but the nodes won't validate!
 
-Log on to one of the nodes (`vagrant ssh node-1`) and inspect the salt minion
-log (`sudo cat /var/log/salt/minion`).
+Log on to one of the nodes (`vagrant ssh node-1`) and inspect the salt node
+log (`sudo cat /var/log/salt/node`).
 
 #### I want to change the number of nodes!
 
