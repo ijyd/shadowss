@@ -1,131 +1,87 @@
-hash: ef45a37c167bba9dd56b80529b599ee2ace6c639b252afa45d6e532209c49ce0
-updated: 2016-10-24T18:23:51.518222888+08:00
+hash: 53008c68fb48ae298e27b86db63d2af0f78a4a2aad429218b94831aaead69cd8
+updated: 2016-11-16T18:17:15.728692034+08:00
 imports:
+- name: apistack
+  version: 5d5e6915f0b1e57954fe316eda953fa53c87e9b0
+  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
+  subpackages:
+  - pkg/genericapiserver/openapi/common
 - name: cloud-keeper
-  version: cfe1fc819d14e50656f33cb3d89b7f3a4b2fa626
+  version: 2fc87e61fb79eac0b610219504d285c977a76a66
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
   - pkg/api/install
-  - pkg/api/v1
-  - pkg/backend
-  - pkg/backend/db
   - pkg/controller/apiserverctl
   - pkg/controller/nodectl
   - pkg/etcdhelper
-  - pkg/pagination
   - pkg/watcher
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
 - name: github.com/coreos/etcd
   version: c349e089b168e28629d0db6ac2819000abbaf6a7
-  subpackages:
-  - auth/authpb
-  - clientv3
-  - etcdserver/api/v3rpc/rpctypes
-  - etcdserver/etcdserverpb
-  - mvcc/mvccpb
-  - pkg/fileutil
-  - pkg/tlsutil
-  - pkg/transport
 - name: github.com/coreos/go-semver
   version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
   subpackages:
   - semver
-- name: github.com/coreos/go-systemd
-  version: 4484981625c1a6a2ecb40a390fcb6a9bcfee76e3
-  subpackages:
-  - activation
-  - daemon
-  - dbus
-  - journal
-  - unit
-  - util
-- name: github.com/coreos/pkg
-  version: fa29b1d70f0beaddd4c7021607cc3c3be8ce94b8
-  subpackages:
-  - capnslog
-  - dlopen
-  - health
-  - httputil
-  - timeutil
 - name: github.com/emicklei/go-restful
-  version: 777bb3f19bcafe2575ffb2a3e46af92509ae9594
+  version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
   subpackages:
   - log
   - swagger
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-openapi/jsonpointer
-  version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
+  version: 8d96a2dc61536b690bd36b2e9df0b3c0b62825b2
 - name: github.com/go-openapi/jsonreference
-  version: 13c6e3589ad90f49bd3e3bbe2c2cb3d7a4142272
+  version: 36d33bfe519efae5632669801b180bf1a245da3b
 - name: github.com/go-openapi/spec
-  version: 6aced65f8501fe1217321abf0749d354824ba2ff
+  version: d1c18b339aece4b16ead6d253b85b6ad7180ea54
 - name: github.com/go-openapi/swag
-  version: 1d0bd113de87027671077d3c71eb3ac5d7dbba72
-- name: github.com/go-sql-driver/mysql
-  version: a732e14c62dde3285440047bba97581bc472ae18
+  version: 3b6d86cd965820f968760d5d419cb4add096bdd7
 - name: github.com/godbus/dbus
   version: 5f6efc7ef2759c81b7ba876593971bfce311eab3
 - name: github.com/gogo/protobuf
-  version: e18d7aa8f8c624c915db340349aad4c49b10d173
+  version: 8d70fb3182befc465c4a1eac8ad4d38ff49778e2
   subpackages:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: a6b377e3400b08991b80d6805d627f347f983866
   subpackages:
   - lru
-- name: github.com/golang/protobuf
-  version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
-  subpackages:
-  - jsonpb
-  - proto
 - name: github.com/google/gofuzz
-  version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
-- name: github.com/grpc-ecosystem/grpc-gateway
-  version: f52d055dc48aec25854ed7d31862f78913cf17d1
-  subpackages:
-  - runtime
-  - runtime/internal
-  - utilities
-- name: github.com/jinzhu/gorm
-  version: 5174cc5c242a728b435ea2be8a2f7f998e15429b
-- name: github.com/jinzhu/inflection
-  version: 74387dc39a75e970e7a3ae6a3386b5bd2e5c5cff
+  version: fd52762d25a41827db7ef64c43756fd4b9f7e382
 - name: github.com/mailru/easyjson
-  version: d5b7844b561a7bc640052f1b935f7b800330d7e0
+  version: 159cdb893c982e3d1bc6450322fedd514f9c9de3
   subpackages:
   - buffer
   - jlexer
   - jwriter
 - name: github.com/pborman/uuid
-  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+  version: a97ce2ca70fa5a848076093f05e639a89ca34d06
 - name: github.com/PuerkitoBio/purell
-  version: 8a290539e2e8629dbc4e6bad948158f790ec31f4
+  version: 0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4
 - name: github.com/PuerkitoBio/urlesc
   version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/pflag
-  version: 103ce5cd2042f2fe629c1957abb64ab3e7f50235
+  version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
-  version: f1f1a805ed361a0e078bb537e4ea78cd37dcf065
+  version: faddd6128c66c4708f45fdc007f575f75e592a3c
   subpackages:
   - codec
-  - codec/codecgen
 - name: gofreezer
-  version: ae3b36de2ca25aec79fc2331da6fa1771b526c26
+  version: 0155cd5a479763b92ae384905b39cd64c3d7cef5
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
-  - cmd/libs/go2idl/openapi-gen/generators/common
-  - pkg/api/errors
+  - pkg/api
   - pkg/api/meta
   - pkg/api/meta/metatypes
-  - pkg/api/prototype
+  - pkg/api/resource
   - pkg/api/unversioned
-  - pkg/api/validation/path
+  - pkg/auth/user
   - pkg/conversion
   - pkg/conversion/queryparams
   - pkg/fields
@@ -137,34 +93,26 @@ imports:
   - pkg/runtime/serializer/json
   - pkg/runtime/serializer/protobuf
   - pkg/runtime/serializer/recognizer
-  - pkg/runtime/serializer/streaming
   - pkg/runtime/serializer/versioning
   - pkg/selection
   - pkg/storage
-  - pkg/storage/etcd
-  - pkg/storage/etcd3
-  - pkg/storage/storagebackend
-  - pkg/storage/storagebackend/factory
   - pkg/types
-  - pkg/util/clock
   - pkg/util/errors
   - pkg/util/framer
   - pkg/util/intstr
   - pkg/util/json
   - pkg/util/labels
-  - pkg/util/net
+  - pkg/util/rand
   - pkg/util/runtime
   - pkg/util/sets
   - pkg/util/uuid
   - pkg/util/validation
   - pkg/util/validation/field
-  - pkg/util/wait
   - pkg/util/yaml
-  - pkg/watch
   - pkg/watch/versioned
   - third_party/forked/golang/reflect
 - name: golang.org/x/crypto
-  version: 351dc6a5bf92a5f2ae22fadeee08eb6a45aa2d93
+  version: 1351f936d976c60a0a48d728281922cf63eafb8d
   subpackages:
   - blowfish
   - cast5
@@ -173,54 +121,21 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
-  - http2
-  - http2/hpack
   - idna
-  - internal/timeseries
-  - lex/httplex
-  - trace
 - name: golang.org/x/text
-  version: 2910a502d2bf9e43193af9d68ca516529614eed3
+  version: a263ba8db058568bb9beba166777d9c9dbe75d68
   subpackages:
-  - cases
-  - internal/tag
-  - language
-  - runes
-  - secure/bidirule
-  - secure/precis
   - transform
-  - unicode/bidi
   - unicode/norm
   - width
 - name: golib
   version: 02c1abb7ca6f030728d028621ba41e8a328d7968
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
   subpackages:
-  - pkg/storage
-  - pkg/storage/mysql
-  - pkg/storage/storagebackend
-  - pkg/storage/storagebackend/factory
   - pkg/util/flag
   - pkg/util/network
-  - pkg/util/timewrap
-- name: google.golang.org/grpc
-  version: 231b4cfea0e79843053a33f5fe90bd4d84b23cd3
-  subpackages:
-  - codes
-  - credentials
-  - grpclog
-  - internal
-  - metadata
-  - naming
-  - peer
-  - transport
+- name: gopkg.in/inf.v0
+  version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
-- name: k8s.io/kubernetes
-  version: 1837914d8e219f54631131c7b3c59b8844df5b2c
-  subpackages:
-  - pkg/util/dbus
-  - pkg/util/exec
-  - pkg/util/iptables
-  - pkg/util/sets
 testImports: []

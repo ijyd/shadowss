@@ -2,7 +2,6 @@ package users
 
 import (
 	"cloud-keeper/pkg/api"
-	"gofreezer/pkg/runtime"
 	"math/rand"
 	"shadowss/pkg/config"
 	"shadowss/pkg/proxyserver"
@@ -120,30 +119,31 @@ func (u *Users) DelUsers(nodeUser *api.NodeUser) {
 	u.refresh(nodeUser, true)
 }
 
-func (u *Users) AddObj(obj runtime.Object) {
-	nodeUser := obj.(*api.NodeUser)
-
-	switch nodeUser.Spec.Phase {
-	case api.NodeUserPhaseAdd:
-		glog.V(5).Infof("add new node user %v\r\n", nodeUser)
-		u.AddUsers(nodeUser)
-	case api.NodeUserPhaseDelete:
-		glog.V(5).Infof("delete node user %v\r\n", nodeUser)
-		u.DelUsers(nodeUser)
-	case api.NodeUserPhaseUpdate:
-		glog.V(5).Infof("update node user not need implement %v", *nodeUser)
-	default:
-		glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
-	}
-
-	return
-}
-
-func (u *Users) ModifyObj(obj runtime.Object) {
-}
-
-func (u *Users) DelObj(obj runtime.Object) {
-}
-
-func (u *Users) Error(obj runtime.Object) {
-}
+//
+// func (u *Users) AddObj(obj runtime.Object) {
+// 	nodeUser := obj.(*api.NodeUser)
+//
+// 	switch nodeUser.Spec.Phase {
+// 	case api.NodeUserPhaseAdd:
+// 		glog.V(5).Infof("add new node user %v\r\n", nodeUser)
+// 		u.AddUsers(nodeUser)
+// 	case api.NodeUserPhaseDelete:
+// 		glog.V(5).Infof("delete node user %v\r\n", nodeUser)
+// 		u.DelUsers(nodeUser)
+// 	case api.NodeUserPhaseUpdate:
+// 		glog.V(5).Infof("update node user not need implement %v", *nodeUser)
+// 	default:
+// 		glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
+// 	}
+//
+// 	return
+// }
+//
+// func (u *Users) ModifyObj(obj runtime.Object) {
+// }
+//
+// func (u *Users) DelObj(obj runtime.Object) {
+// }
+//
+// func (u *Users) Error(obj runtime.Object) {
+// }

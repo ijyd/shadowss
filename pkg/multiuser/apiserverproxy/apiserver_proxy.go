@@ -13,7 +13,7 @@ import (
 
 var localIPList = make(map[string]bool)
 
-var apiServerList []APIServerPair
+var ApiServerList []APIServerPair
 
 type APIServerPair struct {
 	Host string
@@ -84,7 +84,7 @@ func InitAPIServer(srv []api.APIServerSpec) {
 					Port: port,
 				}
 				glog.V(5).Infof("got a active api server %v \r\n", api)
-				apiServerList = append(apiServerList, api)
+				ApiServerList = append(ApiServerList, api)
 				defer resp.Body.Close()
 			}
 
@@ -95,14 +95,14 @@ func InitAPIServer(srv []api.APIServerSpec) {
 					Port: port,
 				}
 				glog.V(5).Infof("got a active api server %v \r\n", api)
-				apiServerList = append(apiServerList, api)
+				ApiServerList = append(ApiServerList, api)
 				defer resp.Body.Close()
 			}
 
 		}
 	}
 
-	if len(apiServerList) == 0 {
+	if len(ApiServerList) == 0 {
 		glog.Fatalf("not found any api server, shutdown node\r\n")
 	}
 
@@ -112,7 +112,7 @@ func FilterRequest(addr *net.TCPAddr) string {
 	host := addr.String()
 	_, ok := localIPList[addr.IP.String()]
 	if ok {
-		host = fmt.Sprintf("%s:%d", apiServerList[0].Host, apiServerList[0].Port)
+		host = fmt.Sprintf("%s:%d", ApiServerList[0].Host, ApiServerList[0].Port)
 	}
 
 	return host

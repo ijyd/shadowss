@@ -2,22 +2,13 @@ package: shadowss
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: cfe1fc819d14e50656f33cb3d89b7f3a4b2fa626
+  version: 2fc87e61fb79eac0b610219504d285c977a76a66
   subpackages:
   - pkg/api/install
   - pkg/controller/apiserverctl
   - pkg/controller/nodectl
   - pkg/etcdhelper
   - pkg/watcher
-
-- package: gofreezer
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
-  version: ae3b36de2ca25aec79fc2331da6fa1771b526c26
-  subpackages:
-  - pkg/api/prototype
-  - pkg/genericstoragecodec/options
-  - pkg/api/unversioned
-  - pkg/runtime
 
 - package: golib
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
@@ -48,11 +39,3 @@ import:
   - context
 - package: github.com/coreos/etcd
   version: c349e089b168e28629d0db6ac2819000abbaf6a7
-
-- package: k8s.io/kubernetes
-  version: ^1.5.0-alpha.0
-  subpackages:
-  - pkg/util/dbus
-  - pkg/util/exec
-  - pkg/util/iptables
-  - pkg/util/sets

@@ -3,8 +3,6 @@ package options
 import (
 	"shadowss/pkg/config"
 
-	storageoptions "gofreezer/pkg/genericstoragecodec/options"
-
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
 )
@@ -13,16 +11,14 @@ type ServerOption struct {
 	ConfigFile     string
 	CpuCoreNum     int
 	EnableUDPRelay bool
-
-	EtcdStorageConfig *storageoptions.StorageOptions
+	URL            string
 }
 
 func NewServerOption() *ServerOption {
 	return &ServerOption{
-		ConfigFile:        string(""),
-		CpuCoreNum:        1,
-		EnableUDPRelay:    false,
-		EtcdStorageConfig: storageoptions.NewStorageOptions().WithEtcdOptions(),
+		ConfigFile:     string(""),
+		CpuCoreNum:     1,
+		EnableUDPRelay: false,
 	}
 }
 
@@ -48,6 +44,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.BoolVar(&s.EnableUDPRelay, "enable-udp-relay", s.EnableUDPRelay, ""+
 		"enable udp relay")
 
-	s.EtcdStorageConfig.AddUniversalFlags(fs)
-	s.EtcdStorageConfig.AddEtcdStorageFlags(fs)
+	fs.StringVar(&s.URL, "apiserver-url", s.URL, ""+
+		"specify a api server url. ")
+
 }

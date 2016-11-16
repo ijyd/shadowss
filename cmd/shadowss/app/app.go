@@ -26,7 +26,7 @@ func Run(options *options.ServerOption) error {
 	}
 
 	//multiuser config
-	multiuser.InitSchedule(options.EtcdStorageConfig, pxy)
+	multiuser.InitSchedule(pxy, options.URL)
 
 	return nil
 }
