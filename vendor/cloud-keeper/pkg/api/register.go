@@ -1,7 +1,7 @@
 package api
 
 import (
-	"gofreezer/pkg/api/prototype"
+	prototype "gofreezer/pkg/api"
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
 )
@@ -17,7 +17,7 @@ var Codecs = prototype.Codecs
 var SchemeGroupVersion = prototype.SchemeGroupVersion
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, addDefaultingFuncs, addConversionFuncs)
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
 	AddToScheme   = AddALLToScheme //SchemeBuilder.AddToScheme
 )
 
@@ -53,6 +53,24 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&APIServerList{},
 		&UserService{},
 		&UserServiceList{},
+		&Login{},
+		&LoginList{},
+		&AccServer{},
+		&AccServerList{},
+		&Account{},
+		&AccountList{},
+		&AccExec{},
+		&AccSSHKey{},
+		//&AccSSHKeyList{},
+		&AccountInfo{},
+		&User{},
+		&UserList{},
+		&ActiveAPINode{},
+		&ActiveAPINodeList{},
+		&UserToken{},
+		&UserTokenList{},
+		&UserPublicFile{},
+		&UserPublicFileList{},
 	)
 	return nil
 }

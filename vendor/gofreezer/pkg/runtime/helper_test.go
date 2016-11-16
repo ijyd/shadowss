@@ -16,32 +16,30 @@ limitations under the License.
 
 package runtime_test
 
-import "testing"
-
 //"gofreezer/pkg/api/testapi"
 
-func TestDecodeList(t *testing.T) {
-	// pl := &api.List{
-	// 	Items: []runtime.Object{
-	// 		&api.Pod{ObjectMeta: api.ObjectMeta{Name: "1"}},
-	// 		&runtime.Unknown{
-	// 			TypeMeta:    runtime.TypeMeta{Kind: "Pod", APIVersion: testapi.Default.GroupVersion().String()},
-	// 			Raw:         []byte(`{"kind":"Pod","apiVersion":"` + testapi.Default.GroupVersion().String() + `","metadata":{"name":"test"}}`),
-	// 			ContentType: runtime.ContentTypeJSON,
-	// 		},
-	// 		&runtime.Unstructured{
-	// 			Object: map[string]interface{}{
-	// 				"kind":       "Foo",
-	// 				"apiVersion": "Bar",
-	// 				"test":       "value",
-	// 			},
-	// 		},
-	// 	},
-	// }
-	// if errs := runtime.DecodeList(pl.Items, testapi.Default.Codec()); len(errs) != 0 {
-	// 	t.Fatalf("unexpected error %v", errs)
-	// }
-	// if pod, ok := pl.Items[1].(*api.Pod); !ok || pod.Name != "test" {
-	// 	t.Errorf("object not converted: %#v", pl.Items[1])
-	// }
-}
+// func TestDecodeList(t *testing.T) {
+// 	pl := &api.List{
+// 		Items: []runtime.Object{
+// 			&api.Pod{ObjectMeta: api.ObjectMeta{Name: "1"}},
+// 			&runtime.Unknown{
+// 				TypeMeta:    runtime.TypeMeta{Kind: "Pod", APIVersion: registered.GroupOrDie(api.GroupName).GroupVersion.String()},
+// 				Raw:         []byte(`{"kind":"Pod","apiVersion":"` + registered.GroupOrDie(api.GroupName).GroupVersion.String() + `","metadata":{"name":"test"}}`),
+// 				ContentType: runtime.ContentTypeJSON,
+// 			},
+// 			&runtime.Unstructured{
+// 				Object: map[string]interface{}{
+// 					"kind":       "Foo",
+// 					"apiVersion": "Bar",
+// 					"test":       "value",
+// 				},
+// 			},
+// 		},
+// 	}
+// 	if errs := runtime.DecodeList(pl.Items, testapi.Default.Codec()); len(errs) != 0 {
+// 		t.Fatalf("unexpected error %v", errs)
+// 	}
+// 	if pod, ok := pl.Items[1].(*api.Pod); !ok || pod.Name != "test" {
+// 		t.Errorf("object not converted: %#v", pl.Items[1])
+// 	}
+// }

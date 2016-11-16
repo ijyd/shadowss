@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gofreezer/cmd/libs/go2idl/openapi-gen/generators/common"
+	"apistack/pkg/genericapiserver/openapi/common"
 
 	"github.com/go-openapi/spec"
 	"github.com/google/gofuzz"

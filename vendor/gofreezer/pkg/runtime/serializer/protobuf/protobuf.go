@@ -36,7 +36,7 @@ var (
 	// byte being reserved for the encoding style. The only encoding style defined is 0x00, which means that
 	// the rest of the byte stream is a message of type k8s.io.kubernetes.pkg.runtime.Unknown (proto2).
 	//
-	// See gofreezer/pkg/runtime/generated.proto for details of the runtime.Unknown message.
+	// See k8s.io/kubernetes/pkg/runtime/generated.proto for details of the runtime.Unknown message.
 	//
 	// This encoding scheme is experimental, and is subject to change at any time.
 	protoEncodingPrefix = []byte{0x6b, 0x38, 0x73, 0x00}

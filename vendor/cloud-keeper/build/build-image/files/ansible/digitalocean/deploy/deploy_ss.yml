@@ -1,9 +1,6 @@
 - hosts: cloud
   remote_user: root
 
-  vars:
-    etcd_server: "{{ lookup('env','PROXY_SERVER_ARGS_ETCD') }}"
-
   tasks:
     - name: Wait for port 22 to become available
       local_action: "wait_for port=22 host={{ inventory_hostname }}"
@@ -16,6 +13,9 @@
 
     - name: Copy shadowss
       copy: src=../../ss/shadowss dest=/home/shadowsocks-node/shadowss owner=root group=root mode=0755
+
+    - name: Copy server-multi-port.json
+      copy: src=../../ss/server-multi-port.json dest=/server-multi-port.json owner=root group=root mode=0755
     
     - name: Copy startvps.sh
       copy: src=../../ss/startvps.sh dest=/home/shadowsocks-node/startvps.sh  owner=root group=root mode=0755
@@ -25,33 +25,12 @@
 
     - name: Copy crontab
       copy: src=../../ss/restartss.sh dest=/home/shadowsocks-node/restartss.sh  owner=root group=root mode=0755
-
-    - name: Copy crontab dropcache
-      copy: src=../../ss/dropcache.sh dest=/home/shadowsocks-node/dropcache.sh  owner=root group=root mode=0755
-
-    - name: copy checkss.sh 
-      copy: src=../../ss/checkss.sh dest=/home/shadowsocks-node/checkss.sh
-
+    
     - name: Copy attr.json
       copy: src=attr.json dest=/attr.json  owner=root group=root mode=0755
 
-    - name: Copy ca.pem
-      copy: src=../../client-keys/ca.pem dest=/home/shadowsocks-node/ca.pem owner=root group=root mode=0600
-
-    - name: Copy client-key.pem
-      copy: src=../../client-keys/client-key.pem dest=/home/shadowsocks-node/client-key.pem owner=root group=root mode=0600
- 
-    - name: Copy client.pem
-      copy: src=../../client-keys/client.pem dest=/home/shadowsocks-node/client.pem  owner=root group=root mode=0600
-
-    - cron: name="restart ssservice" minute="10" hour="18" job="/home/shadowsocks-node/restartss.sh"
-    
-    - cron: name="check ssservice" minute="*/2" job="/home/shadowsocks-node/checkss.sh"
-
-    - cron: name="dropcache" minute="*/10" job="/home/shadowsocks-node/dropcache.sh"
-
-    - shell: echo "{{etcd_server}}" > /home/shadowsocks-node/etcd_server_url 
-
+    - cron: name="restart ssservice" minute="30" hour="5,18" job="/home/shadowsocks-node/restartss.sh"
+  
 - hosts: cloud
   remote_user: root
 

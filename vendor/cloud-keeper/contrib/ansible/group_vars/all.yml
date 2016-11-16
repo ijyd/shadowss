@@ -1,0 +1,10 @@
+# Account name of remote user. Ansible will use this user account to ssh into
+# the managed machines. The user must be able to use sudo without asking
+# for password.
+ansible_ssh_user: root
+
+# docker image on local host
+docker_image: bjjyd/vpskeeper
+
+# remote docker repo full path
+remote_docker_repo: dockerhub.bj-jyd.cn/library/vpskeeper

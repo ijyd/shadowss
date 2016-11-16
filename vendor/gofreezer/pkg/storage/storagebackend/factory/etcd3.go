@@ -18,7 +18,7 @@ package factory
 
 import (
 	"gofreezer/pkg/storage"
-	"gofreezer/pkg/storage/etcd3"
+	"gofreezer/pkg/storage/etcds/etcd3"
 	"gofreezer/pkg/storage/storagebackend"
 
 	"github.com/coreos/etcd/clientv3"

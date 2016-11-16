@@ -21,9 +21,10 @@ import (
 	"log"
 	"time"
 
+	"gofreezer/pkg/util/wait"
+
 	"github.com/golang/glog"
 	"github.com/spf13/pflag"
-	"k8s.io/kubernetes/pkg/util/wait"
 )
 
 var logFlushFreq = pflag.Duration("log-flush-frequency", 5*time.Second, "Maximum number of seconds between log flushes")

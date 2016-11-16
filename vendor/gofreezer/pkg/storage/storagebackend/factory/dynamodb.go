@@ -1,0 +1,43 @@
+package factory
+
+import (
+	"gofreezer/pkg/storage"
+	"gofreezer/pkg/storage/awsdynamodb/dynamodb"
+	"gofreezer/pkg/storage/storagebackend"
+
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/golang/glog"
+)
+
+//newDynamodbSession create session with config and credentials
+func newDynamodbSession(cfg storagebackend.AWSDynamoDBConfig) (*session.Session, error) {
+	// Specify profile for config and region for requests
+	sess, err := session.NewSessionWithOptions(session.Options{
+		Config: aws.Config{
+			Region:      aws.String(cfg.Region),
+			Credentials: credentials.NewSharedCredentials("", "default"),
+		},
+	})
+	if err != nil {
+		glog.Fatalf("create aws session error %v\r\n", err.Error())
+		return nil, err
+	}
+
+	return sess, nil
+}
+
+func newDynamodbStorage(c storagebackend.Config) (storage.Interface, DestroyFunc, error) {
+
+	client, err := newDynamodbSession(c.AWSDynamoDB)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	destroyFunc := func() {
+		//do nothing
+	}
+
+	return dynamodb.New(client, c.AWSDynamoDB.Table, c.Codec), destroyFunc, nil
+}

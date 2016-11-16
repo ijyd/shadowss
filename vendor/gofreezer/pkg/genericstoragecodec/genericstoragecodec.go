@@ -2,23 +2,24 @@ package genericstoragecodec
 
 import (
 	"fmt"
-	"gofreezer/pkg/api/prototype"
+	"mime"
+
+	"gofreezer/pkg/api"
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/genericstoragecodec/options"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/runtime/serializer/recognizer"
-	"gofreezer/pkg/storage"
+	"gofreezer/pkg/storage/etcds"
 	"gofreezer/pkg/storage/storagebackend"
 	"gofreezer/pkg/storage/storagebackend/factory"
-	"mime"
 
 	"github.com/golang/glog"
 )
 
-var memoryVersion = prototype.SchemeGroupVersion
+var memoryVersion = api.SchemeGroupVersion
 
 type GenericStorageCodec struct {
-	Storage        storage.Interface
+	Storage        etcds.Interface
 	Codecs         runtime.Codec
 	DestroyStorage factory.DestroyFunc
 }
@@ -31,14 +32,17 @@ func NewGenericStorageCodec(options *options.StorageOptions, ns runtime.StorageS
 	}
 
 	storageConfig.Codec = codec
+	storageConfig.StorageVersion = storageVersion.Version
 
 	storageHandle, destroy, err := factory.Create(storageConfig)
 	if err != nil {
 		return nil, err
 	}
 
+	storageEtcd := storageHandle.(etcds.Interface)
+
 	return &GenericStorageCodec{
-		Storage:        storageHandle,
+		Storage:        storageEtcd,
 		Codecs:         codec,
 		DestroyStorage: destroy,
 	}, nil
@@ -48,11 +52,11 @@ func NewGenericStorageCodec(options *options.StorageOptions, ns runtime.StorageS
 // newStorageCodec assembles a storage codec for the provided storage media type, the provided serializer, and the requested
 // storage and memory versions.
 func newStorageCodec(storageMediaType string, ns runtime.StorageSerializer, storageVersion, memoryVersion unversioned.GroupVersion, config storagebackend.Config) (runtime.Codec, error) {
-	mediaType, options, err := mime.ParseMediaType(storageMediaType)
+	mediaType, _, err := mime.ParseMediaType(storageMediaType)
 	if err != nil {
 		return nil, fmt.Errorf("%q is not a valid mime-type", storageMediaType)
 	}
-	serializer, ok := ns.SerializerForMediaType(mediaType, options)
+	serializer, ok := runtime.SerializerInfoForMediaType(ns.SupportedMediaTypes(), mediaType)
 	if !ok {
 		return nil, fmt.Errorf("unable to find serializer for %q", storageMediaType)
 	}

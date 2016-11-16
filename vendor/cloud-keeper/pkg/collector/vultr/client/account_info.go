@@ -1,24 +1,21 @@
 package client
 
-import (
-	"encoding/json"
+import "cloud-keeper/pkg/api"
 
-	"cloud-keeper/pkg/api"
-)
-
-func (c *Client) GetAccount() ([]byte, error) {
+func (c *Client) GetAccount() (*api.AccountInfoSpec, error) {
 	info, err := c.vultrClient.GetAccountInfo()
 	if err != nil {
 		return nil, err
 	}
 
-	information := make(map[string]interface{}, 1)
-	information[api.OperatorVultr] = info
-
-	apiInfo := api.AccountInfo{
-		TypeMeta:    api.AccountInfoType,
-		Information: information,
+	apiInfo := &api.AccountInfoSpec{
+		Vultr: api.VultrAccountInfo{
+			Balance:           info.Balance,
+			PendingCharges:    info.PendingCharges,
+			LastPaymentDate:   info.LastPaymentDate,
+			LastPaymentAmount: info.LastPaymentAmount,
+		},
 	}
 
-	return json.Marshal(&apiInfo)
+	return apiInfo, nil
 }

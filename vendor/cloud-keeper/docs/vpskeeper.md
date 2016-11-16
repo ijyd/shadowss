@@ -19,25 +19,8 @@ sudo ./vpskeeper --alsologtostderr=true -v=6  --insecure-port=18088  --swagger-p
 ```
 
 
-## pagination
-格式:  `{URL}?pagination=page=1,perPage=2`
-
-`paga` 指定输出第几页。
-
-`perPage` 指定每一页包含的资源条数。dock
-
-当访问的页面超出范围，则返回全部资源
-
-*Http Header*
-
-在分页请求的HTTP应答包中， 系统会在头域填加`Link`，作为前后一页和最后一页做操作提示：
-rel=prev提示前一页页码，rel=next提示后一页页码，rel=last提示最后一页的页码。
-
-例如:
-> Link: /api/v1beta1/namespace/default/users?pagination=page=1,perPage=1; rel= **prev** ,/api/v1beta1/users?pagination=page=3,perPage=1; rel= **next** ,/api/v1beta1/users?pagination=page=5,perPage=1; rel= **last**
-
+3.0
 
 ```
-etcdctl --endpoints="192.168.60.100:2379" get --prefix=true "/registry"
-./etcdctl --endpoints="172.22.0.2:2379" get --prefix=true "/registry"
+sudo ./vpskeeper --alsologtostderr=true -v=6  --secure-port=18090 --insecure-port=18091 --etcd-servers="192.168.60.100:2379" --etcd-certfile="/home/seanchann/bin/etcd/files/client.pem" --etcd-keyfile="/home/seanchann/bin/etcd/files/client-key.pem" --etcd-cafile="/home/seanchann/bin/etcd/files/ca.pem"  --bind-address=192.168.60.128 --advertise-address=192.168.60.128 --enable-swagger-ui --service-cluster-ip-range=192.168.60.0/24 --mysql-servers="sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel"  --anonymous-auth=false
 ```

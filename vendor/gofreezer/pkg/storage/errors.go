@@ -1,19 +1,3 @@
-/*
-Copyright 2015 The Kubernetes Authors.
-
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS,
-WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-See the License for the specific language governing permissions and
-limitations under the License.
-*/
-
 package storage
 
 import (
@@ -26,6 +10,12 @@ const (
 	ErrCodeKeyNotFound int = iota + 1
 	ErrCodeKeyExists
 	ErrCodeResourceVersionConflicts
+
+	ErrCodeItemNotFound
+	ErrCodeItemExists
+	ErrCodeInvalidSelectionPredicate
+	ErrCodeTooManyItem
+
 	ErrCodeInvalidObj
 	ErrCodeUnreachable
 )
@@ -34,8 +24,14 @@ var errCodeToMessage = map[int]string{
 	ErrCodeKeyNotFound:              "key not found",
 	ErrCodeKeyExists:                "key exists",
 	ErrCodeResourceVersionConflicts: "resource version conflicts",
-	ErrCodeInvalidObj:               "invalid object",
-	ErrCodeUnreachable:              "server unreachable",
+
+	ErrCodeItemNotFound:              "item not found",
+	ErrCodeItemExists:                "item exists",
+	ErrCodeInvalidSelectionPredicate: "invalid selection predicate",
+	ErrCodeTooManyItem:               "too many item",
+
+	ErrCodeInvalidObj:  "invalid object",
+	ErrCodeUnreachable: "server unreachable",
 }
 
 func NewKeyNotFoundError(key string, rv int64) *StorageError {
@@ -54,17 +50,32 @@ func NewKeyExistsError(key string, rv int64) *StorageError {
 	}
 }
 
-func NewResourceVersionConflictsError(key string, rv int64) *StorageError {
+func NewItemNotFoundError(key string) *StorageError {
 	return &StorageError{
-		Code:            ErrCodeResourceVersionConflicts,
-		Key:             key,
-		ResourceVersion: rv,
+		Code: ErrCodeItemNotFound,
+		Key:  key,
+	}
+}
+
+func NewItemExistsError(key string, msg string) *StorageError {
+	return &StorageError{
+		Code:               ErrCodeItemExists,
+		Key:                key,
+		AdditionalErrorMsg: msg,
 	}
 }
 
 func NewUnreachableError(key string, rv int64) *StorageError {
 	return &StorageError{
 		Code:            ErrCodeUnreachable,
+		Key:             key,
+		ResourceVersion: rv,
+	}
+}
+
+func NewResourceVersionConflictsError(key string, rv int64) *StorageError {
+	return &StorageError{
+		Code:            ErrCodeResourceVersionConflicts,
 		Key:             key,
 		ResourceVersion: rv,
 	}
@@ -78,6 +89,22 @@ func NewInvalidObjError(key, msg string) *StorageError {
 	}
 }
 
+func NewSelectionPredicateError(key, msg string) *StorageError {
+	return &StorageError{
+		Code:               ErrCodeInvalidSelectionPredicate,
+		Key:                key,
+		AdditionalErrorMsg: msg,
+	}
+}
+
+func NewTooManyItemError(key, msg string) *StorageError {
+	return &StorageError{
+		Code:               ErrCodeTooManyItem,
+		Key:                key,
+		AdditionalErrorMsg: msg,
+	}
+}
+
 type StorageError struct {
 	Code               int
 	Key                string
@@ -86,8 +113,8 @@ type StorageError struct {
 }
 
 func (e *StorageError) Error() string {
-	return fmt.Sprintf("StorageError: %s, Code: %d, Key: %s, ResourceVersion: %d, AdditionalErrorMsg: %s",
-		errCodeToMessage[e.Code], e.Code, e.Key, e.ResourceVersion, e.AdditionalErrorMsg)
+	return fmt.Sprintf("StorageError: %s, Code: %d, Key: %s,  AdditionalErrorMsg: %s",
+		errCodeToMessage[e.Code], e.Code, e.Key, e.AdditionalErrorMsg)
 }
 
 // IsNotFound returns true if and only if err is "key" not found error.
@@ -100,6 +127,16 @@ func IsNodeExist(err error) bool {
 	return isErrCode(err, ErrCodeKeyExists)
 }
 
+// IsItemNotFound returns true if and only if err is "key" not found error.
+func IsItemNotFound(err error) bool {
+	return isErrCode(err, ErrCodeItemNotFound)
+}
+
+// IsItemExist returns true if and only if err is an node already exist error.
+func IsItemExist(err error) bool {
+	return isErrCode(err, ErrCodeItemExists)
+}
+
 // IsUnreachable returns true if and only if err indicates the server could not be reached.
 func IsUnreachable(err error) bool {
 	return isErrCode(err, ErrCodeUnreachable)
@@ -108,6 +145,16 @@ func IsUnreachable(err error) bool {
 // IsTestFailed returns true if and only if err is a write conflict.
 func IsTestFailed(err error) bool {
 	return isErrCode(err, ErrCodeResourceVersionConflicts)
+}
+
+// IsSelectionPredicateError returns true if and only if err indicates the server could not be reached.
+func IsSelectionPredicateError(err error) bool {
+	return isErrCode(err, ErrCodeInvalidSelectionPredicate)
+}
+
+// IsTooMany returns true if and only if err indicates the server could not be reached.
+func IsTooMany(err error) bool {
+	return isErrCode(err, ErrCodeTooManyItem)
 }
 
 // IsInvalidObj returns true if and only if err is invalid error

@@ -1,7 +1,7 @@
 package ansible
 
 import (
-	"cloud-keeper/pkg/api"
+	api "cloud-keeper/pkg/api"
 	"fmt"
 	"golib/pkg/util/exec"
 	"log"
@@ -98,10 +98,10 @@ func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
 		varfile = absdir + ansibleVulVarFile
 
 		vpsVar = fmt.Sprintf("api_key: %s\r\n", key)
-		vpsVar += fmt.Sprintf("DCID: %s\r\n", srv.Region)
-		vpsVar += fmt.Sprintf("OSID: %s\r\n", srv.Image)
-		vpsVar += fmt.Sprintf("SSHKEYID: %q\r\n", srv.SSHKeyID)
-		vpsVar += fmt.Sprintf("VPSPLANID: %s\r\n", srv.Size)
+		vpsVar += fmt.Sprintf("DCID: %s\r\n", srv.Spec.Region)
+		vpsVar += fmt.Sprintf("OSID: %s\r\n", srv.Spec.Image)
+		vpsVar += fmt.Sprintf("SSHKEYID: %q\r\n", srv.Spec.SSHKeyID)
+		vpsVar += fmt.Sprintf("VPSPLANID: %s\r\n", srv.Spec.Size)
 		vpsVar += fmt.Sprintf("name: %s\r\n", srv.Name)
 
 	case api.OperatorDigitalOcean:
@@ -109,11 +109,11 @@ func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
 		varfile = absdir + ansibleDGOCVarFile
 
 		vpsVar = fmt.Sprintf("do_token: %s\r\n", key)
-		vpsVar += fmt.Sprintf("image_id: %s\r\n", srv.Image)
-		vpsVar += fmt.Sprintf("ssh_key_ids: %s\r\n", srv.SSHKeyID)
-		vpsVar += fmt.Sprintf("region: %s\r\n", srv.Region)
-		vpsVar += fmt.Sprintf("size_id: %s\r\n", srv.Size)
-		vpsVar += fmt.Sprintf("name: %s\r\n", srv.Name)
+		vpsVar += fmt.Sprintf("image_id: %s\r\n", srv.Spec.Image)
+		vpsVar += fmt.Sprintf("ssh_key_ids: %s\r\n", srv.Spec.SSHKeyID)
+		vpsVar += fmt.Sprintf("region: %s\r\n", srv.Spec.Region)
+		vpsVar += fmt.Sprintf("size_id: %s\r\n", srv.Spec.Size)
+		vpsVar += fmt.Sprintf("name: %s\r\n", srv.Spec.Name)
 		vpsVar += fmt.Sprintf("timeout: 500\r\n")
 
 	}

@@ -25,7 +25,7 @@ func NewStorageOptions() *StorageOptions {
 
 func (s *StorageOptions) AddUniversalFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.StorageConfig.Type, "storage-backend", s.StorageConfig.Type,
-		"The storage backend for persistence. Options: 'etcd3' (default), 'etcd2'.")
+		"The storage backend for persistence. Options: 'etcd3' (default), 'etcd2', 'mysql'.")
 
 	fs.StringVar(&s.DefaultStorageMediaType, "storage-media-type", s.DefaultStorageMediaType, ""+
 		"The media type to use to store objects in storage. Defaults to application/json. "+

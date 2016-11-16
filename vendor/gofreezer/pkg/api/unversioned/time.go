@@ -17,10 +17,9 @@ limitations under the License.
 package unversioned
 
 import (
+	"apistack/pkg/genericapiserver/openapi/common"
 	"encoding/json"
 	"time"
-
-	"gofreezer/cmd/libs/go2idl/openapi-gen/generators/common"
 
 	"github.com/go-openapi/spec"
 	"github.com/google/gofuzz"

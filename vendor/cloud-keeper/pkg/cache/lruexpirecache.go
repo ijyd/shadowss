@@ -21,12 +21,15 @@ type cacheEntry struct {
 	expireTime time.Time
 }
 
+//Add  ttl==0 for forever
 func (c *LRUExpireCache) Add(key lru.Key, value interface{}, ttl time.Duration) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 	c.cache.Add(key, &cacheEntry{value, time.Now().Add(ttl)})
 	// Remove entry from cache after ttl.
-	time.AfterFunc(ttl, func() { c.Remove(key) })
+	if ttl != 0 {
+		time.AfterFunc(ttl, func() { c.Remove(key) })
+	}
 }
 
 func (c *LRUExpireCache) Get(key lru.Key) (interface{}, bool) {

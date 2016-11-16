@@ -1,23 +1,22 @@
 package client
 
-import (
-	"cloud-keeper/pkg/api"
-	"encoding/json"
-)
+import "cloud-keeper/pkg/api"
 
-func (c *Client) GetAccount() ([]byte, error) {
+func (c *Client) GetAccount() (*api.AccountInfoSpec, error) {
 	info, _, err := c.client.Account.Get()
 	if err != nil {
 		return nil, err
 	}
 
-	information := make(map[string]interface{}, 1)
-	information[api.OperatorDigitalOcean] = info
-
-	apiInfo := api.AccountInfo{
-		TypeMeta:    api.AccountInfoType,
-		Information: information,
+	apiInfo := &api.AccountInfoSpec{
+		DigitalOcean: api.DGAccountInfo{
+			DropletLimit:  info.DropletLimit,
+			Email:         info.Email,
+			EmailVerified: info.EmailVerified,
+			UUID:          info.UUID,
+		},
 	}
 
-	return json.Marshal(&apiInfo)
+	return apiInfo, nil
+
 }

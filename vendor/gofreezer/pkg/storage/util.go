@@ -22,46 +22,24 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/golang/glog"
+
 	"gofreezer/pkg/api/meta"
 	"gofreezer/pkg/api/validation/path"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/util/validation/field"
 )
 
-type SimpleUpdateFunc func(runtime.Object) (runtime.Object, error)
-
-// SimpleUpdateFunc converts SimpleUpdateFunc into UpdateFunc
-func SimpleUpdate(fn SimpleUpdateFunc) UpdateFunc {
-	return func(input runtime.Object, _ ResponseMeta) (runtime.Object, *uint64, error) {
-		out, err := fn(input)
-		return out, nil, err
-	}
-}
-
-// SimpleFilter implements Filter interface.
-type SimpleFilter struct {
-	filterFunc  func(runtime.Object) bool
-	triggerFunc func() []MatchValue
-}
-
-func (s *SimpleFilter) Filter(obj runtime.Object) bool {
-	return s.filterFunc(obj)
-}
-
-func (s *SimpleFilter) Trigger() []MatchValue {
-	return s.triggerFunc()
-}
-
-func (s *SimpleFilter) Retrieve() RetrieveFilter {
-	return nil
-}
-
-func NewSimpleFilter(
-	filterFunc func(runtime.Object) bool,
-	triggerFunc func() []MatchValue) Filter {
-	return &SimpleFilter{
-		filterFunc:  filterFunc,
-		triggerFunc: triggerFunc,
+// SimpleFilter converts a selection predicate into a FilterFunc.
+// It ignores any error from Matches().
+func SimpleFilter(p SelectionPredicate) FilterFunc {
+	return func(obj runtime.Object) bool {
+		matches, err := p.Matches(obj)
+		if err != nil {
+			glog.Errorf("invalid object for matching. Obj: %v. Err: %v", obj, err)
+			return false
+		}
+		return matches
 	}
 }
 

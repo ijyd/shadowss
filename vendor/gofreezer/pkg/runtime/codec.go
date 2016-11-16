@@ -25,8 +25,8 @@ import (
 	"reflect"
 
 	// "gofreezer/pkg/api/unversioned"
-	"gofreezer/pkg/conversion/queryparams"
 	"gofreezer/pkg/api/unversioned"
+	"gofreezer/pkg/conversion/queryparams"
 )
 
 // codec binds an encoder and decoder.
@@ -75,6 +75,24 @@ func EncodeOrDie(e Encoder, obj Object) string {
 		panic(err)
 	}
 	return string(bytes)
+}
+
+// DefaultingSerializer invokes defaulting after decoding.
+type DefaultingSerializer struct {
+	Defaulter ObjectDefaulter
+	Decoder   Decoder
+	// Encoder is optional to allow this type to be used as both a Decoder and an Encoder
+	Encoder
+}
+
+// Decode performs a decode and then allows the defaulter to act on the provided object.
+func (d DefaultingSerializer) Decode(data []byte, defaultGVK *unversioned.GroupVersionKind, into Object) (Object, *unversioned.GroupVersionKind, error) {
+	obj, gvk, err := d.Decoder.Decode(data, defaultGVK, into)
+	if err != nil {
+		return obj, gvk, err
+	}
+	d.Defaulter.Default(obj)
+	return obj, gvk, nil
 }
 
 // UseOrCreateObject returns obj if the canonical ObjectKind returned by the provided typer matches gvk, or
@@ -198,6 +216,22 @@ func (s base64Serializer) Decode(data []byte, defaults *unversioned.GroupVersion
 		return nil, nil, err
 	}
 	return s.Serializer.Decode(out[:n], defaults, into)
+}
+
+// SerializerInfoForMediaType returns the first info in types that has a matching media type (which cannot
+// include media-type parameters), or the first info with an empty media type, or false if no type matches.
+func SerializerInfoForMediaType(types []SerializerInfo, mediaType string) (SerializerInfo, bool) {
+	for _, info := range types {
+		if info.MediaType == mediaType {
+			return info, true
+		}
+	}
+	for _, info := range types {
+		if len(info.MediaType) == 0 {
+			return info, true
+		}
+	}
+	return SerializerInfo{}, false
 }
 
 var (
