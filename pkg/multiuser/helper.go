@@ -78,6 +78,10 @@ func (mu *MultiUser) refreshNode(loopcnt int64) {
 	}
 }
 
+func (mu *MultiUser) GetUsersFromAPIServer() (*api.NodeUserList, error) {
+	return ListNodeUser(mu.nodeName)
+}
+
 func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error) {
 
 	userList := mu.userHandle.GetUsers()
@@ -134,19 +138,14 @@ func UpdateNodeUserFromNode(spec api.NodeUserSpec) error {
 	userName := spec.User.Name
 	//delete this node user if exist
 	//nodectl.DelNodeUsers(nodeName, schedule.etcdHandle, userName)
-	err := DelNodeUser(userName)
-	if err != nil {
-		return err
-	}
-
 	user := &api.NodeUser{
 		Spec: spec,
 	}
 	user.Name = userName
-	user.Spec.Phase = api.NodeUserPhase(api.NodeUserPhaseUpdate)
 	user.Spec.NodeName = nodeName
 
-	err = AddNodeUser(user, nodeUserLease)
+	user.Spec.Phase = api.NodeUserPhase(api.NodeUserPhaseUpdate)
+	err := UpdateNodeUser(user)
 	if err != nil {
 		return fmt.Errorf("update nodeuser %v err %v", spec, err)
 	}
@@ -163,5 +162,4 @@ func RefreshUser(user *api.NodeUser, del bool) {
 			glog.Errorf("update node user err %v \r\n", err)
 		}
 	}
-
 }

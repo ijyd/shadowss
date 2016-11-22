@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"time"
 
 	"cloud-keeper/pkg/api"
@@ -18,7 +19,7 @@ import (
 type DoReq func(client *http.Client, url string) error
 
 const (
-	token = "49acafe7e63682e1e6b6983580c4ee56"
+	token = "Bearer 49acafe7e63682e1e6b6983580c4ee56"
 )
 
 func Request(req DoReq) error {
@@ -83,7 +84,7 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 	}
 
 	err = Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodes/%s", url, node.Name)
+		url = fmt.Sprintf("%s/api/v1/nodes/%s/refresh", url, node.Name)
 		req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
 		if err != nil {
 			return err
@@ -112,16 +113,18 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 	return err
 }
 
-func AddNodeUser(user *api.NodeUser, ttl uint64) error {
-
+func UpdateNodeUser(user *api.NodeUser) error {
+	name := user.Spec.NodeName
+	//need to update our node user
+	user.Name = name
 	body, err := json.Marshal(user)
 	if err != nil {
 		return err
 	}
 
 	err = Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodeusers/%s", url, user.Name)
-		req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+		url = fmt.Sprintf("%s/api/v1/nodes/%s/nodeusers", url, name)
+		req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
 		if err != nil {
 			return err
 		}
@@ -134,38 +137,8 @@ func AddNodeUser(user *api.NodeUser, ttl uint64) error {
 			return err
 		}
 		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != 200 {
-			return fmt.Errorf("add nodeuser %v  error:%v", user, string(body))
-		}
-
-		return nil
-	})
-
-	return err
-}
-
-func DelNodeUser(name string) error {
-
-	err := Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodeusers/%s", url, name)
-		req, err := http.NewRequest("DELETE", url, nil)
-		if err != nil {
-			return err
-		}
-
-		req.Header.Add("Authorization", token)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
+		dump, err := httputil.DumpRequestOut(req, true)
+		glog.V(5).Infof("xmit request:%v error:%v\r\n", string(dump), err)
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
@@ -179,6 +152,48 @@ func DelNodeUser(name string) error {
 	})
 
 	return err
+}
+
+func ListNodeUser(nodename string) (*api.NodeUserList, error) {
+	nodeUserList := &api.NodeUserList{}
+	err := Request(func(client *http.Client, url string) error {
+		url = fmt.Sprintf("%s/api/v1/nodes/%s/nodeusers", url, nodename)
+		req, err := http.NewRequest("GET", url, nil)
+		if err != nil {
+			return err
+		}
+
+		req.Header.Add("Authorization", token)
+		req.Header.Set("Content-Type", "application/json")
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return err
+		}
+		defer resp.Body.Close()
+
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		if resp.StatusCode != 200 {
+			return fmt.Errorf("list nodeuser %v  error:%v", nodename, string(body))
+		}
+
+		//node := &api.Node{}
+		err = json.Unmarshal(body, nodeUserList)
+		if err != nil {
+			return fmt.Errorf("marshal node json error:%v", err)
+		}
+
+		// for k, v := range node.Spec.Users {
+		// 	nodeusers[k] = v
+		// }
+
+		return err
+	})
+
+	return nodeUserList, err
 }
 
 func WatchNodeUser(name string) error {

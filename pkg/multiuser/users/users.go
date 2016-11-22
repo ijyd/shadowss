@@ -11,16 +11,20 @@ import (
 )
 
 type RefreshUser func(user *api.NodeUser, del bool)
+type GetUsers func() (*api.NodeUserList, error)
 
 type Users struct {
 	proxyHandle *proxyserver.Servers
 	refresh     RefreshUser
+	getusers    GetUsers
 }
 
-func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser) *Users {
+func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser, getusers GetUsers) *Users {
+
 	return &Users{
 		proxyHandle: proxyserver,
 		refresh:     refresh,
+		getusers:    getusers,
 	}
 }
 
@@ -43,6 +47,8 @@ func (u *Users) StartAPIProxy() error {
 	}
 
 	u.proxyHandle.StartWithConfig(config)
+
+	go u.ListUserLoop()
 
 	return nil
 }
@@ -117,6 +123,38 @@ func (u *Users) DelUsers(nodeUser *api.NodeUser) {
 	u.proxyHandle.CleanUpServer(config)
 
 	u.refresh(nodeUser, true)
+}
+
+func (u *Users) ListUserLoop() {
+
+	expireTime := time.Duration(60)
+
+	for {
+		select {
+		case <-time.After(time.Second * expireTime):
+			userlist, err := u.getusers()
+			if err == nil {
+				for _, v := range userlist.Items {
+					nodeUser := &v
+					switch nodeUser.Spec.Phase {
+					case api.NodeUserPhaseAdd:
+						glog.V(5).Infof("add new node user %v\r\n", nodeUser)
+						u.AddUsers(nodeUser)
+					case api.NodeUserPhaseDelete:
+						glog.V(5).Infof("delete node user %v\r\n", nodeUser)
+						u.DelUsers(nodeUser)
+					case api.NodeUserPhaseUpdate:
+						glog.V(5).Infof("update node user not need implement %v", *nodeUser)
+					default:
+						glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
+					}
+				}
+			} else {
+				glog.Warningf("sync user failure %v \r\n", err)
+			}
+		}
+	}
+
 }
 
 //

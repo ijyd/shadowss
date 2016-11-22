@@ -144,43 +144,17 @@ func (mu *MultiUser) StartUp() error {
 
 	go mu.KeepHealth()
 
-	userMgr := users.NewUsers(mu.proxyHandle, RefreshUser)
+	userMgr := users.NewUsers(mu.proxyHandle, RefreshUser, mu.GetUsersFromAPIServer)
 	mu.userHandle = userMgr
-
-	//when node start sync user first
-	// err = mu.SyncAllUserFromEtcd()
-	// if err != nil {
-	// 	return fmt.Errorf("sync user failure %v", err)
-	// }
 
 	if mu.apiProxy {
 		mu.userHandle.StartAPIProxy()
 	}
 
-	// prifixKey := nodectl.BuildNodeUserPrefix(mu.nodeName, string(""))
-	// go watcher.WatchNodeUsersLoop(prifixKey, mu.etcdHandle, userMgr)
-
 	return nil
 }
 
 func (mu *MultiUser) KeepHealth() {
-
-	// nodectl.DelNode(nil, mu.etcdHandle, mu.nodeName, true, false)
-	//
-	// nodeHelper := mu.BuildNodeHelper(mu.ttl)
-	// if nodeHelper == nil {
-	// 	glog.Errorf("invalid node configure\r\n")
-	// 	return
-	// }
-	//
-	// _, err := nodectl.AddNodeToEtcdHelper(mu.etcdHandle, nodeHelper)
-	// if err != nil {
-	// 	glog.Errorf("add node error %v\r\n", err)
-	// 	return
-	// }
-
-	//wait enough time for flush our user from keeper
-	//time.Sleep(5 * time.Minute)
 	loopcnt := int64(0)
 	mu.refreshNode(loopcnt)
 	loopcnt++
