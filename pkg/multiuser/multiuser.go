@@ -151,6 +151,8 @@ func (mu *MultiUser) StartUp() error {
 		mu.userHandle.StartAPIProxy()
 	}
 
+	go mu.userHandle.ListUserLoop()
+
 	return nil
 }
 

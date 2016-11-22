@@ -48,8 +48,6 @@ func (u *Users) StartAPIProxy() error {
 
 	u.proxyHandle.StartWithConfig(config)
 
-	go u.ListUserLoop()
-
 	return nil
 }
 
@@ -132,6 +130,7 @@ func (u *Users) ListUserLoop() {
 	for {
 		select {
 		case <-time.After(time.Second * expireTime):
+			glog.V(5).Infof("**********sync user begin**********\r\n")
 			userlist, err := u.getusers()
 			if err == nil {
 				for _, v := range userlist.Items {
