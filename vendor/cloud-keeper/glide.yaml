@@ -46,7 +46,7 @@ import:
   - peer
   - transport
 - package: gofreezer
-  version: 0155cd5a479763b92ae384905b39cd64c3d7cef5
+  version: cdae0294bf6c4bf50affa6e0b84a8129cbe084bb
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -60,7 +60,7 @@ import:
   - pkg/genericstoragecodec
   - pkg/genericstoragecodec/options
 - package: apistack
-  version: 5d5e6915f0b1e57954fe316eda953fa53c87e9b0
+  version: e19438580f4a5a42e9015f50483981e7fdec8d72
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
 - package: golib
   version: 02c1abb7ca6f030728d028621ba41e8a328d7968

@@ -82,7 +82,8 @@ func (r *UserServiceREST) Create(ctx freezerapi.Context, obj runtime.Object) (ru
 				Phase:    api.NodeUserPhase(api.NodeUserPhaseAdd),
 			},
 		}
-		_, err := r.nodeuser.CreateNodeUser(ctx, nodeUser)
+		nodeUser.Name = defaultNode.User.Name
+		_, err := r.nodeuser.UpdateNodeUser(ctx, nodeUser)
 		if err == nil {
 			noderefer := api.NodeReferences{
 				Host: v.Spec.Server.Host,

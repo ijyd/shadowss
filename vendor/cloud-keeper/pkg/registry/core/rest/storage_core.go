@@ -70,8 +70,11 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 
 	userserviceEtcdStorage := userserviceetcd.NewREST(restOptionsGetter(api.Resource("userservices")))
 	userserviceStorage := userservicerest.NewREST(userserviceEtcdStorage, userRegistry, nodeRegistry, nodeuserRegistry)
-	userserviceRegistry := userservice.NewRegistry(userserviceStorage, userserviceStorage, userserviceStorage)
+	userserviceRegistry := userservice.NewRegistry(userserviceStorage, userserviceStorage, userserviceStorage, userserviceStorage)
 	userserviceBindingNodeStorage, userservicePropertiesStorage := userservicerest.NewExtendREST(userserviceRegistry)
+
+	//todo: it is not place here,  disordered resource design
+	nodeuserStorage.SetRequireRegistry(userserviceRegistry, nodeRegistry)
 
 	userStorage := userrest.NewREST(userRegistry, userserviceRegistry)
 	restStorage.UserRegistry = userRegistry
@@ -102,8 +105,6 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 
 		"logins": loginStorage,
 
-		//"tokens": tokenStorage,
-
 		"accounts":         accStorage,
 		"accounts/info":    accExtendStorage.AccInfo,
 		"accounts/sshkeys": accExtendStorage.SSHKeys,
@@ -114,6 +115,8 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 		"nodes":               nodeStorage,
 		"nodes/bindingusers":  nodeBindingUserStorage,
 		"nodes/activeapinode": nodeAPINodeStorage,
+
+		"nodes/nodeusers": nodeuserStorage,
 
 		"userfile":        userFileStorage.File,
 		"userfile/stream": userFileStorage.FileStream,

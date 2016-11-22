@@ -1,8 +1,8 @@
-hash: 7853767904a139ec5ba9981d6bd2635650b086f4f6f61b82cbc2b8f10d0c9d9b
-updated: 2016-11-15T13:07:02.519193746+08:00
+hash: 9377188813f27e51cbe35d14e406cca52509f72ef8bbbfe4dbdde8e3f6eb5667
+updated: 2016-11-16T19:58:24.767476223+08:00
 imports:
 - name: apistack
-  version: 5d5e6915f0b1e57954fe316eda953fa53c87e9b0
+  version: e19438580f4a5a42e9015f50483981e7fdec8d72
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
   subpackages:
   - pkg/admission
@@ -69,7 +69,7 @@ imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/aws/aws-sdk-go
-  version: d7dc55d865e7877f2c44a9ee28843e80a87aee1e
+  version: 55795bd6e929e8721681ab89f5eebd8944162618
   subpackages:
   - aws
   - aws/awserr
@@ -167,7 +167,7 @@ imports:
 - name: github.com/go-openapi/swag
   version: 3b6d86cd965820f968760d5d419cb4add096bdd7
 - name: github.com/go-sql-driver/mysql
-  version: 8f6c67f0228a4a6a962008d6c3d1e694e4532e71
+  version: 665b83488b90b902ce0a305ef6652e599771cdf9
 - name: github.com/gogo/protobuf
   version: 8d70fb3182befc465c4a1eac8ad4d38ff49778e2
   subpackages:
@@ -261,7 +261,7 @@ imports:
   subpackages:
   - codec
 - name: gofreezer
-  version: 0155cd5a479763b92ae384905b39cd64c3d7cef5
+  version: cdae0294bf6c4bf50affa6e0b84a8129cbe084bb
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -386,7 +386,7 @@ imports:
   - pkg/util/network
   - pkg/util/timewrap
 - name: google.golang.org/appengine
-  version: c7b8227c83007befd67b324a64c969ebc1d7475d
+  version: ca59ef35f409df61fa4a5f8290ff289b37eccfb8
   subpackages:
   - internal
   - internal/base

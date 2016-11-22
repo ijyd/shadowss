@@ -177,7 +177,7 @@ func ValidateLoginUpdate(login, oldlogin *api.Login) field.ErrorList {
 }
 
 func ValidateUser(user *api.User) field.ErrorList {
-	allErrs := apivalidation.ValidateObjectMeta(&user.ObjectMeta, false, nil, field.NewPath("metadata"))
+	allErrs := apivalidation.ValidateObjectMeta(&user.ObjectMeta, false, apivalidation.NameIsDNSSubdomain, field.NewPath("metadata"))
 
 	fldPath := field.NewPath("detailInfo")
 	if !(len(user.Spec.DetailInfo.Email) > 0) {
@@ -209,7 +209,7 @@ func ValidateUserUpdate(user, olduser *api.User) field.ErrorList {
 }
 
 func ValidateUserService(user *api.UserService) field.ErrorList {
-	allErrs := apivalidation.ValidateObjectMeta(&user.ObjectMeta, false, nil, field.NewPath("metadata"))
+	allErrs := apivalidation.ValidateObjectMeta(&user.ObjectMeta, false, apivalidation.NameIsDNSSubdomain, field.NewPath("metadata"))
 	// fldPath := field.NewPath("spec")
 	//
 	// refer := user.Spec.NodeUserReference

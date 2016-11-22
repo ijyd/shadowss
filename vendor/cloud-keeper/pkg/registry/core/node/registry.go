@@ -11,7 +11,8 @@ type Registry interface {
 	GetAPINodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error)
 	GetNode(ctx freezerapi.Context, name string) (*api.Node, error)
 	ListNodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error)
-	Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error)
+	UpdateNode(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error)
+	//UpdateNodeUser(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error)
 }
 
 // storage puts strong typing around storage calls
@@ -31,9 +32,17 @@ func NewRegistry(u rest.Updater, g rest.Getter, l rest.Lister) Registry {
 	}
 }
 
-func (s *storage) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error) {
-	return s.Update(ctx, name, objInfo)
+func (s *storage) UpdateNode(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error) {
+	obj, flag, err := s.Update(ctx, name, objInfo)
+	if err != nil {
+		return nil, false, err
+	}
+	return obj.(*api.Node), flag, nil
 }
+
+// func (s *storage) UpdateNodeUser(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error) {
+// 	return s.Update(ctx, name, objInfo)
+// }
 
 func (s *storage) GetAPINodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error) {
 	options = &freezerapi.ListOptions{}
@@ -52,6 +61,7 @@ func (s *storage) GetNode(ctx freezerapi.Context, name string) (*api.Node, error
 	}
 	return obj.(*api.Node), nil
 }
+
 func (s *storage) ListNodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error) {
 	obj, err := s.List(ctx, options)
 	if err != nil {

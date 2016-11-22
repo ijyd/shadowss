@@ -50,10 +50,13 @@ func (nodeStrategy) AllowCreateOnUpdate() bool {
 
 // PrepareForUpdate sets the Status fields which is not allowed to be set by an end user updating a PV
 func (nodeStrategy) PrepareForUpdate(ctx freezerapi.Context, obj, old runtime.Object) {
-	// _ = obj.(*api.Node)
-	// _ = old.(*api.Node)
 	PadObj(obj)
 	PadObj(old)
+
+	node := obj.(*api.Node)
+	oldnode := old.(*api.Node)
+
+	node.UID = oldnode.UID
 }
 
 func (nodeStrategy) ValidateUpdate(ctx freezerapi.Context, obj, old runtime.Object) field.ErrorList {

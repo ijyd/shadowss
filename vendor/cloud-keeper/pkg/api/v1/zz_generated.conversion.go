@@ -1434,6 +1434,7 @@ func autoConvert_v1_NodeServer_To_api_NodeServer(in *NodeServer, out *api.NodeSe
 	out.TrafficRate = in.TrafficRate
 	out.TotalUploadTraffic = in.TotalUploadTraffic
 	out.TotalDownloadTraffic = in.TotalDownloadTraffic
+	out.CustomMethod = in.CustomMethod
 	return nil
 }
 
@@ -1458,6 +1459,7 @@ func autoConvert_api_NodeServer_To_v1_NodeServer(in *api.NodeServer, out *NodeSe
 	out.TrafficRate = in.TrafficRate
 	out.TotalUploadTraffic = in.TotalUploadTraffic
 	out.TotalDownloadTraffic = in.TotalDownloadTraffic
+	out.CustomMethod = in.CustomMethod
 	return nil
 }
 
@@ -1469,6 +1471,19 @@ func autoConvert_v1_NodeSpec_To_api_NodeSpec(in *NodeSpec, out *api.NodeSpec, s 
 	if err := Convert_v1_NodeServer_To_api_NodeServer(&in.Server, &out.Server, s); err != nil {
 		return err
 	}
+	if in.Users != nil {
+		in, out := &in.Users, &out.Users
+		*out = make(map[string]api.NodeUser, len(*in))
+		for key, val := range *in {
+			newVal := new(api.NodeUser)
+			if err := Convert_v1_NodeUser_To_api_NodeUser(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.Users = nil
+	}
 	return nil
 }
 
@@ -1479,6 +1494,19 @@ func Convert_v1_NodeSpec_To_api_NodeSpec(in *NodeSpec, out *api.NodeSpec, s conv
 func autoConvert_api_NodeSpec_To_v1_NodeSpec(in *api.NodeSpec, out *NodeSpec, s conversion.Scope) error {
 	if err := Convert_api_NodeServer_To_v1_NodeServer(&in.Server, &out.Server, s); err != nil {
 		return err
+	}
+	if in.Users != nil {
+		in, out := &in.Users, &out.Users
+		*out = make(map[string]NodeUser, len(*in))
+		for key, val := range *in {
+			newVal := new(NodeUser)
+			if err := Convert_api_NodeUser_To_v1_NodeUser(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.Users = nil
 	}
 	return nil
 }

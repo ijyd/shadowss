@@ -29,6 +29,7 @@ type Controller struct {
 
 // NewBootstrapController returns a controller for watching the core capabilities of the master
 func (c *Config) NewBootstrapController(legacyRESTStorage corerest.LegacyRESTStorage, port int) *Controller {
+	InnerHookHandler.SetRegistry(legacyRESTStorage)
 	return &Controller{
 		UserRegistry:      legacyRESTStorage.UserRegistry,
 		APIServerRegistry: legacyRESTStorage.APIServerRegistry,

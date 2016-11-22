@@ -1,5 +1,0 @@
-package watcher
-
-func watchUsers() {
-
-}

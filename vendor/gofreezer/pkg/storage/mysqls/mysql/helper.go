@@ -20,7 +20,12 @@ func ScanRows(rows *sql.Rows, t *Table, obj runtime.Object) ([]*RowResult, error
 	var listObj []*RowResult
 	tableObj := reflect.Indirect(reflect.New(t.obj.Type()))
 	for i, col := range columns {
-		filedName := t.freezerTag[t.columnToFreezerTagKey[col]].structField
+		key, ok := t.columnToFreezerTagKey[col]
+		if !ok {
+			continue
+		}
+
+		filedName := t.freezerTag[key].structField
 		valuesPtrs[i] = tableObj.FieldByName(filedName).Addr().Interface()
 	}
 	for rows.Next() {

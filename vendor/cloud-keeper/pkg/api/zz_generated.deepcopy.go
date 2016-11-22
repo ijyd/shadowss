@@ -528,7 +528,11 @@ func DeepCopy_api_Node(in interface{}, out interface{}, c *conversion.Cloner) er
 		if err := pkg_api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
 			return err
 		}
-		out.Spec = in.Spec
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*NodeSpec)
+		}
 		return nil
 	}
 }
@@ -586,6 +590,7 @@ func DeepCopy_api_NodeServer(in interface{}, out interface{}, c *conversion.Clon
 		out.TrafficRate = in.TrafficRate
 		out.TotalUploadTraffic = in.TotalUploadTraffic
 		out.TotalDownloadTraffic = in.TotalDownloadTraffic
+		out.CustomMethod = in.CustomMethod
 		return nil
 	}
 }
@@ -595,6 +600,19 @@ func DeepCopy_api_NodeSpec(in interface{}, out interface{}, c *conversion.Cloner
 		in := in.(*NodeSpec)
 		out := out.(*NodeSpec)
 		out.Server = in.Server
+		if in.Users != nil {
+			in, out := &in.Users, &out.Users
+			*out = make(map[string]NodeUser)
+			for key, val := range *in {
+				if newVal, err := c.DeepCopy(&val); err != nil {
+					return err
+				} else {
+					(*out)[key] = *newVal.(*NodeUser)
+				}
+			}
+		} else {
+			out.Users = nil
+		}
 		return nil
 	}
 }

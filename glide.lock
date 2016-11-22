@@ -1,13 +1,13 @@
-hash: 53008c68fb48ae298e27b86db63d2af0f78a4a2aad429218b94831aaead69cd8
-updated: 2016-11-16T18:17:15.728692034+08:00
+hash: 0ab305e70c718ef4bc0f80da54644767c833ebff8053f939b1d9bbf0f6d8caf3
+updated: 2016-11-17T16:14:50.577126629+08:00
 imports:
 - name: apistack
-  version: 5d5e6915f0b1e57954fe316eda953fa53c87e9b0
+  version: e19438580f4a5a42e9015f50483981e7fdec8d72
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
   subpackages:
   - pkg/genericapiserver/openapi/common
 - name: cloud-keeper
-  version: 2fc87e61fb79eac0b610219504d285c977a76a66
+  version: 04060a53e9c69403ab33ca7e187921b631111cc3
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
@@ -73,7 +73,7 @@ imports:
   subpackages:
   - codec
 - name: gofreezer
-  version: 0155cd5a479763b92ae384905b39cd64c3d7cef5
+  version: cdae0294bf6c4bf50affa6e0b84a8129cbe084bb
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api

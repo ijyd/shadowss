@@ -565,26 +565,28 @@ const (
 )
 
 type NodeServer struct {
-	ID                   int64  `json:"id" column:"id" gorm:"column:id"`
-	Name                 string `json:"name,omitempty" column:"name" gorm:"column:name"`
-	EnableOTA            int64  `json:"enableOTA" column:"enableota" gorm:"column:enableota"`
-	Host                 string `json:"host,omitempty" column:"server" gorm:"column:server"`
-	Method               string `json:"method" column:"method" gorm:"column:method"`
-	Status               int64  `json:"status,omitempty" column:"status" gorm:"column:status"`
-	Location             string `json:"location,omitempty" column:"location" gorm:"column:location"`
-	AccServerID          int64  `json:"accServerID,omitempty" column:"vps_server_id" gorm:"column:vps_server_id"`
-	AccServerName        string `json:"accServerName,omitempty" column:"vps_server_name" gorm:"column:vps_server_name"`
-	Description          string `json:"description,omitempty" column:"description" gorm:"column:description"`
-	TrafficLimit         int64  `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"`
-	Upload               int64  `json:"upload,omitempty" column:"upload" gorm:"column:upload"`
-	Download             int64  `json:"download,omitempty" column:"download" gorm:"column:download"`
-	TrafficRate          int64  `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
-	TotalUploadTraffic   int64  `json:"totalUploadTraffic,omitempty" column:"total_upload" gorm:"column:total_upload"`
-	TotalDownloadTraffic int64  `json:"totalDownloadTraffic,omitempty" column:"total_download" gorm:"column:total_download"`
+	ID                   int64  `json:"id" freezer:"column:id" gorm:"column:id"`
+	Name                 string `json:"name,omitempty" freezer:"column:name;resoucekey" gorm:"column:name"`
+	EnableOTA            bool   `json:"enableOTA" freezer:"column:enableota" gorm:"column:enableota"`
+	Host                 string `json:"host,omitempty" freezer:"column:server" gorm:"column:server"`
+	Method               string `json:"method" freezer:"column:method" gorm:"column:method"`
+	Status               int64  `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
+	Location             string `json:"location,omitempty" freezer:"column:location" gorm:"column:location"`
+	AccServerID          int64  `json:"accServerID,omitempty" freezer:"column:vps_server_id" gorm:"column:vps_server_id"`
+	AccServerName        string `json:"accServerName,omitempty" freezer:"column:vps_server_name" gorm:"column:vps_server_name"`
+	Description          string `json:"description,omitempty" freezer:"column:description" gorm:"column:description"`
+	TrafficLimit         int64  `json:"trafficLimit,omitempty" freezer:"column:traffic_limit" gorm:"column:traffic_limit"`
+	Upload               int64  `json:"upload,omitempty" freezer:"column:upload" gorm:"column:upload"`
+	Download             int64  `json:"download,omitempty" freezer:"column:download" gorm:"column:download"`
+	TrafficRate          int64  `json:"trafficRate,omitempty" freezer:"column:traffic_rate" gorm:"column:traffic_rate"`
+	TotalUploadTraffic   int64  `json:"totalUploadTraffic,omitempty" freezer:"column:total_upload" gorm:"column:total_upload"`
+	TotalDownloadTraffic int64  `json:"totalDownloadTraffic,omitempty" freezer:"column:total_download" gorm:"column:total_download"`
+	CustomMethod         int    `json:"customMethod,omitempty" freezer:"column:custom_method" gorm:"column:custom_method"`
 }
 
 type NodeSpec struct {
-	Server NodeServer `json:"server,omitempty"`
+	Server NodeServer          `json:"server,omitempty" freezer:"table:ss_node"`
+	Users  map[string]NodeUser `json:"users,omitempty"`
 }
 
 type Node struct {
@@ -662,7 +664,7 @@ type UserInfo struct {
 	ID                   int64            `json:"id,omitempty" freezer:"column:id"`
 	Passwd               string           `json:"passwd,omitempty" freezer:"column:passwd"`
 	Email                string           `json:"email,omitempty" freezer:"column:email"`
-	EnableOTA            int64            `json:"enableOTA,omitempty" freezer:"column:enable_ota"`
+	EnableOTA            bool             `json:"enableOTA,omitempty" freezer:"column:enable_ota"`
 	TrafficLimit         int64            `json:"trafficLimit,omitempty" freezer:"column:traffic_limit" gorm:"column:traffic_limit"` //traffic for per user
 	UploadTraffic        int64            `json:"uploadTraffic,omitempty" freezer:"column:upload" gorm:"column:upload"`              //upload traffic for per user
 	DownloadTraffic      int64            `json:"downloadTraffic,omitempty" freezer:"column:download" gorm:"column:download"`        //download traffic for per user
