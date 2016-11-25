@@ -2,6 +2,7 @@ package dynamodb
 
 import (
 	"encoding/json"
+	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/awserr"
@@ -10,10 +11,11 @@ import (
 	"github.com/golang/glog"
 )
 
+var defaultTable = os.Args[0]
+
 const (
-	defaultTable = "runtime"
-	primaryKey   = "key"
-	sortKey      = "sortKey"
+	primaryKey = "key"
+	sortKey    = "sortKey"
 )
 
 func CreateTable(dbHandler *awsdb.DynamoDB, table string) (string, error) {

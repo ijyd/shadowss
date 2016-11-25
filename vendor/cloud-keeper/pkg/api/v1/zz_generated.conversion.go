@@ -66,6 +66,8 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_api_ActiveAPINodeList_To_v1_ActiveAPINodeList,
 		Convert_v1_ActiveAPINodeSpec_To_api_ActiveAPINodeSpec,
 		Convert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec,
+		Convert_v1_BindingNodes_To_api_BindingNodes,
+		Convert_api_BindingNodes_To_v1_BindingNodes,
 		Convert_v1_DGAccountInfo_To_api_DGAccountInfo,
 		Convert_api_DGAccountInfo_To_v1_DGAccountInfo,
 		Convert_v1_DGServerInfo_To_api_DGServerInfo,
@@ -130,6 +132,10 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_api_UserReferences_To_v1_UserReferences,
 		Convert_v1_UserService_To_api_UserService,
 		Convert_api_UserService_To_v1_UserService,
+		Convert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes,
+		Convert_api_UserServiceBindingNodes_To_v1_UserServiceBindingNodes,
+		Convert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec,
+		Convert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec,
 		Convert_v1_UserServiceList_To_api_UserServiceList,
 		Convert_api_UserServiceList_To_v1_UserServiceList,
 		Convert_v1_UserServiceSpec_To_api_UserServiceSpec,
@@ -891,6 +897,52 @@ func Convert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(in *api.ActiveAPINode
 	return autoConvert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(in, out, s)
 }
 
+func autoConvert_v1_BindingNodes_To_api_BindingNodes(in *BindingNodes, out *api.BindingNodes, s conversion.Scope) error {
+	if in.Nodes != nil {
+		in, out := &in.Nodes, &out.Nodes
+		*out = make(map[string]api.NodeReferences, len(*in))
+		for key, val := range *in {
+			newVal := new(api.NodeReferences)
+			if err := Convert_v1_NodeReferences_To_api_NodeReferences(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.Nodes = nil
+	}
+	out.NodeCnt = in.NodeCnt
+	out.Status = in.Status
+	return nil
+}
+
+func Convert_v1_BindingNodes_To_api_BindingNodes(in *BindingNodes, out *api.BindingNodes, s conversion.Scope) error {
+	return autoConvert_v1_BindingNodes_To_api_BindingNodes(in, out, s)
+}
+
+func autoConvert_api_BindingNodes_To_v1_BindingNodes(in *api.BindingNodes, out *BindingNodes, s conversion.Scope) error {
+	if in.Nodes != nil {
+		in, out := &in.Nodes, &out.Nodes
+		*out = make(map[string]NodeReferences, len(*in))
+		for key, val := range *in {
+			newVal := new(NodeReferences)
+			if err := Convert_api_NodeReferences_To_v1_NodeReferences(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.Nodes = nil
+	}
+	out.NodeCnt = in.NodeCnt
+	out.Status = in.Status
+	return nil
+}
+
+func Convert_api_BindingNodes_To_v1_BindingNodes(in *api.BindingNodes, out *BindingNodes, s conversion.Scope) error {
+	return autoConvert_api_BindingNodes_To_v1_BindingNodes(in, out, s)
+}
+
 func autoConvert_v1_DGAccountInfo_To_api_DGAccountInfo(in *DGAccountInfo, out *api.DGAccountInfo, s conversion.Scope) error {
 	out.DropletLimit = in.DropletLimit
 	out.Email = in.Email
@@ -923,6 +975,8 @@ func autoConvert_v1_DGServerInfo_To_api_DGServerInfo(in *DGServerInfo, out *api.
 	out.IPV4Addr = in.IPV4Addr
 	out.IPV4NetMask = in.IPV4NetMask
 	out.IPV4Gateway = in.IPV4Gateway
+	out.PriceMonthly = in.PriceMonthly
+	out.PriceHourly = in.PriceHourly
 	return nil
 }
 
@@ -938,6 +992,8 @@ func autoConvert_api_DGServerInfo_To_v1_DGServerInfo(in *api.DGServerInfo, out *
 	out.IPV4Addr = in.IPV4Addr
 	out.IPV4NetMask = in.IPV4NetMask
 	out.IPV4Gateway = in.IPV4Gateway
+	out.PriceMonthly = in.PriceMonthly
+	out.PriceHourly = in.PriceHourly
 	return nil
 }
 
@@ -1015,48 +1071,52 @@ func Convert_api_ExportOptions_To_v1_ExportOptions(in *pkg_api.ExportOptions, ou
 	return autoConvert_api_ExportOptions_To_v1_ExportOptions(in, out, s)
 }
 
+func Convert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *pkg_api.ListOptions, s conversion.Scope) error {
+	return autoConvert_v1_ListOptions_To_api_ListOptions(in, out, s)
+}
+
 func autoConvert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *pkg_api.ListOptions, s conversion.Scope) error {
 	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.LabelSelector, &out.LabelSelector, 0); err != nil {
+	if err := pkg_api.Convert_string_To_labels_Selector(&in.LabelSelector, &out.LabelSelector, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.FieldSelector, &out.FieldSelector, 0); err != nil {
+	if err := pkg_api.Convert_string_To_fields_Selector(&in.FieldSelector, &out.FieldSelector, s); err != nil {
+		return err
+	}
+	if err := pkg_api.Convert_string_To_page_Selector(&in.PageSelector, &out.PageSelector, s); err != nil {
 		return err
 	}
 	out.Watch = in.Watch
 	out.ResourceVersion = in.ResourceVersion
 	out.TimeoutSeconds = in.TimeoutSeconds
+	// WARNING: in.PageSelector requires manual conversion: inconvertible types (string vs gofreezer/pkg/pagination.Pager)
 	return nil
 }
 
-func Convert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *pkg_api.ListOptions, s conversion.Scope) error {
-	return autoConvert_v1_ListOptions_To_api_ListOptions(in, out, s)
+func Convert_api_ListOptions_To_v1_ListOptions(in *pkg_api.ListOptions, out *ListOptions, s conversion.Scope) error {
+	return autoConvert_api_ListOptions_To_v1_ListOptions(in, out, s)
 }
 
 func autoConvert_api_ListOptions_To_v1_ListOptions(in *pkg_api.ListOptions, out *ListOptions, s conversion.Scope) error {
 	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.LabelSelector, &out.LabelSelector, 0); err != nil {
+	if err := pkg_api.Convert_labels_Selector_To_string(&in.LabelSelector, &out.LabelSelector, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.FieldSelector, &out.FieldSelector, 0); err != nil {
+	if err := pkg_api.Convert_fields_Selector_To_string(&in.FieldSelector, &out.FieldSelector, s); err != nil {
+		return err
+	}
+	if err := pkg_api.Convert_page_Selector_To_string(&in.PageSelector, &out.PageSelector, s); err != nil {
 		return err
 	}
 	out.Watch = in.Watch
 	out.ResourceVersion = in.ResourceVersion
 	out.TimeoutSeconds = in.TimeoutSeconds
+	// WARNING: in.PageSelector requires manual conversion: inconvertible types (gofreezer/pkg/pagination.Pager vs string)
 	return nil
-}
-
-func Convert_api_ListOptions_To_v1_ListOptions(in *pkg_api.ListOptions, out *ListOptions, s conversion.Scope) error {
-	return autoConvert_api_ListOptions_To_v1_ListOptions(in, out, s)
 }
 
 func autoConvert_v1_Login_To_api_Login(in *Login, out *api.Login, s conversion.Scope) error {
@@ -1473,10 +1533,10 @@ func autoConvert_v1_NodeSpec_To_api_NodeSpec(in *NodeSpec, out *api.NodeSpec, s 
 	}
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
-		*out = make(map[string]api.NodeUser, len(*in))
+		*out = make(map[string]api.NodeUserSpec, len(*in))
 		for key, val := range *in {
-			newVal := new(api.NodeUser)
-			if err := Convert_v1_NodeUser_To_api_NodeUser(&val, newVal, s); err != nil {
+			newVal := new(api.NodeUserSpec)
+			if err := Convert_v1_NodeUserSpec_To_api_NodeUserSpec(&val, newVal, s); err != nil {
 				return err
 			}
 			(*out)[key] = *newVal
@@ -1497,10 +1557,10 @@ func autoConvert_api_NodeSpec_To_v1_NodeSpec(in *api.NodeSpec, out *NodeSpec, s 
 	}
 	if in.Users != nil {
 		in, out := &in.Users, &out.Users
-		*out = make(map[string]NodeUser, len(*in))
+		*out = make(map[string]NodeUserSpec, len(*in))
 		for key, val := range *in {
-			newVal := new(NodeUser)
-			if err := Convert_api_NodeUser_To_v1_NodeUser(&val, newVal, s); err != nil {
+			newVal := new(NodeUserSpec)
+			if err := Convert_api_NodeUserSpec_To_v1_NodeUserSpec(&val, newVal, s); err != nil {
 				return err
 			}
 			(*out)[key] = *newVal
@@ -2091,6 +2151,86 @@ func Convert_api_UserService_To_v1_UserService(in *api.UserService, out *UserSer
 	return autoConvert_api_UserService_To_v1_UserService(in, out, s)
 }
 
+func autoConvert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes(in *UserServiceBindingNodes, out *api.UserServiceBindingNodes, s conversion.Scope) error {
+	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
+		return err
+	}
+	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+		return err
+	}
+	if err := Convert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes(in *UserServiceBindingNodes, out *api.UserServiceBindingNodes, s conversion.Scope) error {
+	return autoConvert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes(in, out, s)
+}
+
+func autoConvert_api_UserServiceBindingNodes_To_v1_UserServiceBindingNodes(in *api.UserServiceBindingNodes, out *UserServiceBindingNodes, s conversion.Scope) error {
+	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
+		return err
+	}
+	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+		return err
+	}
+	if err := Convert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_api_UserServiceBindingNodes_To_v1_UserServiceBindingNodes(in *api.UserServiceBindingNodes, out *UserServiceBindingNodes, s conversion.Scope) error {
+	return autoConvert_api_UserServiceBindingNodes_To_v1_UserServiceBindingNodes(in, out, s)
+}
+
+func autoConvert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec(in *UserServiceBindingNodesSpec, out *api.UserServiceBindingNodesSpec, s conversion.Scope) error {
+	if in.NodeUserReference != nil {
+		in, out := &in.NodeUserReference, &out.NodeUserReference
+		*out = make(map[string]api.NodeReferences, len(*in))
+		for key, val := range *in {
+			newVal := new(api.NodeReferences)
+			if err := Convert_v1_NodeReferences_To_api_NodeReferences(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.NodeUserReference = nil
+	}
+	out.NodeCnt = in.NodeCnt
+	out.Status = in.Status
+	return nil
+}
+
+func Convert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec(in *UserServiceBindingNodesSpec, out *api.UserServiceBindingNodesSpec, s conversion.Scope) error {
+	return autoConvert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec(in, out, s)
+}
+
+func autoConvert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(in *api.UserServiceBindingNodesSpec, out *UserServiceBindingNodesSpec, s conversion.Scope) error {
+	if in.NodeUserReference != nil {
+		in, out := &in.NodeUserReference, &out.NodeUserReference
+		*out = make(map[string]NodeReferences, len(*in))
+		for key, val := range *in {
+			newVal := new(NodeReferences)
+			if err := Convert_api_NodeReferences_To_v1_NodeReferences(&val, newVal, s); err != nil {
+				return err
+			}
+			(*out)[key] = *newVal
+		}
+	} else {
+		out.NodeUserReference = nil
+	}
+	out.NodeCnt = in.NodeCnt
+	out.Status = in.Status
+	return nil
+}
+
+func Convert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(in *api.UserServiceBindingNodesSpec, out *UserServiceBindingNodesSpec, s conversion.Scope) error {
+	return autoConvert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(in, out, s)
+}
+
 func autoConvert_v1_UserServiceList_To_api_UserServiceList(in *UserServiceList, out *api.UserServiceList, s conversion.Scope) error {
 	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
 		return err
@@ -2142,21 +2282,12 @@ func Convert_api_UserServiceList_To_v1_UserServiceList(in *api.UserServiceList, 
 }
 
 func autoConvert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, out *api.UserServiceSpec, s conversion.Scope) error {
-	if in.Nodes != nil {
-		in, out := &in.Nodes, &out.Nodes
-		*out = make(map[string]api.NodeReferences, len(*in))
-		for key, val := range *in {
-			newVal := new(api.NodeReferences)
-			if err := Convert_v1_NodeReferences_To_api_NodeReferences(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Nodes = nil
+	out.NodeName = in.NodeName
+	out.Host = in.Host
+	if err := Convert_v1_UserReferences_To_api_UserReferences(&in.UserRefer, &out.UserRefer, s); err != nil {
+		return err
 	}
-	out.NodeCnt = in.NodeCnt
-	out.Status = in.Status
+	out.Delete = in.Delete
 	return nil
 }
 
@@ -2165,21 +2296,12 @@ func Convert_v1_UserServiceSpec_To_api_UserServiceSpec(in *UserServiceSpec, out 
 }
 
 func autoConvert_api_UserServiceSpec_To_v1_UserServiceSpec(in *api.UserServiceSpec, out *UserServiceSpec, s conversion.Scope) error {
-	if in.Nodes != nil {
-		in, out := &in.Nodes, &out.Nodes
-		*out = make(map[string]NodeReferences, len(*in))
-		for key, val := range *in {
-			newVal := new(NodeReferences)
-			if err := Convert_api_NodeReferences_To_v1_NodeReferences(&val, newVal, s); err != nil {
-				return err
-			}
-			(*out)[key] = *newVal
-		}
-	} else {
-		out.Nodes = nil
+	out.NodeName = in.NodeName
+	out.Host = in.Host
+	if err := Convert_api_UserReferences_To_v1_UserReferences(&in.UserRefer, &out.UserRefer, s); err != nil {
+		return err
 	}
-	out.NodeCnt = in.NodeCnt
-	out.Status = in.Status
+	out.Delete = in.Delete
 	return nil
 }
 
@@ -2191,6 +2313,9 @@ func autoConvert_v1_UserSpec_To_api_UserSpec(in *UserSpec, out *api.UserSpec, s 
 	if err := Convert_v1_UserInfo_To_api_UserInfo(&in.DetailInfo, &out.DetailInfo, s); err != nil {
 		return err
 	}
+	if err := Convert_v1_BindingNodes_To_api_BindingNodes(&in.UserService, &out.UserService, s); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -2200,6 +2325,9 @@ func Convert_v1_UserSpec_To_api_UserSpec(in *UserSpec, out *api.UserSpec, s conv
 
 func autoConvert_api_UserSpec_To_v1_UserSpec(in *api.UserSpec, out *UserSpec, s conversion.Scope) error {
 	if err := Convert_api_UserInfo_To_v1_UserInfo(&in.DetailInfo, &out.DetailInfo, s); err != nil {
+		return err
+	}
+	if err := Convert_api_BindingNodes_To_v1_BindingNodes(&in.UserService, &out.UserService, s); err != nil {
 		return err
 	}
 	return nil
@@ -2362,6 +2490,9 @@ func autoConvert_v1_VultrServerInfo_To_api_VultrServerInfo(in *VultrServerInfo, 
 	out.IPV4NetMask = in.IPV4NetMask
 	out.IPV4Gateway = in.IPV4Gateway
 	out.PendingCharges = in.PendingCharges
+	out.CostPerMonth = in.CostPerMonth
+	out.AllowedBandWidth = in.AllowedBandWidth
+	out.CurrentBandwidth = in.CurrentBandwidth
 	return nil
 }
 
@@ -2378,6 +2509,9 @@ func autoConvert_api_VultrServerInfo_To_v1_VultrServerInfo(in *api.VultrServerIn
 	out.IPV4NetMask = in.IPV4NetMask
 	out.IPV4Gateway = in.IPV4Gateway
 	out.PendingCharges = in.PendingCharges
+	out.CostPerMonth = in.CostPerMonth
+	out.AllowedBandWidth = in.AllowedBandWidth
+	out.CurrentBandwidth = in.CurrentBandwidth
 	return nil
 }
 

@@ -74,24 +74,24 @@ type UserInfo struct {
 	ID                   int64            `json:"id,omitempty" freezer:"column:id"`
 	Passwd               string           `json:"passwd,omitempty" freezer:"column:passwd"`
 	Email                string           `json:"email,omitempty" freezer:"column:email"`
-	EnableOTA            int64            `json:"enableOTA,omitempty" freezer:"column:enable_ota"`
+	EnableOTA            bool             `json:"enableOTA,omitempty" freezer:"column:enable_ota"`
 	TrafficLimit         int64            `json:"trafficLimit,omitempty" freezer:"column:traffic_limit" gorm:"column:traffic_limit"` //traffic for per user
 	UploadTraffic        int64            `json:"uploadTraffic,omitempty" freezer:"column:upload" gorm:"column:upload"`              //upload traffic for per user
 	DownloadTraffic      int64            `json:"downloadTraffic,omitempty" freezer:"column:download" gorm:"column:download"`        //download traffic for per user
 	Name                 string           `json:"name,omitempty" freezer:"column:user_name;resoucekey" gorm:"column:user_name"`
 	ManagePasswd         string           `json:"managePasswd,omitempty" freezer:"column:manage_pass" gorm:"column:manage_pass"`
 	ExpireTime           unversioned.Time `json:"expireTime,omitempty" freezer:"column:expire_time" gorm:"column:expire_time"`
-	EmailVerify          int16            `json:"emailVerify,omitempty" freezer:"column:is_email_verify" gorm:"column:is_email_verify"`
+	EmailVerify          bool             `json:"emailVerify,omitempty" freezer:"column:is_email_verify" gorm:"column:is_email_verify"`
 	RegIPAddr            string           `json:"regIPAddr,omitempty" freezer:"column:reg_ip" gorm:"column:reg_ip"`
 	RegDBTime            unversioned.Time `json:"regTime,omitempty" freezer:"column:reg_date" gorm:"column:reg_date"`
 	Description          string           `json:"description,omitempty" freezer:"column:description" gorm:"column:description"`
 	TrafficRate          float64          `json:"trafficRate,omitempty" freezer:"column:traffic_rate" gorm:"column:traffic_rate"`
-	IsAdmin              int64            `json:"isAdmin,omitempty" freezer:"column:is_admin" gorm:"column:is_admin"`
+	IsAdmin              bool             `json:"isAdmin,omitempty" freezer:"column:is_admin" gorm:"column:is_admin"`
 	LastCheckInTime      unversioned.Time `json:"-" freezer:"column:last_check_in_time" gorm:"column:last_check_in_time"`
 	LastResetPwdTime     unversioned.Time `json:"-" freezer:"column:last_reset_pass_time" gorm:"column:last_reset_pass_time"`
 	TotalUploadTraffic   int64            `json:"totalUploadTraffic,omitempty" freezer:"column:total_upload" gorm:"column:total_upload"`
 	TotalDownloadTraffic int64            `json:"totalDownloadTraffic,omitempty" freezer:"column:total_download" gorm:"column:total_download"`
-	Status               int64            `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
+	Status               bool             `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
 }
 
 type UserSpec struct {

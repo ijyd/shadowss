@@ -38,7 +38,8 @@ func WriteDeplossConfigFile(hosts []string, sshkey, hostpath, sshkeypath, privat
 
 		hostList += fmt.Sprintf("ansible_connection=ssh ")
 		hostList += fmt.Sprintf("ansible_ssh_user=root ")
-		hostList += fmt.Sprintf("ansible_ssh_private_key_file=%s \r\n", privateKey)
+		hostList += fmt.Sprintf("ansible_ssh_private_key_file=%s ", privateKey)
+		hostList += fmt.Sprintf("serverip=%s \r\n", v)
 	}
 
 	ioutil.WriteFile(hostpath, []byte(hostList), os.FileMode(0644))

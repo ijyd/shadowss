@@ -14,6 +14,7 @@ import (
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/storage"
 	"gofreezer/pkg/storage/mysqls"
@@ -60,7 +61,11 @@ func (e *Store) List(ctx api.Context, options *api.ListOptions) (runtime.Object,
 	if options != nil && options.FieldSelector != nil {
 		field = options.FieldSelector
 	}
-	out, err := e.ListPredicate(ctx, e.PredicateFunc(label, field), options)
+	page := pagination.Everything()
+	if options != nil && options.PageSelector != nil {
+		page = options.PageSelector
+	}
+	out, err := e.ListPredicate(ctx, e.PredicateFunc(label, field, page), options)
 	if err != nil {
 		return nil, err
 	}
@@ -194,43 +199,48 @@ func (e *Store) Update(ctx api.Context, name string, objInfo rest.UpdatedObjectI
 	err = e.Storage.GuaranteedUpdate(ctx, key, out, true, nil, func(existing runtime.Object) (output runtime.Object, updateField []string, err error) {
 		// Given the existing object, get the new object
 		obj, err := objInfo.UpdatedObject(ctx, existing)
-		glog.V(9).Infof("updated object(%v) err:%v", existing, err)
 		if err != nil {
 			return nil, nil, err
 		}
 
+		// If AllowUnconditionalUpdate() is true and the object specified by the user does not have a resource version,
+		// then we populate it with the latest version.
+		// Else, we check that the version specified by the user matches the version of latest storage object.
+		resourceVersion, err := e.Storage.Versioner().ObjectResourceVersion(obj)
+		if err != nil {
+			return nil, nil, err
+		}
+		_ = resourceVersion == 0 && e.UpdateStrategy.AllowUnconditionalUpdate()
+
 		version, err := e.Storage.Versioner().ObjectResourceVersion(existing)
-		glog.V(9).Infof("updated object(%v) err:%v", version, err)
 		if err != nil {
 			return nil, nil, err
 		}
 		if version == 0 {
-			glog.V(9).Infof("Will create obj instead of update err")
 			if !e.UpdateStrategy.AllowCreateOnUpdate() {
 				return nil, nil, apierr.NewNotFound(e.QualifiedResource, name)
 			}
 			creating = true
 			creatingObj = obj
 			if err := rest.BeforeCreate(e.CreateStrategy, ctx, obj); err != nil {
-				glog.V(9).Infof("Will BeforeCreate obj instead of update err")
 				return nil, nil, err
 			}
 			return obj, nil, nil
 		}
 
+		//force overwrite newobj resource version with existing obj resource version
+		e.Storage.Versioner().UpdateObject(obj, version)
+
 		creating = false
 		creatingObj = nil
-		glog.V(9).Infof("Will update 2")
 		if err := rest.BeforeUpdate(e.UpdateStrategy, ctx, obj, existing); err != nil {
 			return nil, nil, err
 		}
-		glog.V(9).Infof("Will update")
 		delete := e.shouldDelete(ctx, key, obj, existing)
 		if delete {
 			deleteObj = obj
 			return nil, nil, errEmptiedFinalizers
 		}
-		glog.V(9).Infof("Will update 4")
 		return obj, nil, nil
 	})
 

@@ -21,4 +21,5 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	s.GenericServerRunOptions.AddUniversalFlags(fs)
 	s.GenericServerRunOptions.AddEtcdStorageFlags(fs)
 	s.GenericServerRunOptions.AddMysqlStorageFlags(fs)
+	s.GenericServerRunOptions.AddDynamoDBStorageFlags(fs)
 }

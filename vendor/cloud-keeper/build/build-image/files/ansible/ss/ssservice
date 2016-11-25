@@ -3,7 +3,7 @@
 # shadowss daemon
 
 # chkconfig:   2345 90 10
-#The above indicates that the script should be started in levels 2, 3, 4, and 5, #that its start priority should be 10, and that its stop priority should be 90. 
+#The above indicates that the script should be started in levels 2, 3, 4, and 5, #that its start priority should be 10, and that its stop priority should be 90.
 # description:  Redis is a persistent key-value database
 . /etc/rc.d/init.d/functions
 
@@ -13,11 +13,9 @@ EXEC="$SS_PATH/shadowss"
 PROG="shadowss"
 
 DAEMON_OPTS='--alsologtostderr="true" \
-                --config-file="./server-multi-port.json" \
                 -v=6 \
                 --enable-udp-relay \
-                --storage-backend="etcd3" \
-                --etcd-servers="http://47.89.189.237:2379"'
+                --apiserver-url="https://etcd.vps.i-jyd.com:18088"'
 
 [ -e /etc/sysconfig/$PROG ] && . /etc/sysconfig/$PROG
 

@@ -21,6 +21,10 @@ func ValidateAccServer(server *api.AccServer) field.ErrorList {
 		allErrs = append(allErrs, field.Required(fldPath.Child("Size"), ""))
 	}
 
+	if !(len(server.Spec.Name) > 0) {
+		allErrs = append(allErrs, field.Required(fldPath.Child("name"), ""))
+	}
+
 	return allErrs
 }
 
@@ -120,9 +124,9 @@ func ValidateAccount(acc *api.Account) field.ErrorList {
 		allErrs = append(allErrs, field.Required(fldPath.Child("description"), ""))
 	}
 
-	if !(len(acc.Spec.AccDetail.Lables) > 0) {
-		allErrs = append(allErrs, field.Required(fldPath.Child("lables"), ""))
-	}
+	// if !(len(acc.Spec.AccDetail.Lables) > 0) {
+	// 	allErrs = append(allErrs, field.Required(fldPath.Child("lables"), ""))
+	// }
 
 	if acc.Spec.AccDetail.CreditCeilings == 0 {
 		allErrs = append(allErrs, field.Required(fldPath.Child("creditCeilings"), ""))
@@ -210,24 +214,19 @@ func ValidateUserUpdate(user, olduser *api.User) field.ErrorList {
 
 func ValidateUserService(user *api.UserService) field.ErrorList {
 	allErrs := apivalidation.ValidateObjectMeta(&user.ObjectMeta, false, apivalidation.NameIsDNSSubdomain, field.NewPath("metadata"))
-	// fldPath := field.NewPath("spec")
-	//
-	// refer := user.Spec.NodeUserReference
-	// if !(len(refer.Name) > 0) {
-	// 	return fmt.Errorf("invalid name")
-	// }
-	//
-	// if refer.ID == 0 {
-	// 	return fmt.Errorf("invalid user id")
-	// }
-	//
-	// if !(len(refer.Password) > 0) {
-	// 	return fmt.Errorf("invalid passwd")
-	// }
-	//
-	// if !(len(refer.Method) > 0) {
-	// 	return fmt.Errorf("invalid method")
-	// }
+	fldPath := field.NewPath("spec")
+
+	if !(len(user.Spec.NodeName) > 0) {
+		allErrs = append(allErrs, field.Required(fldPath.Child("nodeName"), ""))
+	}
+
+	if !(len(user.Spec.UserRefer.Name) > 0) {
+		allErrs = append(allErrs, field.Required(fldPath.Child("userRefer.name"), ""))
+	}
+
+	if user.Spec.UserRefer.ID == 0 {
+		allErrs = append(allErrs, field.Required(fldPath.Child("userRefer.ID"), ""))
+	}
 
 	return allErrs
 }

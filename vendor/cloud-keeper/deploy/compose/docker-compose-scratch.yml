@@ -1,7 +1,7 @@
 version: '2'
 services:
   etcd3:
-    image: bjjyd/etcd:v3.0.12
+    image: dockerhub.bj-jyd.cn/library/etcd:v3.0.12
     build: ./etcd/
     container_name: etcd3
     volumes:
@@ -20,12 +20,12 @@ services:
       --auto-compaction-retention 1
       --client-cert-auth
       --trusted-ca-file=/keys/ca.pem
-      --cert-file=/keys/server.pem
-      --key-file=/keys/server-key.pem
+      --cert-file=/keys/etcdserver.pem
+      --key-file=/keys/etcdserver-key.pem
       --peer-client-cert-auth
       --peer-trusted-ca-file=/keys/ca.pem
-      --peer-cert-file=/keys/member1.pem
-      --peer-key-file=/keys/member1-key.pem
+      --peer-cert-file=/keys/etcdpeer0.pem
+      --peer-key-file=/keys/etcdpeer0-key.pem
       --advertise-client-urls https://etcd3:2379,https://etcd3:4001
       --listen-client-urls https://0.0.0.0:2379,https://0.0.0.0:4001
       --initial-advertise-peer-urls https://etcd3:2380
@@ -38,7 +38,7 @@ services:
     build:
       context: ../../
       dockerfile: build/build-image/Dockerfile
-    image: bjjyd/vpskeeper
+    image: dockerhub.bj-jyd.cn/library/vpskeeper
     restart: always
     container_name: vpskeeper
     env_file:

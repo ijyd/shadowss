@@ -11,7 +11,11 @@ docker build --rm -t bjjyd/vpskeeper -f Dockerfile ../../
 first get hwcode for license
 
 ```
-docker run  -it --privileged -v /dev/mem:/dev/mem bjjyd/vpskeeper /go/bin/vpslicense gencode
+docker run  --rm -i --privileged -v /dev/mem:/dev/mem dockerhub.bj-jyd.cn/library/vpskeeper /go/bin/vpslicense gencode
+```
+
+```
+./licenseX86 VPSKeeper --hwcode  04022698e1087a6aa6c05150f0cc8608
 ```
 
 

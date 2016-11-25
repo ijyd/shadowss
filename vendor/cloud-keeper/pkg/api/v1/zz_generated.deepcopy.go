@@ -11,8 +11,6 @@ package v1
 import (
 	unversioned "gofreezer/pkg/api/unversioned"
 	conversion "gofreezer/pkg/conversion"
-	fields "gofreezer/pkg/fields"
-	labels "gofreezer/pkg/labels"
 	runtime "gofreezer/pkg/runtime"
 	types "gofreezer/pkg/types"
 	reflect "reflect"
@@ -48,6 +46,7 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINode, InType: reflect.TypeOf(&ActiveAPINode{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINodeList, InType: reflect.TypeOf(&ActiveAPINodeList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINodeSpec, InType: reflect.TypeOf(&ActiveAPINodeSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BindingNodes, InType: reflect.TypeOf(&BindingNodes{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DGAccountInfo, InType: reflect.TypeOf(&DGAccountInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DGServerInfo, InType: reflect.TypeOf(&DGServerInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DeleteOptions, InType: reflect.TypeOf(&DeleteOptions{})},
@@ -80,6 +79,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserPublicFileSpec, InType: reflect.TypeOf(&UserPublicFileSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserReferences, InType: reflect.TypeOf(&UserReferences{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserService, InType: reflect.TypeOf(&UserService{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserServiceBindingNodes, InType: reflect.TypeOf(&UserServiceBindingNodes{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserServiceBindingNodesSpec, InType: reflect.TypeOf(&UserServiceBindingNodesSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserServiceList, InType: reflect.TypeOf(&UserServiceList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserServiceSpec, InType: reflect.TypeOf(&UserServiceSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserSpec, InType: reflect.TypeOf(&UserSpec{})},
@@ -472,6 +473,25 @@ func DeepCopy_v1_ActiveAPINodeSpec(in interface{}, out interface{}, c *conversio
 	}
 }
 
+func DeepCopy_v1_BindingNodes(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BindingNodes)
+		out := out.(*BindingNodes)
+		if in.Nodes != nil {
+			in, out := &in.Nodes, &out.Nodes
+			*out = make(map[string]NodeReferences)
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		} else {
+			out.Nodes = nil
+		}
+		out.NodeCnt = in.NodeCnt
+		out.Status = in.Status
+		return nil
+	}
+}
+
 func DeepCopy_v1_DGAccountInfo(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*DGAccountInfo)
@@ -495,6 +515,8 @@ func DeepCopy_v1_DGServerInfo(in interface{}, out interface{}, c *conversion.Clo
 		out.IPV4Addr = in.IPV4Addr
 		out.IPV4NetMask = in.IPV4NetMask
 		out.IPV4Gateway = in.IPV4Gateway
+		out.PriceMonthly = in.PriceMonthly
+		out.PriceHourly = in.PriceHourly
 		return nil
 	}
 }
@@ -548,20 +570,8 @@ func DeepCopy_v1_ListOptions(in interface{}, out interface{}, c *conversion.Clon
 		in := in.(*ListOptions)
 		out := out.(*ListOptions)
 		out.TypeMeta = in.TypeMeta
-		if in.LabelSelector == nil {
-			out.LabelSelector = nil
-		} else if newVal, err := c.DeepCopy(&in.LabelSelector); err != nil {
-			return err
-		} else {
-			out.LabelSelector = *newVal.(*labels.Selector)
-		}
-		if in.FieldSelector == nil {
-			out.FieldSelector = nil
-		} else if newVal, err := c.DeepCopy(&in.FieldSelector); err != nil {
-			return err
-		} else {
-			out.FieldSelector = *newVal.(*fields.Selector)
-		}
+		out.LabelSelector = in.LabelSelector
+		out.FieldSelector = in.FieldSelector
 		out.Watch = in.Watch
 		out.ResourceVersion = in.ResourceVersion
 		if in.TimeoutSeconds != nil {
@@ -571,6 +581,7 @@ func DeepCopy_v1_ListOptions(in interface{}, out interface{}, c *conversion.Clon
 		} else {
 			out.TimeoutSeconds = nil
 		}
+		out.PageSelector = in.PageSelector
 		return nil
 	}
 }
@@ -778,13 +789,9 @@ func DeepCopy_v1_NodeSpec(in interface{}, out interface{}, c *conversion.Cloner)
 		out.Server = in.Server
 		if in.Users != nil {
 			in, out := &in.Users, &out.Users
-			*out = make(map[string]NodeUser)
+			*out = make(map[string]NodeUserSpec)
 			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*NodeUser)
-				}
+				(*out)[key] = val
 			}
 		} else {
 			out.Users = nil
@@ -1102,11 +1109,45 @@ func DeepCopy_v1_UserService(in interface{}, out interface{}, c *conversion.Clon
 		} else {
 			out.ObjectMeta = *newVal.(*ObjectMeta)
 		}
+		out.Spec = in.Spec
+		return nil
+	}
+}
+
+func DeepCopy_v1_UserServiceBindingNodes(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*UserServiceBindingNodes)
+		out := out.(*UserServiceBindingNodes)
+		out.TypeMeta = in.TypeMeta
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
+			return err
+		} else {
+			out.ObjectMeta = *newVal.(*ObjectMeta)
+		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
 		} else {
-			out.Spec = *newVal.(*UserServiceSpec)
+			out.Spec = *newVal.(*UserServiceBindingNodesSpec)
 		}
+		return nil
+	}
+}
+
+func DeepCopy_v1_UserServiceBindingNodesSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*UserServiceBindingNodesSpec)
+		out := out.(*UserServiceBindingNodesSpec)
+		if in.NodeUserReference != nil {
+			in, out := &in.NodeUserReference, &out.NodeUserReference
+			*out = make(map[string]NodeReferences)
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		} else {
+			out.NodeUserReference = nil
+		}
+		out.NodeCnt = in.NodeCnt
+		out.Status = in.Status
 		return nil
 	}
 }
@@ -1138,17 +1179,10 @@ func DeepCopy_v1_UserServiceSpec(in interface{}, out interface{}, c *conversion.
 	{
 		in := in.(*UserServiceSpec)
 		out := out.(*UserServiceSpec)
-		if in.Nodes != nil {
-			in, out := &in.Nodes, &out.Nodes
-			*out = make(map[string]NodeReferences)
-			for key, val := range *in {
-				(*out)[key] = val
-			}
-		} else {
-			out.Nodes = nil
-		}
-		out.NodeCnt = in.NodeCnt
-		out.Status = in.Status
+		out.NodeName = in.NodeName
+		out.Host = in.Host
+		out.UserRefer = in.UserRefer
+		out.Delete = in.Delete
 		return nil
 	}
 }
@@ -1161,6 +1195,11 @@ func DeepCopy_v1_UserSpec(in interface{}, out interface{}, c *conversion.Cloner)
 			return err
 		} else {
 			out.DetailInfo = *newVal.(*UserInfo)
+		}
+		if newVal, err := c.DeepCopy(&in.UserService); err != nil {
+			return err
+		} else {
+			out.UserService = *newVal.(*BindingNodes)
 		}
 		return nil
 	}
@@ -1246,6 +1285,9 @@ func DeepCopy_v1_VultrServerInfo(in interface{}, out interface{}, c *conversion.
 		out.IPV4NetMask = in.IPV4NetMask
 		out.IPV4Gateway = in.IPV4Gateway
 		out.PendingCharges = in.PendingCharges
+		out.CostPerMonth = in.CostPerMonth
+		out.AllowedBandWidth = in.AllowedBandWidth
+		out.CurrentBandwidth = in.CurrentBandwidth
 		return nil
 	}
 }

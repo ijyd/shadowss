@@ -1,12 +1,14 @@
 package mysql
 
 import (
-	"context"
 	"database/sql"
 	stderrs "errors"
 	"reflect"
 	"strings"
 
+	"golang.org/x/net/context"
+
+	"gofreezer/pkg/api/meta"
 	"gofreezer/pkg/runtime"
 
 	"github.com/golang/glog"
@@ -36,12 +38,12 @@ func ScanRows(rows *sql.Rows, t *Table, obj runtime.Object) ([]*RowResult, error
 		}
 		glog.V(9).Infof("scan rows result table obj %+v\r\n", tableObj)
 
-		itme := &RowResult{}
-		err = t.CovertRowsToObject(itme, obj, tableObj)
+		item := &RowResult{}
+		err = t.CovertRowsToObject(item, obj, tableObj)
 		if err != nil {
 			return nil, err
 		}
-		listObj = append(listObj, itme)
+		listObj = append(listObj, item)
 	}
 
 	return listObj, nil
@@ -64,4 +66,14 @@ func WithTable(parent context.Context, val interface{}) context.Context {
 		panic(stderrs.New("Invalid context type"))
 	}
 	return context.WithValue(internalCtx, tablecontextKey, val)
+}
+
+// UpdateNameWithResouceKey implements metadata.name
+func UpdateNameWithResouceKey(obj runtime.Object, name string) error {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return err
+	}
+	accessor.SetName(name)
+	return nil
 }

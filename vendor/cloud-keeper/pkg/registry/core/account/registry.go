@@ -6,6 +6,8 @@ import (
 	"cloud-keeper/pkg/collector/collectorbackend"
 	"cloud-keeper/pkg/collector/collectorbackend/factory"
 
+	"github.com/golang/glog"
+
 	"fmt"
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/api/errors"
@@ -76,11 +78,15 @@ func (s *storage) DeleteAccount(ctx freezerapi.Context, name string) error {
 
 func (s *storage) GetCloudProvider(ctx freezerapi.Context, name string) (collector.Collector, error) {
 
+	glog.Infof("Get cloud provider %s\r\n", name)
 	collectorHandler, ok := s.collectors[name]
 	if ok {
 		return collectorHandler, nil
 	} else {
 		acc, err := s.GetAccount(ctx, name)
+		if err != nil {
+			return nil, err
+		}
 
 		cfg := collectorbackend.Config{
 			Type:   string(acc.Spec.AccDetail.Operators),

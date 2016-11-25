@@ -1,8 +1,8 @@
-hash: 9377188813f27e51cbe35d14e406cca52509f72ef8bbbfe4dbdde8e3f6eb5667
-updated: 2016-11-16T19:58:24.767476223+08:00
+hash: ee1412009871bfd582e50112c3e5a718327b8ad73337e6041796be3cc335dc2f
+updated: 2016-11-23T11:51:17.108626917+08:00
 imports:
 - name: apistack
-  version: e19438580f4a5a42e9015f50483981e7fdec8d72
+  version: dbd8d913717c23c49c8bcf5834cb4f76e3c81c94
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
   subpackages:
   - pkg/admission
@@ -44,6 +44,7 @@ imports:
   - pkg/probe/http
   - pkg/registry/generic
   - pkg/registry/generic/registry
+  - pkg/registry/generic/registry/dynamodbs
   - pkg/registry/generic/registry/etcds
   - pkg/registry/generic/registry/mysqls
   - pkg/serviceaccount
@@ -69,7 +70,7 @@ imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/aws/aws-sdk-go
-  version: 55795bd6e929e8721681ab89f5eebd8944162618
+  version: 92ed7a76d078fc5b792a3b5c834274c8dc89d10a
   subpackages:
   - aws
   - aws/awserr
@@ -119,7 +120,7 @@ imports:
   - pkg/transport
   - pkg/types
 - name: github.com/coreos/go-oidc
-  version: 16c5ecc505f1efa0fe4685826fd9962c4d137e87
+  version: 5a7f09ab5787e846efa7f56f4a08b6d6926d08c4
   subpackages:
   - http
   - jose
@@ -157,13 +158,13 @@ imports:
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
-  version: 6e4869b434bd001f6983749881c7ead3545887d8
+  version: 2ba15ac2dc9cdf88c110ec2dc0ced7fa45f5678c
 - name: github.com/go-openapi/jsonpointer
   version: 8d96a2dc61536b690bd36b2e9df0b3c0b62825b2
 - name: github.com/go-openapi/jsonreference
   version: 36d33bfe519efae5632669801b180bf1a245da3b
 - name: github.com/go-openapi/spec
-  version: d1c18b339aece4b16ead6d253b85b6ad7180ea54
+  version: f7ae86df5bc115a2744343016c789a89f065a4bd
 - name: github.com/go-openapi/swag
   version: 3b6d86cd965820f968760d5d419cb4add096bdd7
 - name: github.com/go-sql-driver/mysql
@@ -189,7 +190,7 @@ imports:
   subpackages:
   - query
 - name: github.com/google/gofuzz
-  version: fd52762d25a41827db7ef64c43756fd4b9f7e382
+  version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/grpc-ecosystem/grpc-gateway
   version: f52d055dc48aec25854ed7d31862f78913cf17d1
   subpackages:
@@ -261,7 +262,7 @@ imports:
   subpackages:
   - codec
 - name: gofreezer
-  version: cdae0294bf6c4bf50affa6e0b84a8129cbe084bb
+  version: e7113f3a8d271f5b4f0167cac8dfdba649244fda
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -368,7 +369,7 @@ imports:
   subpackages:
   - internal
 - name: golang.org/x/text
-  version: a263ba8db058568bb9beba166777d9c9dbe75d68
+  version: b01949dc0793a9af5e4cb3fce4d42999e76e8ca1
   subpackages:
   - transform
   - unicode/norm
@@ -381,6 +382,7 @@ imports:
   - pkg/storage/storagebackend
   - pkg/storage/storagebackend/factory
   - pkg/util/cache
+  - pkg/util/crypto
   - pkg/util/exec
   - pkg/util/flag
   - pkg/util/network
@@ -420,7 +422,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 - name: k8s.io/gengo
-  version: 2a08ddc5b82ac30d203c58a2f36897d2a7facd14
+  version: 1408ff498e5d40a6dde29ece12ae36a1982fd697
   subpackages:
   - args
   - examples/defaulter-gen/generators

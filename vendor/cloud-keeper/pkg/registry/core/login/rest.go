@@ -70,6 +70,7 @@ func (r *REST) Create(ctx freezerapi.Context, obj runtime.Object) (runtime.Objec
 	}
 	login.Spec.Token = newToken.Spec.Token
 	login.Spec.Auth = ""
+	login.Spec.AuthID = fmt.Sprintf("%d", user.Spec.DetailInfo.ID)
 
 	return login, err
 }

@@ -22,20 +22,20 @@ var (
 )
 
 func init() {
-	prototype.InitInternalAPI(Unversioned)
+	prototype.InitInternalAPI(Unversioned, Scheme)
 }
 
 // AddToScheme applies all the stored functions to the scheme.
 // this schem in prototype package
 func AddALLToScheme() error {
 	//add prototype scheme
-	if err := prototype.AddToScheme(prototype.Scheme); err != nil {
+	if err := prototype.AddToScheme(Scheme); err != nil {
 		// Programmer error, detect immediately
 		panic(err)
 	}
 
 	//add customes scheme
-	if err := SchemeBuilder.AddToScheme(prototype.Scheme); err != nil {
+	if err := SchemeBuilder.AddToScheme(Scheme); err != nil {
 		// Programmer error, detect immediately
 		panic(err)
 	}
@@ -53,6 +53,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&APIServerList{},
 		&UserService{},
 		&UserServiceList{},
+		&UserServiceBindingNodes{},
 		&Login{},
 		&LoginList{},
 		&AccServer{},

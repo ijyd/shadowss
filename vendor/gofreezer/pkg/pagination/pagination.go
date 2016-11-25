@@ -191,6 +191,13 @@ func try(pagination, op string) (lhs, rhs string, ok bool) {
 	return "", "", false
 }
 
+func SelectorFromSet(page, perPage uint64) Pager {
+	return &hasPage{
+		itemTotal:         0,
+		requirePagination: [...]uint64{page, perPage},
+	}
+}
+
 //parsePagination accept format like : "page=1,perPage=10"
 func parsePagination(pagination string) (Pager, error) {
 	parts := strings.Split(pagination, ",")

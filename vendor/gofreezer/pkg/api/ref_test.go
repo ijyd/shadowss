@@ -16,121 +16,121 @@ limitations under the License.
 
 package api
 
-import (
-	"reflect"
-	"testing"
-
-	"gofreezer/pkg/api/unversioned"
-	"gofreezer/pkg/runtime"
-)
-
-type FakeAPIObject struct{}
-
-func (obj *FakeAPIObject) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
-
-type ExtensionAPIObject struct {
-	unversioned.TypeMeta
-	ObjectMeta
-}
-
-func (obj *ExtensionAPIObject) GetObjectKind() unversioned.ObjectKind { return &obj.TypeMeta }
-
-func TestGetReference(t *testing.T) {
-
-	// when vendoring kube, if you don't force the set of registered versions (like make test does)
-	// then you run into trouble because the types aren't registered in the scheme by anything.  This does the
-	// register manually to allow unit test execution
-	if _, _, err := Scheme.ObjectKinds(&Pod{}); err != nil {
-		AddToScheme(Scheme)
-	}
-
-	table := map[string]struct {
-		obj       runtime.Object
-		ref       *ObjectReference
-		fieldPath string
-		shouldErr bool
-	}{
-		"pod": {
-			obj: &Pod{
-				ObjectMeta: ObjectMeta{
-					Name:            "foo",
-					UID:             "bar",
-					ResourceVersion: "42",
-					SelfLink:        "/api/version1/pods/foo",
-				},
-			},
-			fieldPath: ".desiredState.containers[0]",
-			ref: &ObjectReference{
-				Kind:            "Pod",
-				APIVersion:      "version1",
-				Name:            "foo",
-				UID:             "bar",
-				ResourceVersion: "42",
-				FieldPath:       ".desiredState.containers[0]",
-			},
-		},
-		"serviceList": {
-			obj: &ServiceList{
-				ListMeta: unversioned.ListMeta{
-					ResourceVersion: "42",
-					SelfLink:        "/api/version2/services",
-				},
-			},
-			ref: &ObjectReference{
-				Kind:            "ServiceList",
-				APIVersion:      "version2",
-				ResourceVersion: "42",
-			},
-		},
-		"extensionAPIObject": {
-			obj: &ExtensionAPIObject{
-				TypeMeta: unversioned.TypeMeta{
-					Kind: "ExtensionAPIObject",
-				},
-				ObjectMeta: ObjectMeta{
-					Name:            "foo",
-					UID:             "bar",
-					ResourceVersion: "42",
-					SelfLink:        "/custom_prefix/version1/extensions/foo",
-				},
-			},
-			ref: &ObjectReference{
-				Kind:            "ExtensionAPIObject",
-				APIVersion:      "version1",
-				Name:            "foo",
-				UID:             "bar",
-				ResourceVersion: "42",
-			},
-		},
-		"badSelfLink": {
-			obj: &ServiceList{
-				ListMeta: unversioned.ListMeta{
-					ResourceVersion: "42",
-					SelfLink:        "version2/services",
-				},
-			},
-			shouldErr: true,
-		},
-		"error": {
-			obj:       &FakeAPIObject{},
-			ref:       nil,
-			shouldErr: true,
-		},
-		"errorNil": {
-			obj:       nil,
-			ref:       nil,
-			shouldErr: true,
-		},
-	}
-
-	for name, item := range table {
-		ref, err := GetPartialReference(item.obj, item.fieldPath)
-		if e, a := item.shouldErr, (err != nil); e != a {
-			t.Errorf("%v: expected %v, got %v, err %v", name, e, a, err)
-			continue
-		}
-		if e, a := item.ref, ref; !reflect.DeepEqual(e, a) {
-			t.Errorf("%v: expected %#v, got %#v", name, e, a)
-		}
-	}
-}
+// import (
+// 	"reflect"
+// 	"testing"
+//
+// 	"gofreezer/pkg/api/unversioned"
+// 	"gofreezer/pkg/runtime"
+// )
+//
+// type FakeAPIObject struct{}
+//
+// func (obj *FakeAPIObject) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+//
+// type ExtensionAPIObject struct {
+// 	unversioned.TypeMeta
+// 	ObjectMeta
+// }
+//
+// func (obj *ExtensionAPIObject) GetObjectKind() unversioned.ObjectKind { return &obj.TypeMeta }
+//
+// func TestGetReference(t *testing.T) {
+//
+// 	// when vendoring kube, if you don't force the set of registered versions (like make test does)
+// 	// then you run into trouble because the types aren't registered in the scheme by anything.  This does the
+// 	// register manually to allow unit test execution
+// 	if _, _, err := Scheme.ObjectKinds(&Pod{}); err != nil {
+// 		AddToScheme(Scheme)
+// 	}
+//
+// 	table := map[string]struct {
+// 		obj       runtime.Object
+// 		ref       *ObjectReference
+// 		fieldPath string
+// 		shouldErr bool
+// 	}{
+// 		"pod": {
+// 			obj: &Pod{
+// 				ObjectMeta: ObjectMeta{
+// 					Name:            "foo",
+// 					UID:             "bar",
+// 					ResourceVersion: "42",
+// 					SelfLink:        "/api/version1/pods/foo",
+// 				},
+// 			},
+// 			fieldPath: ".desiredState.containers[0]",
+// 			ref: &ObjectReference{
+// 				Kind:            "Pod",
+// 				APIVersion:      "version1",
+// 				Name:            "foo",
+// 				UID:             "bar",
+// 				ResourceVersion: "42",
+// 				FieldPath:       ".desiredState.containers[0]",
+// 			},
+// 		},
+// 		"serviceList": {
+// 			obj: &ServiceList{
+// 				ListMeta: unversioned.ListMeta{
+// 					ResourceVersion: "42",
+// 					SelfLink:        "/api/version2/services",
+// 				},
+// 			},
+// 			ref: &ObjectReference{
+// 				Kind:            "ServiceList",
+// 				APIVersion:      "version2",
+// 				ResourceVersion: "42",
+// 			},
+// 		},
+// 		"extensionAPIObject": {
+// 			obj: &ExtensionAPIObject{
+// 				TypeMeta: unversioned.TypeMeta{
+// 					Kind: "ExtensionAPIObject",
+// 				},
+// 				ObjectMeta: ObjectMeta{
+// 					Name:            "foo",
+// 					UID:             "bar",
+// 					ResourceVersion: "42",
+// 					SelfLink:        "/custom_prefix/version1/extensions/foo",
+// 				},
+// 			},
+// 			ref: &ObjectReference{
+// 				Kind:            "ExtensionAPIObject",
+// 				APIVersion:      "version1",
+// 				Name:            "foo",
+// 				UID:             "bar",
+// 				ResourceVersion: "42",
+// 			},
+// 		},
+// 		"badSelfLink": {
+// 			obj: &ServiceList{
+// 				ListMeta: unversioned.ListMeta{
+// 					ResourceVersion: "42",
+// 					SelfLink:        "version2/services",
+// 				},
+// 			},
+// 			shouldErr: true,
+// 		},
+// 		"error": {
+// 			obj:       &FakeAPIObject{},
+// 			ref:       nil,
+// 			shouldErr: true,
+// 		},
+// 		"errorNil": {
+// 			obj:       nil,
+// 			ref:       nil,
+// 			shouldErr: true,
+// 		},
+// 	}
+//
+// 	for name, item := range table {
+// 		ref, err := GetPartialReference(item.obj, item.fieldPath)
+// 		if e, a := item.shouldErr, (err != nil); e != a {
+// 			t.Errorf("%v: expected %v, got %v, err %v", name, e, a, err)
+// 			continue
+// 		}
+// 		if e, a := item.ref, ref; !reflect.DeepEqual(e, a) {
+// 			t.Errorf("%v: expected %#v, got %#v", name, e, a)
+// 		}
+// 	}
+// }

@@ -4,6 +4,7 @@ import (
 	"cloud-keeper/pkg/api"
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/api/rest"
+	"gofreezer/pkg/labels"
 )
 
 // Registry is an interface for things that know how to store node.
@@ -46,6 +47,10 @@ func (s *storage) UpdateNode(ctx freezerapi.Context, name string, objInfo rest.U
 
 func (s *storage) GetAPINodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error) {
 	options = &freezerapi.ListOptions{}
+	ls := labels.Set(map[string]string{
+		api.NodeLablesUserSpace: api.NodeUserSpaceAPI,
+	})
+	options.LabelSelector = labels.SelectorFromSet(ls)
 	obj, err := s.List(ctx, options)
 	if err != nil {
 		return nil, err

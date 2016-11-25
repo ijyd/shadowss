@@ -11,9 +11,10 @@ import (
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/registry/core/node"
 	"cloud-keeper/pkg/registry/core/nodeuser"
-	"cloud-keeper/pkg/registry/core/userservice"
+	"cloud-keeper/pkg/registry/core/user"
 
 	freezerapi "gofreezer/pkg/api"
+	"gofreezer/pkg/api/errors"
 	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/watch"
@@ -23,8 +24,8 @@ import (
 type REST struct {
 	store *etcdregistry.Store
 
-	userService  userservice.Registry
 	nodeRegistry node.Registry
+	user         user.Registry
 }
 
 // NewREST returns a RESTStorage object that will work with testtype.
@@ -69,26 +70,19 @@ func NewREST(opts generic.RESTOptions) *REST {
 	}
 }
 
-func (r *REST) SetRequireRegistry(userSrvReg userservice.Registry, nodeReg node.Registry) {
-	r.userService = userSrvReg
+func (r *REST) SetRequireRegistry(nodeReg node.Registry, user user.Registry) {
+	r.user = user
 	r.nodeRegistry = nodeReg
+
 }
 
 func (*REST) New() runtime.Object {
 	return &api.NodeUser{}
 }
 
-// func (*REST) NewList() runtime.Object {
-// 	return &api.NodeUserList{}
-// }
-
-// func (r *REST) Delete(ctx freezerapi.Context, name string, options *freezerapi.DeleteOptions) (runtime.Object, error) {
-// 	return r.store.Delete(ctx, name, options)
-// }
-//
-// func (r *REST) Create(ctx freezerapi.Context, obj runtime.Object) (runtime.Object, error) {
-// 	return r.store.Create(ctx, obj)
-// }
+func (*REST) NewList() runtime.Object {
+	return &api.NodeUserList{}
+}
 
 func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
 
@@ -97,27 +91,26 @@ func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedO
 		return nil, false, err
 	}
 
-	user := obj.(*api.NodeUser)
-	nodename := user.Spec.NodeName
+	nodeuser := obj.(*api.NodeUser)
+	nodename := nodeuser.Spec.NodeName
 	node, err := r.nodeRegistry.GetNode(ctx, nodename)
-
-	glog.V(5).Infof("update node user %v \r\n", *node)
-
-	switch user.Spec.Phase {
+	userName := nodeuser.Spec.User.Name
+	glog.V(5).Infof("update node user %+v \r\n", *node)
+	switch nodeuser.Spec.Phase {
 	case api.NodeUserPhaseAdd:
-		glog.V(5).Infof("add node user %v \r\n", *user)
-		node.Spec.Users[user.Name] = *user
+		glog.V(5).Infof("add node user %v \r\n", *nodeuser)
+		node.Spec.Users[userName] = nodeuser.Spec
 	case api.NodeUserPhaseDelete:
-		glog.V(5).Infof("delete node user %v \r\n", user)
-		delete(node.Spec.Users, user.Name)
+		glog.V(5).Infof("delete node user %v \r\n", *nodeuser)
+		delete(node.Spec.Users, userName)
 	case api.NodeUserPhaseUpdate:
-		glog.V(5).Infof("update node user %v \r\n", user)
-		user := &api.UserService{}
-		err = r.userService.UpdateUserServiceByNodeUser(ctx, user)
+		glog.V(5).Infof("update node user %v \r\n", *nodeuser)
+		err = r.user.UpdateUserByNodeUser(ctx, nodeuser)
 		if err != nil {
 			return nil, false, err
 		}
-		return obj, true, nil
+		glog.V(5).Infof("update node user done \r\n")
+		node.Spec.Users[userName] = nodeuser.Spec
 	}
 
 	_, _, err = r.nodeRegistry.UpdateNode(ctx, nodename, rest.DefaultUpdatedObjectInfo(node, api.Scheme))
@@ -126,6 +119,30 @@ func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedO
 	}
 
 	return obj, true, nil
+}
+
+func (r *REST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
+	if name, ok := options.FieldSelector.RequiresExactMatch("metadata.name"); ok {
+		node, err := r.nodeRegistry.GetNode(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeUserList := &api.NodeUserList{}
+		for _, v := range node.Spec.Users {
+			nodeUser := api.NodeUser{}
+			nodeUser.Name = v.User.Name
+			nodeUser.Spec.NodeName = v.NodeName
+			nodeUser.Spec.User = v.User
+			nodeUser.Spec.Phase = v.Phase
+			nodeUserList.Items = append(nodeUserList.Items, nodeUser)
+		}
+
+		return nodeUserList, nil
+	} else {
+		return nil, errors.NewBadRequest("need a 'metadata.name' filed selector")
+	}
+
 }
 
 func (r *REST) Watch(ctx freezerapi.Context, options *freezerapi.ListOptions) (watch.Interface, error) {

@@ -69,8 +69,11 @@ type MongoExtendConfig struct {
 }
 
 type AWSDynamoDBConfig struct {
-	Region string
-	Table  string
+	Region    string
+	Table     string
+	AccessKey string
+	AccessID  string
+	Token     string
 }
 
 type MysqlConfig struct {

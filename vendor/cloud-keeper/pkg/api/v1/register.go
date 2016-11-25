@@ -13,7 +13,7 @@ const GroupName = ""
 var SchemeGroupVersion = unversioned.GroupVersion{Group: GroupName, Version: "v1"}
 
 var (
-	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes)
+	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, addConversionFuncs)
 	AddToScheme   = SchemeBuilder.AddToScheme
 )
 
@@ -28,6 +28,7 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&APIServerList{},
 		&UserService{},
 		&UserServiceList{},
+		&UserServiceBindingNodes{},
 		&Login{},
 		&LoginList{},
 		&AccServer{},

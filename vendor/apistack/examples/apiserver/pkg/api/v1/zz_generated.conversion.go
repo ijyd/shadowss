@@ -14,6 +14,8 @@ import (
 	conversion "gofreezer/pkg/conversion"
 	runtime "gofreezer/pkg/runtime"
 	types "gofreezer/pkg/types"
+
+	"github.com/golang/glog"
 )
 
 func init() {
@@ -139,48 +141,54 @@ func Convert_api_ExportOptions_To_v1_ExportOptions(in *api.ExportOptions, out *E
 	return autoConvert_api_ExportOptions_To_v1_ExportOptions(in, out, s)
 }
 
-func autoConvert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *api.ListOptions, s conversion.Scope) error {
-	if err := api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.LabelSelector, &out.LabelSelector, 0); err != nil {
-		return err
-	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.FieldSelector, &out.FieldSelector, 0); err != nil {
-		return err
-	}
-	out.Watch = in.Watch
-	out.ResourceVersion = in.ResourceVersion
-	out.TimeoutSeconds = in.TimeoutSeconds
-	return nil
-}
-
 func Convert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *api.ListOptions, s conversion.Scope) error {
 	return autoConvert_v1_ListOptions_To_api_ListOptions(in, out, s)
 }
 
-func autoConvert_api_ListOptions_To_v1_ListOptions(in *api.ListOptions, out *ListOptions, s conversion.Scope) error {
+func autoConvert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *api.ListOptions, s conversion.Scope) error {
+	glog.Infof("v1 list to api list")
 	if err := api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.LabelSelector, &out.LabelSelector, 0); err != nil {
+	if err := api.Convert_string_To_labels_Selector(&in.LabelSelector, &out.LabelSelector, s); err != nil {
 		return err
 	}
-	// TODO: Inefficient conversion - can we improve it?
-	if err := s.Convert(&in.FieldSelector, &out.FieldSelector, 0); err != nil {
+	if err := api.Convert_string_To_fields_Selector(&in.FieldSelector, &out.FieldSelector, s); err != nil {
+		return err
+	}
+	if err := api.Convert_string_To_page_Selector(&in.PageSelector, &out.PageSelector, s); err != nil {
 		return err
 	}
 	out.Watch = in.Watch
 	out.ResourceVersion = in.ResourceVersion
 	out.TimeoutSeconds = in.TimeoutSeconds
+	// WARNING: in.PaginationPager requires manual conversion: inconvertible types (string vs invalid type)
 	return nil
 }
 
 func Convert_api_ListOptions_To_v1_ListOptions(in *api.ListOptions, out *ListOptions, s conversion.Scope) error {
 	return autoConvert_api_ListOptions_To_v1_ListOptions(in, out, s)
+}
+
+func autoConvert_api_ListOptions_To_v1_ListOptions(in *api.ListOptions, out *ListOptions, s conversion.Scope) error {
+	glog.Infof("api list to v1 list")
+	if err := api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
+		return err
+	}
+	if err := api.Convert_labels_Selector_To_string(&in.LabelSelector, &out.LabelSelector, s); err != nil {
+		return err
+	}
+	if err := api.Convert_fields_Selector_To_string(&in.FieldSelector, &out.FieldSelector, s); err != nil {
+		return err
+	}
+	if err := api.Convert_page_Selector_To_string(&in.PageSelector, &out.PageSelector, s); err != nil {
+		return err
+	}
+	out.Watch = in.Watch
+	out.ResourceVersion = in.ResourceVersion
+	out.TimeoutSeconds = in.TimeoutSeconds
+	// WARNING: in.PaginationPager requires manual conversion: inconvertible types (invalid type vs string)
+	return nil
 }
 
 func autoConvert_v1_Login_To_api_Login(in *Login, out *pkg_api.Login, s conversion.Scope) error {

@@ -33,6 +33,7 @@ import (
 	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/fields"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/util"
 	utilruntime "gofreezer/pkg/util/runtime"
@@ -192,7 +193,7 @@ func ConnectResource(connecter rest.Connecter, scope RequestScope, admit admissi
 			scope.err(err, res.ResponseWriter, req.Request)
 			return
 		}
-		if admit.Handles(admission.Connect) {
+		if admit != nil && admit.Handles(admission.Connect) {
 			connectRequest := &rest.ConnectRequest{
 				Name:         name,
 				Options:      opts,
@@ -292,6 +293,11 @@ func ListResource(r rest.Lister, rw rest.Watcher, scope RequestScope, forceWatch
 			opts.FieldSelector = nameSelector
 		}
 
+		hasPager := false
+		if opts.PageSelector != nil && !opts.PageSelector.Empty() {
+			hasPager = true
+		}
+
 		if (opts.Watch || forceWatch) && rw != nil {
 			watcher, err := rw.Watch(ctx, &opts)
 			if err != nil {
@@ -325,6 +331,30 @@ func ListResource(r rest.Lister, rw rest.Watcher, scope RequestScope, forceWatch
 			return
 		}
 		trace.Step("Self-linking done")
+		if hasPager {
+			var pagelink string
+			// TODO: List SelfLink generation should return a full URL?
+			path, query, err := scope.Namer.GenerateListLink(req)
+			if err != nil {
+				scope.err(err, res.ResponseWriter, req.Request)
+				return
+			}
+			newURL := *req.Request.URL
+			newURL.Path = path
+			newURL.RawQuery = query
+			// use the path that got us here
+			newURL.Fragment = ""
+			baseLink := newURL.String()
+			if pagelink, err = pagination.BuildDefPageLink(opts.PageSelector, baseLink); err != nil {
+				scope.err(err, res.ResponseWriter, req.Request)
+				return
+			}
+			if len(pagelink) > 0 {
+				w.Header().Set("Link", pagelink)
+			}
+		}
+		trace.Step("Link done")
+
 		write(http.StatusOK, scope.Kind.GroupVersion(), scope.Serializer, result, w, req.Request)
 		trace.Step(fmt.Sprintf("Writing http response done (%d items)", numberOfItems))
 	}

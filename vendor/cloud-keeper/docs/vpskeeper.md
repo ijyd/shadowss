@@ -22,5 +22,5 @@ sudo ./vpskeeper --alsologtostderr=true -v=6  --insecure-port=18088  --swagger-p
 3.0
 
 ```
-sudo ./vpskeeper --alsologtostderr=true -v=6  --secure-port=18090 --insecure-port=18091 --etcd-servers="192.168.60.100:2379" --etcd-certfile="/home/seanchann/bin/etcd/files/client.pem" --etcd-keyfile="/home/seanchann/bin/etcd/files/client-key.pem" --etcd-cafile="/home/seanchann/bin/etcd/files/ca.pem"  --bind-address=192.168.60.128 --advertise-address=192.168.60.128 --enable-swagger-ui --service-cluster-ip-range=192.168.60.0/24 --mysql-servers="sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel"  --anonymous-auth=false
+sudo ./vpskeeper --alsologtostderr=true -v=9  --secure-port=18090 --insecure-port=18091 --etcd-servers="192.168.60.128:2379" --etcd-certfile="/home/seanchann/bin/etcd/auth/etcdclient.pem" --etcd-keyfile="/home/seanchann/bin/etcd/auth/etcdclient-key.pem" --etcd-cafile="/home/seanchann/bin/etcd/auth/ca.pem" --enable-swagger-ui  --mysql-servers="sspanel:sspanel@tcp(192.168.60.100:23306)/sspanel"  --aws-region="us-west-2" --aws-table="vpstest" --anonymous-auth=false
 ```

@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"gofreezer/pkg/pagination"
+	"sort"
 	"strconv"
 
 	"cloud-keeper/pkg/ansible"
@@ -26,16 +28,10 @@ func (slice servers) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
-func (c *Client) GetServer(id int) (*api.AccServerSpec, error) {
-	idStr := strconv.FormatInt(int64(id), 10)
-	srv, err := c.vultrClient.GetServer(idStr)
-	if err != nil {
-		return nil, err
-	}
+func (c *Client) newAccserverSpec(srv *lib.Server) *api.AccServer {
+	accsrv := &api.AccServer{}
 
-	accsrv := &api.AccServerSpec{}
-
-	accsrv.Vultr = api.VultrServerInfo{
+	accsrv.Spec.Vultr = api.VultrServerInfo{
 		Location:    srv.Location,
 		Status:      srv.Status,
 		Name:        srv.Name,
@@ -45,83 +41,83 @@ func (c *Client) GetServer(id int) (*api.AccServerSpec, error) {
 		IPV4NetMask: srv.NetmaskV4,
 		IPV4Gateway: srv.GatewayV4,
 
-		PendingCharges: srv.PendingCharges,
+		PendingCharges:   srv.PendingCharges,
+		CostPerMonth:     srv.Cost,
+		AllowedBandWidth: srv.AllowedBandwidth,
+		CurrentBandwidth: srv.CurrentBandwidth,
 	}
+	accsrv.Spec.ID = srv.ID
+	accsrv.Spec.Size = srv.RAM
+
+	return accsrv
+}
+
+func (c *Client) GetServer(id int) (*api.AccServer, error) {
+	idStr := strconv.FormatInt(int64(id), 10)
+	srv, err := c.vultrClient.GetServer(idStr)
+	if err != nil {
+		return nil, err
+	}
+
+	accsrv := c.newAccserverSpec(&srv)
 
 	return accsrv, nil
 }
 
 //GetServers get account server information
-// func (c *Client) GetServers(page pagination.Pager) ([]byte, error) {
-// 	info, err := c.vultrClient.GetServers()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-//
-// 	srvList := api.AccServerList{
-// 		TypeMeta: AccountInfoType,
-// 		ListMeta: unversioned.ListMeta{
-// 			SelfLink: "/api/v1/apiservers",
-// 		},
-// 	}
-//
-// 	var notPage bool
-// 	if page == nil {
-// 		notPage = true
-// 	} else {
-// 		notPage = page.Empty()
-// 	}
-//
-// 	srvs := servers(info)
-// 	sort.Sort(srvs)
-//
-// 	var hasPage bool
-// 	var perPage, skip uint64
-// 	var count int
-// 	if notPage {
-// 		goto AllPage
-// 	} else {
-// 		count = len(info)
-// 		glog.V(5).Infof("Got Total count %v \r\n", count)
-// 		hasPage, perPage, skip = false, 0, 0 //api.PagerToCondition(page, uint64(count))
-// 		glog.V(5).Infof("Got page has %v  perpage %v skip %v\r\n", hasPage, perPage, skip)
-// 		if hasPage {
-// 			goto Pieces
-// 		} else {
-// 			goto AllPage
-// 		}
-// 	}
-//
-// AllPage:
-// 	for _, v := range info {
-// 		information := make(map[string]interface{}, 1)
-// 		information[api.OperatorVultr] = v
-//
-// 		srv := api.AccServer{
-// 			TypeMeta: AccServerType,
-// 			//Information: information,
-// 		}
-// 		srvList.Items = append(srvList.Items, srv)
-// 	}
-// 	goto Out
-//
-// Pieces:
-// 	for index := uint64(0); index < perPage; index++ {
-// 		information := make(map[string]interface{}, 1)
-// 		information[api.OperatorVultr] = info[index+skip]
-//
-// 		srv := api.AccServer{
-// 			TypeMeta: AccServerType,
-// 			//Information: information,
-// 		}
-// 		srvList.Items = append(srvList.Items, srv)
-// 	}
-//
-// 	goto Out
-//
-// Out:
-// 	return json.Marshal(&srvList)
-// }
+func (c *Client) GetServers(page pagination.Pager) ([]api.AccServer, error) {
+	info, err := c.vultrClient.GetServers()
+	if err != nil {
+		return nil, err
+	}
+
+	var srvList []api.AccServer
+
+	var notPage bool
+	if page == nil {
+		notPage = true
+	} else {
+		notPage = page.Empty()
+	}
+
+	srvs := servers(info)
+	sort.Sort(srvs)
+
+	var hasPage bool
+	var perPage, skip uint64
+	var count int
+	if notPage {
+		goto AllPage
+	} else {
+		count = len(info)
+		glog.V(5).Infof("Got Total count %v \r\n", count)
+		hasPage, perPage, skip = false, 0, 0 //api.PagerToCondition(page, uint64(count))
+		glog.V(5).Infof("Got page has %v  perpage %v skip %v\r\n", hasPage, perPage, skip)
+		if hasPage {
+			goto Pieces
+		} else {
+			goto AllPage
+		}
+	}
+
+AllPage:
+	for _, v := range info {
+		accsrv := c.newAccserverSpec(&v)
+		srvList = append(srvList, *accsrv)
+	}
+	goto Out
+
+Pieces:
+	for index := uint64(0); index < perPage; index++ {
+		accsrv := c.newAccserverSpec(&info[index+skip])
+		srvList = append(srvList, *accsrv)
+	}
+
+	goto Out
+
+Out:
+	return srvList, nil
+}
 
 //CreateServer create server
 func (c *Client) CreateServer(server interface{}) error {

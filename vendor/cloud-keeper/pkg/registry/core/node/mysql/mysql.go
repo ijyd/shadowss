@@ -82,7 +82,16 @@ func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedO
 }
 
 func (r *REST) Get(ctx freezerapi.Context, name string) (runtime.Object, error) {
-	return r.store.Get(ctx, name)
+	obj, err := r.store.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+
+	objNode := obj.(*api.Node)
+
+	objNode.Name = objNode.Spec.Server.Name
+
+	return objNode, nil
 }
 
 func (rs *REST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {

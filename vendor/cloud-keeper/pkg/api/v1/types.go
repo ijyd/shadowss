@@ -2,8 +2,6 @@ package v1
 
 import (
 	"gofreezer/pkg/api/unversioned"
-	"gofreezer/pkg/fields"
-	"gofreezer/pkg/labels"
 	"gofreezer/pkg/types"
 	"time"
 )
@@ -270,20 +268,31 @@ type ExportOptions struct {
 type ListOptions struct {
 	unversioned.TypeMeta `json:",inline"`
 
-	// A selector based on labels
-	LabelSelector labels.Selector
-	// A selector based on fields
-	FieldSelector fields.Selector
-	//If true, watch for changes to this list
-	Watch bool
-	// For watch, it's the resource version to watch.
-	// For list,
-	// - if unset, then the result is returned from remote storage based on quorum-read flag;
-	// - if it's 0, then we simply return what we currently have in cache, no guarantee;
-	// - if set to non zero, then the result is as fresh as given rv.
-	ResourceVersion string
+	// A selector to restrict the list of returned objects by their labels.
+	// Defaults to everything.
+	// +optional
+	LabelSelector string `json:"labelSelector,omitempty" protobuf:"bytes,1,opt,name=labelSelector"`
+	// A selector to restrict the list of returned objects by their fields.
+	// Defaults to everything.
+	// +optional
+	FieldSelector string `json:"fieldSelector,omitempty" protobuf:"bytes,2,opt,name=fieldSelector"`
+	// Watch for changes to the described resources and return them as a stream of
+	// add, update, and remove notifications. Specify resourceVersion.
+	// +optional
+	Watch bool `json:"watch,omitempty" protobuf:"varint,3,opt,name=watch"`
+	// When specified with a watch call, shows changes that occur after that particular version of a resource.
+	// Defaults to changes from the beginning of history.
+	// +optional
+	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,4,opt,name=resourceVersion"`
 	// Timeout for the list/watch call.
-	TimeoutSeconds *int64
+	// +optional
+	TimeoutSeconds *int64 `json:"timeoutSeconds,omitempty" protobuf:"varint,5,opt,name=timeoutSeconds"`
+
+	// A selector to restrict the list of returned objects by Pagination.
+	// Defaults to everything.
+	// +optional
+	//A selector based on pagination
+	PageSelector string `json:"pageSelector,omitempty" protobuf:"varint,6,opt,name=pageSelector"`
 }
 
 type LoginSpec struct {
@@ -342,6 +351,10 @@ type VultrServerInfo struct {
 	IPV4Gateway string `json:"ipv4Gateway,omitempty"`
 
 	PendingCharges float64 `json:"pendingCharges,omitempty"`
+
+	CostPerMonth     string  `json:"costPerMonth,omitempty"`
+	AllowedBandWidth float64 `json:"allowedBandwidth,omitempty"`
+	CurrentBandwidth float64 `json:"currentBandwidth,omitempty"`
 }
 
 type DGServerInfo struct {
@@ -353,6 +366,9 @@ type DGServerInfo struct {
 	IPV4Addr    string `json:"ipv4Addr,omitempty"`
 	IPV4NetMask string `json:"ipv4NetMask,omitempty"`
 	IPV4Gateway string `json:"ipv4Gateway,omitempty"`
+
+	PriceMonthly float64 `json:"priceMonthly,omitempty"`
+	PriceHourly  float64 `json:"priceHourly,omitempty"`
 }
 
 type AccServerSpec struct {
@@ -487,20 +503,20 @@ const (
 type OperatorType string
 
 type AccountDetail struct {
-	ID             int64            `json:"-" column:"id"`
-	Name           string           `json:"name,omitempty" column:"name"`
-	Operators      string           `json:"operators,omitempty" column:"operators"`
-	Key            string           `json:"key,omitempty" column:"api_key" gorm:"column:api_key"`
-	Descryption    string           `json:"descryption,omitempty" column:"descryption"`
-	CreditCeilings float64          `json:"creditCeilings,omitempty" column:"credit_ceilings"`
-	Lables         string           `json:"lables,omitempty" column:"lables"`
-	CreateTime     unversioned.Time `json:"creationTime,omitempty" column:"expire_time" gorm:"column:expire_time"`
-	ExpireTime     unversioned.Time `json:"expire,omitempty" column:"created_time" gorm:"column:created_time"`
+	ID             int64            `json:"-" freezer:"column:id"`
+	Name           string           `json:"name,omitempty" freezer:"column:name;resoucekey"`
+	Operators      string           `json:"operators,omitempty" freezer:"column:operators"`
+	Key            string           `json:"key,omitempty" freezer:"column:api_key" gorm:"column:api_key"`
+	Descryption    string           `json:"descryption,omitempty" freezer:"column:descryption"`
+	CreditCeilings float64          `json:"creditCeilings,omitempty" freezer:"column:credit_ceilings"`
+	Lables         string           `json:"lables,omitempty" freezer:"column:lables"`
+	CreateTime     unversioned.Time `json:"creationTime,omitempty" freezer:"column:expire_time" gorm:"column:expire_time"`
+	ExpireTime     unversioned.Time `json:"expire,omitempty" freezer:"column:created_time" gorm:"column:created_time"`
 }
 
 // AccountSpec of Vultr account
 type AccountSpec struct {
-	AccDetail AccountDetail `json:"account,omitempty"`
+	AccDetail AccountDetail `json:"account,omitempty" freezer:"table:vps_server_account"`
 }
 
 type Account struct {
@@ -585,8 +601,8 @@ type NodeServer struct {
 }
 
 type NodeSpec struct {
-	Server NodeServer          `json:"server,omitempty" freezer:"table:ss_node"`
-	Users  map[string]NodeUser `json:"users,omitempty"`
+	Server NodeServer              `json:"server,omitempty" freezer:"table:vps_new_node"`
+	Users  map[string]NodeUserSpec `json:"users,omitempty"`
 }
 
 type Node struct {
@@ -636,14 +652,15 @@ type NodeReferences struct {
 	User UserReferences `json:"user,omitempty"`
 }
 
-const (
-	UserServicetDefaultNode = "default"
-)
+// const (
+// 	UserServicetDefaultNode = "default"
+// )
 
 type UserServiceSpec struct {
-	Nodes   map[string]NodeReferences `json:"nodes,omitempty"`
-	NodeCnt uint                      `json:"nodecnt,omitempty"`
-	Status  bool                      `json:"status,omitempty"`
+	NodeName  string         `json:"nodeName,omitempty"`
+	Host      string         `json:"host,omitempty"`
+	UserRefer UserReferences `json:"userRefer,omitempty"`
+	Delete    bool           `json:"delete,omitempty"`
 }
 
 type UserService struct {
@@ -660,6 +677,19 @@ type UserServiceList struct {
 	Items []UserService `json:"items"`
 }
 
+type UserServiceBindingNodesSpec struct {
+	NodeUserReference map[string]NodeReferences `json:"nodeUserReference,omitempty"`
+	NodeCnt           uint                      `json:"nodecnt,omitempty"`
+	Status            bool                      `json:"status,omitempty"`
+}
+
+type UserServiceBindingNodes struct {
+	unversioned.TypeMeta `json:",inline"`
+	ObjectMeta           `json:"metadata,omitempty"`
+
+	Spec UserServiceBindingNodesSpec `json:"spec,omitempty"`
+}
+
 type UserInfo struct {
 	ID                   int64            `json:"id,omitempty" freezer:"column:id"`
 	Passwd               string           `json:"passwd,omitempty" freezer:"column:passwd"`
@@ -671,21 +701,28 @@ type UserInfo struct {
 	Name                 string           `json:"name,omitempty" freezer:"column:user_name;resoucekey" gorm:"column:user_name"`
 	ManagePasswd         string           `json:"managePasswd,omitempty" freezer:"column:manage_pass" gorm:"column:manage_pass"`
 	ExpireTime           unversioned.Time `json:"expireTime,omitempty" freezer:"column:expire_time" gorm:"column:expire_time"`
-	EmailVerify          int16            `json:"emailVerify,omitempty" freezer:"column:is_email_verify" gorm:"column:is_email_verify"`
+	EmailVerify          bool             `json:"emailVerify,omitempty" freezer:"column:is_email_verify" gorm:"column:is_email_verify"`
 	RegIPAddr            string           `json:"regIPAddr,omitempty" freezer:"column:reg_ip" gorm:"column:reg_ip"`
 	RegDBTime            unversioned.Time `json:"regTime,omitempty" freezer:"column:reg_date" gorm:"column:reg_date"`
 	Description          string           `json:"description,omitempty" freezer:"column:description" gorm:"column:description"`
 	TrafficRate          float64          `json:"trafficRate,omitempty" freezer:"column:traffic_rate" gorm:"column:traffic_rate"`
-	IsAdmin              int64            `json:"isAdmin,omitempty" freezer:"column:is_admin" gorm:"column:is_admin"`
+	IsAdmin              bool             `json:"isAdmin,omitempty" freezer:"column:is_admin" gorm:"column:is_admin"`
 	LastCheckInTime      unversioned.Time `json:"-" freezer:"column:last_check_in_time" gorm:"column:last_check_in_time"`
 	LastResetPwdTime     unversioned.Time `json:"-" freezer:"column:last_reset_pass_time" gorm:"column:last_reset_pass_time"`
 	TotalUploadTraffic   int64            `json:"totalUploadTraffic,omitempty" freezer:"column:total_upload" gorm:"column:total_upload"`
 	TotalDownloadTraffic int64            `json:"totalDownloadTraffic,omitempty" freezer:"column:total_download" gorm:"column:total_download"`
-	Status               int64            `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
+	Status               bool             `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
+}
+
+type BindingNodes struct {
+	Nodes   map[string]NodeReferences `json:"nodes,omitempty"`
+	NodeCnt uint                      `json:"nodecnt,omitempty"`
+	Status  bool                      `json:"status,omitempty"`
 }
 
 type UserSpec struct {
-	DetailInfo UserInfo `json:"detailInfo,omitempty" freezer:"table:user"`
+	DetailInfo  UserInfo     `json:"detailInfo,omitempty" freezer:"table:vps_new_user"`
+	UserService BindingNodes `json:"userService,omitempty"`
 }
 
 type User struct {

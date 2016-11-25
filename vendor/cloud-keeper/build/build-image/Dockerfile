@@ -43,8 +43,6 @@ RUN set -ex \
   && cp -rf build/build-image/files/entrypoint.sh /entrypoint.sh\
   && cp -rf third_party/swagger-ui /swagger-ui\
   && cp -rf build/build-image/files/ansible /go/bin/ansible\
-  && mkdir -p /go/bin/ansible/client-keys \
-  && cp -rf contrib/keys/ca.pem contrib/keys/client-key.pem contrib/keys/client.pem /go/bin/ansible/client-keys/\
   && cp -rf build/build-image/files/vpslicense /go/bin/vpslicense\
   && chmod +x /go/bin/vpslicense
 

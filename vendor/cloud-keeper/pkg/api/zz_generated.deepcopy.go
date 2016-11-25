@@ -45,6 +45,7 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINode, InType: reflect.TypeOf(&ActiveAPINode{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINodeList, InType: reflect.TypeOf(&ActiveAPINodeList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINodeSpec, InType: reflect.TypeOf(&ActiveAPINodeSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BindingNodes, InType: reflect.TypeOf(&BindingNodes{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_DGAccountInfo, InType: reflect.TypeOf(&DGAccountInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_DGServerInfo, InType: reflect.TypeOf(&DGServerInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_Login, InType: reflect.TypeOf(&Login{})},
@@ -67,6 +68,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserPublicFileSpec, InType: reflect.TypeOf(&UserPublicFileSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserReferences, InType: reflect.TypeOf(&UserReferences{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserService, InType: reflect.TypeOf(&UserService{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserServiceBindingNodes, InType: reflect.TypeOf(&UserServiceBindingNodes{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserServiceBindingNodesSpec, InType: reflect.TypeOf(&UserServiceBindingNodesSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserServiceList, InType: reflect.TypeOf(&UserServiceList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserServiceSpec, InType: reflect.TypeOf(&UserServiceSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserSpec, InType: reflect.TypeOf(&UserSpec{})},
@@ -445,6 +448,25 @@ func DeepCopy_api_ActiveAPINodeSpec(in interface{}, out interface{}, c *conversi
 	}
 }
 
+func DeepCopy_api_BindingNodes(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BindingNodes)
+		out := out.(*BindingNodes)
+		if in.Nodes != nil {
+			in, out := &in.Nodes, &out.Nodes
+			*out = make(map[string]NodeReferences)
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		} else {
+			out.Nodes = nil
+		}
+		out.NodeCnt = in.NodeCnt
+		out.Status = in.Status
+		return nil
+	}
+}
+
 func DeepCopy_api_DGAccountInfo(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*DGAccountInfo)
@@ -468,6 +490,8 @@ func DeepCopy_api_DGServerInfo(in interface{}, out interface{}, c *conversion.Cl
 		out.IPV4Addr = in.IPV4Addr
 		out.IPV4NetMask = in.IPV4NetMask
 		out.IPV4Gateway = in.IPV4Gateway
+		out.PriceMonthly = in.PriceMonthly
+		out.PriceHourly = in.PriceHourly
 		return nil
 	}
 }
@@ -602,13 +626,9 @@ func DeepCopy_api_NodeSpec(in interface{}, out interface{}, c *conversion.Cloner
 		out.Server = in.Server
 		if in.Users != nil {
 			in, out := &in.Users, &out.Users
-			*out = make(map[string]NodeUser)
+			*out = make(map[string]NodeUserSpec)
 			for key, val := range *in {
-				if newVal, err := c.DeepCopy(&val); err != nil {
-					return err
-				} else {
-					(*out)[key] = *newVal.(*NodeUser)
-				}
+				(*out)[key] = val
 			}
 		} else {
 			out.Users = nil
@@ -815,11 +835,43 @@ func DeepCopy_api_UserService(in interface{}, out interface{}, c *conversion.Clo
 		if err := pkg_api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
 			return err
 		}
+		out.Spec = in.Spec
+		return nil
+	}
+}
+
+func DeepCopy_api_UserServiceBindingNodes(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*UserServiceBindingNodes)
+		out := out.(*UserServiceBindingNodes)
+		out.TypeMeta = in.TypeMeta
+		if err := pkg_api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
+			return err
+		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
 		} else {
-			out.Spec = *newVal.(*UserServiceSpec)
+			out.Spec = *newVal.(*UserServiceBindingNodesSpec)
 		}
+		return nil
+	}
+}
+
+func DeepCopy_api_UserServiceBindingNodesSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*UserServiceBindingNodesSpec)
+		out := out.(*UserServiceBindingNodesSpec)
+		if in.NodeUserReference != nil {
+			in, out := &in.NodeUserReference, &out.NodeUserReference
+			*out = make(map[string]NodeReferences)
+			for key, val := range *in {
+				(*out)[key] = val
+			}
+		} else {
+			out.NodeUserReference = nil
+		}
+		out.NodeCnt = in.NodeCnt
+		out.Status = in.Status
 		return nil
 	}
 }
@@ -851,17 +903,10 @@ func DeepCopy_api_UserServiceSpec(in interface{}, out interface{}, c *conversion
 	{
 		in := in.(*UserServiceSpec)
 		out := out.(*UserServiceSpec)
-		if in.Nodes != nil {
-			in, out := &in.Nodes, &out.Nodes
-			*out = make(map[string]NodeReferences)
-			for key, val := range *in {
-				(*out)[key] = val
-			}
-		} else {
-			out.Nodes = nil
-		}
-		out.NodeCnt = in.NodeCnt
-		out.Status = in.Status
+		out.NodeName = in.NodeName
+		out.Host = in.Host
+		out.UserRefer = in.UserRefer
+		out.Delete = in.Delete
 		return nil
 	}
 }
@@ -874,6 +919,11 @@ func DeepCopy_api_UserSpec(in interface{}, out interface{}, c *conversion.Cloner
 			return err
 		} else {
 			out.DetailInfo = *newVal.(*UserInfo)
+		}
+		if newVal, err := c.DeepCopy(&in.UserService); err != nil {
+			return err
+		} else {
+			out.UserService = *newVal.(*BindingNodes)
 		}
 		return nil
 	}
@@ -957,6 +1007,9 @@ func DeepCopy_api_VultrServerInfo(in interface{}, out interface{}, c *conversion
 		out.IPV4NetMask = in.IPV4NetMask
 		out.IPV4Gateway = in.IPV4Gateway
 		out.PendingCharges = in.PendingCharges
+		out.CostPerMonth = in.CostPerMonth
+		out.AllowedBandWidth = in.AllowedBandWidth
+		out.CurrentBandwidth = in.CurrentBandwidth
 		return nil
 	}
 }

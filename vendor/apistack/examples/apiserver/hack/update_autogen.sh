@@ -37,8 +37,9 @@ function deepcopy {
 }
 
 function conversion {
+  echo "in coversion"
   #for conversion v1 to api
-  $ConversionGen --extra-peer-dirs="gofreezer/pkg/api" --input-dirs="apistack/examples/apiserver/pkg/api/v1" --go-header-file=$GoHeaderFile
+  $ConversionGen -v=5 --extra-peer-dirs="gofreezer/pkg/api" --input-dirs="apistack/examples/apiserver/pkg/api/v1" --go-header-file=$GoHeaderFile
 
   #for apis/batch
   $ConversionGen --extra-peer-dirs="gofreezer/pkg/api" --input-dirs="apistack/examples/apiserver/pkg/apis/testgroup/v1" --go-header-file=$GoHeaderFile

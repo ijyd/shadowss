@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"strings"
 
-	"gofreezer/pkg/api/rest"
 	api "gofreezer/pkg/api"
 	kubeerr "gofreezer/pkg/api/errors"
+	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/api/validation/path"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/storage"
 )
@@ -57,7 +58,7 @@ type Store struct {
 	TTLFunc func(obj runtime.Object, existing uint64, update bool) (uint64, error)
 
 	// Returns a matcher corresponding to the provided labels and fields.
-	PredicateFunc func(label labels.Selector, field fields.Selector) storage.SelectionPredicate
+	PredicateFunc func(label labels.Selector, field fields.Selector, page pagination.Pager) storage.SelectionPredicate
 
 	// Called to cleanup storage clients.
 	DestroyFunc func()

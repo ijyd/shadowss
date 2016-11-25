@@ -33,6 +33,7 @@ import (
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/storage"
 	"gofreezer/pkg/storage/etcds"
@@ -80,7 +81,11 @@ func (e *Store) List(ctx api.Context, options *api.ListOptions) (runtime.Object,
 	if options != nil && options.FieldSelector != nil {
 		field = options.FieldSelector
 	}
-	out, err := e.ListPredicate(ctx, e.PredicateFunc(label, field), options)
+	page := pagination.Everything()
+	if options != nil && options.PageSelector != nil {
+		page = options.PageSelector
+	}
+	out, err := e.ListPredicate(ctx, e.PredicateFunc(label, field, page), options)
 	if err != nil {
 		return nil, err
 	}
@@ -755,11 +760,15 @@ func (e *Store) Watch(ctx api.Context, options *api.ListOptions) (watch.Interfac
 	if options != nil && options.FieldSelector != nil {
 		field = options.FieldSelector
 	}
+	page := pagination.Everything()
+	if options != nil && options.PageSelector != nil {
+		page = options.PageSelector
+	}
 	resourceVersion := ""
 	if options != nil {
 		resourceVersion = options.ResourceVersion
 	}
-	return e.WatchPredicate(ctx, e.PredicateFunc(label, field), resourceVersion)
+	return e.WatchPredicate(ctx, e.PredicateFunc(label, field, page), resourceVersion)
 }
 
 // WatchPredicate starts a watch for the items that m matches.

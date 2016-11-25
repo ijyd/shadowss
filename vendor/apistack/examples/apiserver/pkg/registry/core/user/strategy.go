@@ -3,9 +3,12 @@ package user
 import (
 	"fmt"
 
+	"github.com/golang/glog"
+
 	"gofreezer/pkg/api"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	apistorage "gofreezer/pkg/storage"
 	"gofreezer/pkg/util/validation/field"
@@ -50,8 +53,10 @@ func (userStrategy) AllowCreateOnUpdate() bool {
 
 // PrepareForUpdate sets the Status fields which is not allowed to be set by an end user updating a PV
 func (userStrategy) PrepareForUpdate(ctx api.Context, obj, old runtime.Object) {
-	_ = obj.(*userapi.User)
-	_ = old.(*userapi.User)
+	newuser := obj.(*userapi.User)
+	olduser := old.(*userapi.User)
+	glog.Infof("got newuser : %+v \r\n", *newuser)
+	glog.Infof("got olduser : %+v \r\n", *olduser)
 }
 
 func (userStrategy) ValidateUpdate(ctx api.Context, obj, old runtime.Object) field.ErrorList {
@@ -63,11 +68,12 @@ func (userStrategy) AllowUnconditionalUpdate() bool {
 	return true
 }
 
-// MatchStorageClass returns a generic matcher for a given label and field selector.
-func MatchStorageClasses(label labels.Selector, field fields.Selector) apistorage.SelectionPredicate {
+// MatchUser returns a generic matcher for a given label and field selector.
+func MatchUser(label labels.Selector, field fields.Selector, page pagination.Pager) apistorage.SelectionPredicate {
 	return apistorage.SelectionPredicate{
 		Label: label,
 		Field: field,
+		Pager: page,
 		GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
 			cls, ok := obj.(*userapi.User)
 			if !ok {

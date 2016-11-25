@@ -19,35 +19,36 @@ package validation
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"apistack/pkg/genericapiserver/options"
 	utilerrors "gofreezer/pkg/util/errors"
+
+	"github.com/golang/glog"
 )
 
 // TODO: Longer term we should read this from some config store, rather than a flag.
-func verifyClusterIPFlags(options *options.ServerRunOptions) []error {
-	errors := []error{}
-	if options.ServiceClusterIPRange.IP == nil {
-		errors = append(errors, fmt.Errorf("No --service-cluster-ip-range specified"))
-	}
-	var ones, bits = options.ServiceClusterIPRange.Mask.Size()
-	if bits-ones > 20 {
-		errors = append(errors, fmt.Errorf("Specified --service-cluster-ip-range is too large"))
-	}
-	return errors
-}
+// func verifyClusterIPFlags(options *options.ServerRunOptions) []error {
+// 	errors := []error{}
+// 	if options.ServiceClusterIPRange.IP == nil {
+// 		errors = append(errors, fmt.Errorf("No --service-cluster-ip-range specified"))
+// 	}
+// 	var ones, bits = options.ServiceClusterIPRange.Mask.Size()
+// 	if bits-ones > 20 {
+// 		errors = append(errors, fmt.Errorf("Specified --service-cluster-ip-range is too large"))
+// 	}
+// 	return errors
+// }
 
-func verifyServiceNodePort(options *options.ServerRunOptions) []error {
-	errors := []error{}
-	if options.KubernetesServiceNodePort < 0 || options.KubernetesServiceNodePort > 65535 {
-		errors = append(errors, fmt.Errorf("--kubernetes-service-node-port %v must be between 0 and 65535, inclusive. If 0, the Kubernetes master service will be of type ClusterIP.", options.KubernetesServiceNodePort))
-	}
-
-	if options.KubernetesServiceNodePort > 0 && !options.ServiceNodePortRange.Contains(options.KubernetesServiceNodePort) {
-		errors = append(errors, fmt.Errorf("Kubernetes service port range %v doesn't contain %v", options.ServiceNodePortRange, (options.KubernetesServiceNodePort)))
-	}
-	return errors
-}
+// func verifyServiceNodePort(options *options.ServerRunOptions) []error {
+// 	errors := []error{}
+// 	if options.KubernetesServiceNodePort < 0 || options.KubernetesServiceNodePort > 65535 {
+// 		errors = append(errors, fmt.Errorf("--kubernetes-service-node-port %v must be between 0 and 65535, inclusive. If 0, the Kubernetes master service will be of type ClusterIP.", options.KubernetesServiceNodePort))
+// 	}
+//
+// 	if options.KubernetesServiceNodePort > 0 && !options.ServiceNodePortRange.Contains(options.KubernetesServiceNodePort) {
+// 		errors = append(errors, fmt.Errorf("Kubernetes service port range %v doesn't contain %v", options.ServiceNodePortRange, (options.KubernetesServiceNodePort)))
+// 	}
+// 	return errors
+// }
 
 func verifySecureAndInsecurePort(options *options.ServerRunOptions) []error {
 	errors := []error{}
@@ -71,12 +72,12 @@ func verifySecureAndInsecurePort(options *options.ServerRunOptions) []error {
 
 func ValidateRunOptions(options *options.ServerRunOptions) {
 	errors := []error{}
-	if errs := verifyClusterIPFlags(options); len(errs) > 0 {
-		errors = append(errors, errs...)
-	}
-	if errs := verifyServiceNodePort(options); len(errs) > 0 {
-		errors = append(errors, errs...)
-	}
+	// if errs := verifyClusterIPFlags(options); len(errs) > 0 {
+	// 	errors = append(errors, errs...)
+	// }
+	// if errs := verifyServiceNodePort(options); len(errs) > 0 {
+	// 	errors = append(errors, errs...)
+	// }
 	if errs := verifySecureAndInsecurePort(options); len(errs) > 0 {
 		errors = append(errors, errs...)
 	}

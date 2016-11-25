@@ -1,12 +1,13 @@
 package mysql
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
 	"time"
+
+	"golang.org/x/net/context"
 
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/runtime"
@@ -33,10 +34,11 @@ type Table struct {
 	//json tag value as key,valus is TableTag: it contains column or talbe or  other keyword for sql
 	freezerTag map[string]TableTag
 
-	//freezer column as key,the key in struct freezerTag  as value
+	//freezer column as key,the jsonkey as value
 	columnToFreezerTagKey map[string]string
 
 	//resourcekey hold a column name,this key as a resouce name in restful url
+	//will use this filed value for metadata.name field
 	resoucekey string
 }
 
@@ -267,23 +269,26 @@ func (t *Table) ExtractTableObj(obj runtime.Object, afterFunc AfterFindTable) er
 	return fmt.Errorf("runtime object(%v) not found table", v.Type())
 }
 
-func (t *Table) SetTable(obj runtime.Object, table reflect.Value) error {
+func (t *Table) SetTable(obj runtime.Object, table reflect.Value) (string, error) {
+	resourceKeyValue := string("")
 	err := t.ExtractTableObj(obj, func(tObj reflect.Value) error {
 		if !tObj.CanSet() {
 			return fmt.Errorf("object(%v) cannt set by reflect", tObj.Type())
 		}
 		tObj.Set(table)
+		val := tObj.FieldByName(t.freezerTag[t.columnToFreezerTagKey[t.resoucekey]].structField)
+		resourceKeyValue = fmt.Sprintf("%v", val.Interface())
 		return nil
 	})
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return resourceKeyValue, nil
 }
 
 func (t *Table) CovertRowsToObject(row *RowResult, obj runtime.Object, table reflect.Value) error {
-	err := t.SetTable(obj, table)
+	resourceKeyValue, err := t.SetTable(obj, table)
 	if err != nil {
 		return err
 	}
@@ -292,6 +297,7 @@ func (t *Table) CovertRowsToObject(row *RowResult, obj runtime.Object, table ref
 	if err != nil {
 		return err
 	}
+	row.resourceKey = resourceKeyValue
 
 	return nil
 }

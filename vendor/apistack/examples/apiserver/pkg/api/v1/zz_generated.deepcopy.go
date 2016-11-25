@@ -11,8 +11,6 @@ package v1
 import (
 	unversioned "gofreezer/pkg/api/unversioned"
 	conversion "gofreezer/pkg/conversion"
-	fields "gofreezer/pkg/fields"
-	labels "gofreezer/pkg/labels"
 	runtime "gofreezer/pkg/runtime"
 	types "gofreezer/pkg/types"
 	reflect "reflect"
@@ -100,20 +98,8 @@ func DeepCopy_v1_ListOptions(in interface{}, out interface{}, c *conversion.Clon
 		in := in.(*ListOptions)
 		out := out.(*ListOptions)
 		out.TypeMeta = in.TypeMeta
-		if in.LabelSelector == nil {
-			out.LabelSelector = nil
-		} else if newVal, err := c.DeepCopy(&in.LabelSelector); err != nil {
-			return err
-		} else {
-			out.LabelSelector = *newVal.(*labels.Selector)
-		}
-		if in.FieldSelector == nil {
-			out.FieldSelector = nil
-		} else if newVal, err := c.DeepCopy(&in.FieldSelector); err != nil {
-			return err
-		} else {
-			out.FieldSelector = *newVal.(*fields.Selector)
-		}
+		out.LabelSelector = in.LabelSelector
+		out.FieldSelector = in.FieldSelector
 		out.Watch = in.Watch
 		out.ResourceVersion = in.ResourceVersion
 		if in.TimeoutSeconds != nil {
@@ -123,6 +109,7 @@ func DeepCopy_v1_ListOptions(in interface{}, out interface{}, c *conversion.Clon
 		} else {
 			out.TimeoutSeconds = nil
 		}
+		out.PageSelector = in.PageSelector
 		return nil
 	}
 }

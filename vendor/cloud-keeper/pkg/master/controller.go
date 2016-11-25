@@ -51,6 +51,8 @@ func (c *Controller) Start() {
 
 	//publish api server
 	c.PublishAPIServer()
+	// glog.V(5).Infof("begin migrate userservier")
+	// c.UserRegistry.MigrateUser()
 
 	//not have any runner
 	// c.runner = async.NewRunner(c.RunKubernetesNamespaces, c.RunKubernetesService, repairClusterIPs.RunUntil, repairNodePorts.RunUntil)

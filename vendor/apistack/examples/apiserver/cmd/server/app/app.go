@@ -77,7 +77,7 @@ func Run(s *options.ServerOption) error {
 	apiAuthorizer := authorizer.NewAlwaysAllowAuthorizer()
 
 	// TODO(dims): We probably need to add an option "EnableLoopbackToken"
-	privilegedLoopbackToken := uuid.NewRandom().String()
+	privilegedLoopbackToken := "49acafe7e63682e1e6b6983580c4ee56"
 	if apiAuthenticator != nil {
 		var uid = uuid.NewRandom().String()
 		tokens := make(map[string]*user.DefaultInfo)

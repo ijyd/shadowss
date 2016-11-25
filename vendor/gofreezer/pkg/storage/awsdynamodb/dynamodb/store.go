@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
-	"time"
 
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/runtime"
@@ -19,6 +18,11 @@ import (
 	"github.com/golang/glog"
 
 	"golang.org/x/net/context"
+)
+
+const (
+	//give a resourceversion with 1 if resource exist
+	resourceVersion = 1
 )
 
 type store struct {
@@ -61,11 +65,12 @@ func (s *store) Versioner() storage.Versioner {
 }
 
 func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object, ttl uint64) error {
+	glog.V(9).Infof("dynamodb create resource  %v \r\n", key)
 
-	//check item with this key exist,we need replace this by aws PutItem
-	err := s.queryObjByKey(key, out, false)
+	//check item with this key if exist
+	_, err := s.queryObjByKey(key, out, false)
 	if err != nil {
-		if storage.IsNotFound(err) == false {
+		if storage.IsItemNotFound(err) == false {
 			return storage.NewInternalErrorf("key %v, object search error %v", err.Error())
 		}
 	} else if err == nil {
@@ -87,7 +92,7 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 		return err
 	}
 	item[primaryKey] = &awsdb.AttributeValue{S: aws.String(key)}
-	item[sortKey] = &awsdb.AttributeValue{S: aws.String(time.Now().String())}
+	item[sortKey] = &awsdb.AttributeValue{S: aws.String(key)}
 
 	_, err = s.dbHandler.PutItem(&awsdb.PutItemInput{
 		Item:      item,
@@ -102,9 +107,18 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 }
 
 func (s *store) Delete(ctx context.Context, key string, out runtime.Object, preconditions *storage.Preconditions) error {
+	glog.V(9).Infof("dynamodb delete resource  %v \r\n", key)
+	_, err := s.queryObjByKey(key, out, false)
+	if err != nil {
+		return err
+	}
+
 	params := &awsdb.DeleteItemInput{
 		Key: map[string]*awsdb.AttributeValue{
-			"key": &awsdb.AttributeValue{
+			primaryKey: &awsdb.AttributeValue{
+				S: aws.String(key),
+			},
+			sortKey: &awsdb.AttributeValue{
 				S: aws.String(key),
 			},
 		},
@@ -116,13 +130,14 @@ func (s *store) Delete(ctx context.Context, key string, out runtime.Object, prec
 	if err != nil {
 		return storage.NewInternalErrorf("key %v delete error %v\r\n", err.Error())
 	}
-	glog.V(5).Infof("got result %v err %v\r\n", resp.Attributes, err)
+	glog.V(9).Infof("got result %v err %v\r\n", resp.Attributes, err)
 
 	return s.getObject(key, out, false, resp.Attributes)
 }
 
 func (s *store) Get(ctx context.Context, key string, out runtime.Object, ignoreNotFound bool) error {
-	return s.queryObjByKey(key, out, ignoreNotFound)
+	_, err := s.queryObjByKey(key, out, ignoreNotFound)
+	return err
 }
 
 func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPredicate, listObj runtime.Object) error {
@@ -142,7 +157,7 @@ func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPr
 		return storage.NewInternalErrorf("key %v, scan list count error %v", err.Error())
 	}
 
-	hasPage, perPage, _ := p.BuildPagerCondition(uint64(*output.Count))
+	hasPage, perPage, skip := p.BuildPagerCondition(uint64(*output.Count))
 
 	scanParam = &awsdb.ScanInput{
 		TableName: aws.String(s.table),
@@ -150,13 +165,21 @@ func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPr
 	if hasPage && perPage != 0 {
 		limit := int64(perPage)
 		scanParam.Limit = &(limit)
+		glog.V(9).Infof("perpage(%v) skip(%v) segment(%v) totalSegment(%v) total(%v)", perPage, skip)
+		// total := *output.Count
+		// segment := total / int64(skip)
+		// totalSegments := total / int64(perPage)
+		//
+		// glog.V(9).Infof("perpage(%v) skip(%v) segment(%v) totalSegment(%v) total(%v)", perPage, skip, segment, totalSegments, total)
+		// scanParam.Segment = aws.Int64(segment)
+		// scanParam.TotalSegments = aws.Int64(totalSegments)
 	}
 	output, err = s.dbHandler.Scan(scanParam)
 	if err != nil {
 		return storage.NewInternalErrorf("key %v, scan list  error %v", err.Error())
 	}
 
-	glog.V(5).Infof("Get query output %+v\r\n", output)
+	glog.V(9).Infof("Get query output %+v\r\n", output)
 
 	jsonData, cnt, err := ConvertTOJson(&output.Items)
 	if cnt == 0 {
@@ -168,9 +191,11 @@ func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPr
 
 func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Object, ignoreNotFound bool, precondtions *storage.Preconditions, tryUpdate awsdynamodb.UpdateFunc) error {
 	//check item with this key exist,we need replace this by aws PutItem
-	err := s.queryObjByKey(key, out, false)
+	_, err := s.queryObjByKey(key, out, false)
 	if err != nil {
-		return storage.NewInternalErrorf("key %s, search error %v", err.Error())
+		if !storage.IsNotFound(err) {
+			return storage.NewInternalErrorf("key %s, search error %v", err.Error())
+		}
 	}
 
 	attrValue := make(map[string]interface{})
@@ -179,33 +204,76 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Ob
 		return storage.NewInternalErrorf("key %s, update by user error:%v", key, err.Error())
 	}
 
-	updateExpression, expressionAttributeNames, expressionAttributeValues, err := BuildUpdateAttr(ret, out, attrValue)
+	data, err := runtime.Encode(s.codec, ret)
 	if err != nil {
-		return storage.NewInternalErrorf("key %v, update error %v\r\n", key, err.Error())
+		return storage.NewInternalErrorf("key %v, object encode error %v", key, err.Error())
 	}
-	glog.V(5).Infof("build attr UpdateExpression: %v expressionAttributeNames:%v expressionAttributeValues:%v",
-		updateExpression, expressionAttributeNames, expressionAttributeValues)
 
-	params := &awsdb.UpdateItemInput{
-		Key: map[string]*awsdb.AttributeValue{
-			"key": &awsdb.AttributeValue{
-				S: aws.String(key),
-			},
-		},
-		ReturnValues:              aws.String("ALL_NEW"),
-		TableName:                 aws.String(s.table),
-		UpdateExpression:          aws.String(updateExpression),
-		ExpressionAttributeNames:  expressionAttributeNames,
-		ExpressionAttributeValues: expressionAttributeValues,
-	}
-	resp, err := s.dbHandler.UpdateItem(params)
+	mapObj, err := ConvertByteToMap(data)
 	if err != nil {
-		return storage.NewInternalErrorf("key %v update error %v\r\n", err.Error())
+		return storage.NewInternalErrorf("key %v, object encode error %v", key, err.Error())
 	}
-	glog.V(5).Infof("got result %v err %v\r\n", resp.Attributes, err)
 
-	return s.getObject(key, out, false, resp.Attributes)
+	item, err := dynamodbattribute.MarshalMap(mapObj)
+	if err != nil {
+		return err
+	}
+	item[primaryKey] = &awsdb.AttributeValue{S: aws.String(key)}
+	item[sortKey] = &awsdb.AttributeValue{S: aws.String(key)}
+
+	_, err = s.dbHandler.PutItem(&awsdb.PutItemInput{
+		Item:      item,
+		TableName: aws.String(s.table),
+		//ReturnValues: aws.String("ALL_OLD"),
+	})
+	if err != nil {
+		return storage.NewInternalErrorf("key %v, put error %v\r\n", key, err)
+	}
+
+	return decode(s.codec, s.versioner, data, out)
 }
+
+//can't got attr values from apistack registry store use putitem instead of
+// func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Object, ignoreNotFound bool, precondtions *storage.Preconditions, tryUpdate awsdynamodb.UpdateFunc) error {
+// 	//check item with this key exist,we need replace this by aws PutItem
+// 	_, err := s.queryObjByKey(key, out, false)
+// 	if err != nil {
+// 		return storage.NewInternalErrorf("key %s, search error %v", err.Error())
+// 	}
+//
+// 	attrValue := make(map[string]interface{})
+// 	ret, _, err := userUpdate(out, tryUpdate, attrValue)
+// 	if err != nil {
+// 		return storage.NewInternalErrorf("key %s, update by user error:%v", key, err.Error())
+// 	}
+//
+// 	updateExpression, expressionAttributeNames, expressionAttributeValues, err := BuildUpdateAttr(ret, out, attrValue)
+// 	if err != nil {
+// 		return storage.NewInternalErrorf("key %v, update error %v\r\n", key, err.Error())
+// 	}
+// 	glog.V(5).Infof("build attr UpdateExpression: %v expressionAttributeNames:%v expressionAttributeValues:%v",
+// 		updateExpression, expressionAttributeNames, expressionAttributeValues)
+//
+// 	params := &awsdb.UpdateItemInput{
+// 		Key: map[string]*awsdb.AttributeValue{
+// 			"key": &awsdb.AttributeValue{
+// 				S: aws.String(key),
+// 			},
+// 		},
+// 		ReturnValues:              aws.String("ALL_NEW"),
+// 		TableName:                 aws.String(s.table),
+// 		UpdateExpression:          aws.String(updateExpression),
+// 		ExpressionAttributeNames:  expressionAttributeNames,
+// 		ExpressionAttributeValues: expressionAttributeValues,
+// 	}
+// 	resp, err := s.dbHandler.UpdateItem(params)
+// 	glog.V(5).Infof("got result %v err %v\r\n", resp.Attributes, err)
+// 	if err != nil {
+// 		return storage.NewInternalErrorf("key %v update error %v\r\n", err.Error())
+// 	}
+//
+// 	return s.getObject(key, out, false, resp.Attributes)
+// }
 
 // decode decodes value of bytes into object. It will also set the object resource version to rev.
 // On success, objPtr would be set to the object.
@@ -218,7 +286,7 @@ func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objP
 		return err
 	}
 	// being unable to set the version does not prevent the object from being extracted
-	//versioner.UpdateObject(objPtr, uint64(rev))
+	versioner.UpdateObject(objPtr, uint64(resourceVersion))
 	return nil
 }
 
@@ -239,10 +307,8 @@ func decodeList(elems []map[string]interface{}, ListPtr interface{}, codec runti
 			return err
 		}
 		// being unable to set the version does not prevent the object from being extracted
-		// versioner.UpdateObject(obj, elem.rev)
-		// if filter(obj) {
+		versioner.UpdateObject(obj, uint64(resourceVersion))
 		v.Set(reflect.Append(v, reflect.ValueOf(obj).Elem()))
-		// }
 	}
 	return nil
 }
@@ -255,7 +321,7 @@ func userUpdate(input runtime.Object, userUpdate awsdynamodb.UpdateFunc, attribu
 	return ret, ttl, nil
 }
 
-func (s *store) queryObjByKey(key string, out runtime.Object, ignoreNotFound bool) error {
+func (s *store) queryObjByKey(key string, out runtime.Object, ignoreNotFound bool) (*awsdb.ScanOutput, error) {
 	scanParam := &awsdb.ScanInput{
 		ScanFilter: map[string]*awsdb.Condition{
 			"key": {
@@ -272,10 +338,10 @@ func (s *store) queryObjByKey(key string, out runtime.Object, ignoreNotFound boo
 
 	output, err := s.dbHandler.Scan(scanParam)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return s.getObject(key, out, ignoreNotFound, output.Items...)
+	return output, s.getObject(key, out, ignoreNotFound, output.Items...)
 }
 
 func (s *store) getObject(key string, out runtime.Object, ignoreNotFound bool, attrs ...map[string]*awsdb.AttributeValue) error {
@@ -285,9 +351,9 @@ func (s *store) getObject(key string, out runtime.Object, ignoreNotFound bool, a
 		if ignoreNotFound {
 			return runtime.SetZeroValue(out)
 		}
-		return storage.NewItemNotFoundError(key)
+		return storage.NewKeyNotFoundError(key, resourceVersion)
 	} else if count > 1 {
-		return storage.NewTooManyItemError(key, fmt.Sprint("too many item found by key"))
+		panic(fmt.Sprintf("resource key(%s) must to be unique", key))
 	}
 
 	firstObj := jsonData[0]
@@ -297,3 +363,13 @@ func (s *store) getObject(key string, out runtime.Object, ignoreNotFound bool, a
 	}
 	return decode(s.codec, s.versioner, data, out)
 }
+
+// func (s *store) extracKeys(attrs ...map[string]*awsdb.AttributeValue) (patitionKey *awsdb.AttributeValue, sortKey *awsdb.AttributeValue) {
+// 	// for var := range attrs {
+// 	//
+// 	// }
+// 	// partitionKeyitem = scanOut.Items[primaryKey]
+// 	// sortkeyitem = scanOut.Items[sortKey]
+//
+// 	return nil, nil
+// }

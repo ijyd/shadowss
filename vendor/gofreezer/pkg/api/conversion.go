@@ -23,6 +23,7 @@ import (
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/util/intstr"
 	utillabels "gofreezer/pkg/util/labels"
@@ -48,6 +49,9 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 
 		Convert_string_To_fields_Selector,
 		Convert_fields_Selector_To_string,
+
+		Convert_string_To_page_Selector,
+		Convert_page_Selector_To_string,
 
 		Convert_Pointer_bool_To_bool,
 		Convert_bool_To_Pointer_bool,
@@ -202,6 +206,15 @@ func Convert_string_To_fields_Selector(in *string, out *fields.Selector, s conve
 	return nil
 }
 
+func Convert_string_To_page_Selector(in *string, out *pagination.Pager, s conversion.Scope) error {
+	pager, err := pagination.ParsePaginaton(*in)
+	if err != nil {
+		return err
+	}
+	*out = pager
+	return nil
+}
+
 func Convert_labels_Selector_To_string(in *labels.Selector, out *string, s conversion.Scope) error {
 	if *in == nil {
 		return nil
@@ -211,6 +224,14 @@ func Convert_labels_Selector_To_string(in *labels.Selector, out *string, s conve
 }
 
 func Convert_fields_Selector_To_string(in *fields.Selector, out *string, s conversion.Scope) error {
+	if *in == nil {
+		return nil
+	}
+	*out = (*in).String()
+	return nil
+}
+
+func Convert_page_Selector_To_string(in *pagination.Pager, out *string, s conversion.Scope) error {
 	if *in == nil {
 		return nil
 	}

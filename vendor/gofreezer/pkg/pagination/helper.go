@@ -7,9 +7,9 @@ import (
 )
 
 //BuildPageLink build a string 'Link' that like as :
-// "Link: /api/v1beta1/namespace/default/users?pagination=page=1,perPage=1; rel=prev,
-// "/api/v1beta1/users?pagination=page=3,perPage=1; rel= next,"
-// "/api/v1beta1/users?pagination=page=5,perPage=1; rel=last"
+// "Link: /api/v1beta1/namespace/default/users?pageSelector=page=1,perPage=1; rel=prev,
+// "/api/v1beta1/users?pageSelector=page=3,perPage=1; rel= next,"
+// "/api/v1beta1/users?pageSelector=page=5,perPage=1; rel=last"
 func BuildDefPageLink(pager Pager, baseLink string) (string, error) {
 
 	glog.V(5).Infof("Got base link %v\r\n", baseLink)
@@ -24,17 +24,17 @@ func BuildDefPageLink(pager Pager, baseLink string) (string, error) {
 
 		has, page, perPage := pager.PreviousPage()
 		if has {
-			prevPageLink = fmt.Sprintf("%v?pagination=page=%v,perPage=%v; rel=prev", baseLink, page, perPage)
+			prevPageLink = fmt.Sprintf("%v?pageSelector=page=%v,perPage=%v; rel=prev", baseLink, page, perPage)
 		}
 
 		has, page, perPage = pager.NextPage()
 		if has {
-			nextPageLink = fmt.Sprintf("%v?pagination=page=%v,perPage=%v; rel=next", baseLink, page, perPage)
+			nextPageLink = fmt.Sprintf("%v?pageSelector=page=%v,perPage=%v; rel=next", baseLink, page, perPage)
 		}
 
 		has, page, perPage = pager.LastPage()
 		if has {
-			lastPageLink = fmt.Sprintf("%v?pagination=page=%v,perPage=%v; rel=last", baseLink, page, perPage)
+			lastPageLink = fmt.Sprintf("%v?pageSelector=page=%v,perPage=%v; rel=last", baseLink, page, perPage)
 		}
 
 		separator := string("")

@@ -8,8 +8,8 @@ import (
 
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/registry/core/account"
+	accserverrest "cloud-keeper/pkg/registry/core/account/accserver/rest"
 	accmysql "cloud-keeper/pkg/registry/core/account/mysql"
-	accserveretcd "cloud-keeper/pkg/registry/core/accserver/etcd"
 	"cloud-keeper/pkg/registry/core/apiserver"
 	apiserveretcd "cloud-keeper/pkg/registry/core/apiserver/etcd"
 	"cloud-keeper/pkg/registry/core/login"
@@ -20,12 +20,11 @@ import (
 	"cloud-keeper/pkg/registry/core/nodeuser"
 	nodeuseretcd "cloud-keeper/pkg/registry/core/nodeuser/etcd"
 	"cloud-keeper/pkg/registry/core/user"
+	userdynamo "cloud-keeper/pkg/registry/core/user/dynamodb"
+	useretcd "cloud-keeper/pkg/registry/core/user/etcd"
 	usermysql "cloud-keeper/pkg/registry/core/user/mysql"
 	userrest "cloud-keeper/pkg/registry/core/user/rest"
 	"cloud-keeper/pkg/registry/core/userfile"
-	"cloud-keeper/pkg/registry/core/userservice"
-	userserviceetcd "cloud-keeper/pkg/registry/core/userservice/etcd"
-	userservicerest "cloud-keeper/pkg/registry/core/userservice/rest"
 	"cloud-keeper/pkg/registry/core/usertoken"
 	usertokenmysql "cloud-keeper/pkg/registry/core/usertoken/mysql"
 )
@@ -66,42 +65,44 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 	nodeRegistry := node.NewRegistry(nodeStorage, nodeStorage, nodeStorage)
 
 	userMysqlStorage := usermysql.NewREST(restOptionsGetter(api.Resource("users")))
-	userRegistry := user.NewRegistry(userMysqlStorage, userMysqlStorage, userMysqlStorage, userMysqlStorage, userMysqlStorage)
+	userEtcdStorage := useretcd.NewREST(restOptionsGetter(api.Resource("users")))
+	userDynamoStorage := userdynamo.NewREST(restOptionsGetter(api.Resource("users")))
+	userStorage := userrest.NewREST(userEtcdStorage, userMysqlStorage, userDynamoStorage, nodeRegistry, nodeuserRegistry)
+	userRegistry := user.NewRegistry(userStorage, userStorage, userStorage, userStorage, userStorage, userStorage, userStorage)
 
-	userserviceEtcdStorage := userserviceetcd.NewREST(restOptionsGetter(api.Resource("userservices")))
-	userserviceStorage := userservicerest.NewREST(userserviceEtcdStorage, userRegistry, nodeRegistry, nodeuserRegistry)
-	userserviceRegistry := userservice.NewRegistry(userserviceStorage, userserviceStorage, userserviceStorage, userserviceStorage)
-	userserviceBindingNodeStorage, userservicePropertiesStorage := userservicerest.NewExtendREST(userserviceRegistry)
+	userBindingNodeStorage, userPropertiesStorage := userrest.NewExtendREST(userRegistry)
 
 	//todo: it is not place here,  disordered resource design
-	nodeuserStorage.SetRequireRegistry(userserviceRegistry, nodeRegistry)
+	nodeuserStorage.SetRequireRegistry(nodeRegistry, userRegistry)
+	nodeStorage.SetRequireRegistry(userRegistry, nodeuserRegistry)
 
-	userStorage := userrest.NewREST(userRegistry, userserviceRegistry)
-	restStorage.UserRegistry = userRegistry
-
-	nodeBindingUserStorage, nodeAPINodeStorage := noderest.NewExtendREST(nodeRegistry, userserviceRegistry)
+	nodeAPINodeStorage, nodeRefreshStorage := noderest.NewExtendREST(nodeRegistry)
 
 	tokenStorage := usertokenmysql.NewREST(restOptionsGetter(api.Resource("usertokens")))
-	restStorage.TokenRegistry = usertoken.NewRegistry(tokenStorage, tokenStorage, tokenStorage)
+	tokenRegistry := usertoken.NewRegistry(tokenStorage, tokenStorage, tokenStorage)
 
-	loginStorage := login.NewREST(restStorage.UserRegistry, restStorage.TokenRegistry)
+	loginStorage := login.NewREST(userRegistry, tokenRegistry)
 
 	accStorage := accmysql.NewREST(restOptionsGetter(api.Resource("accounts")))
 	accRegistry := account.NewRegistry(accStorage, accStorage, accStorage, accStorage, accStorage)
 
 	accExtendStorage := account.NewREST(accRegistry)
 
-	cloudServerStorage := accserveretcd.NewREST(restOptionsGetter(api.Resource("accservers")), accRegistry)
+	cloudServerStorage := accserverrest.NewREST(accRegistry)
 
 	userFileStorage := userfile.NewREST()
 
 	apiserverStorage := apiserveretcd.NewREST(restOptionsGetter(api.Resource("apiservers")))
-	restStorage.APIServerRegistry = apiserver.NewRegistry(apiserverStorage, apiserverStorage, apiserverStorage.Store, apiserverStorage.Store)
+	apiServerRegistry := apiserver.NewRegistry(apiserverStorage, apiserverStorage, apiserverStorage.Store, apiserverStorage.Store)
+
+	restStorage.UserRegistry = userRegistry
+	restStorage.TokenRegistry = tokenRegistry
+	restStorage.APIServerRegistry = apiServerRegistry
 
 	restStorageMap := map[string]rest.Storage{
 		"users":              userStorage,
-		"users/bindingnodes": userserviceBindingNodeStorage,
-		"users/properties":   userservicePropertiesStorage,
+		"users/bindingnodes": userBindingNodeStorage,
+		"users/properties":   userPropertiesStorage,
 
 		"logins": loginStorage,
 
@@ -109,12 +110,14 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 		"accounts/info":    accExtendStorage.AccInfo,
 		"accounts/sshkeys": accExtendStorage.SSHKeys,
 		"accounts/exec":    accExtendStorage.Exec,
+		"accounts/servers": cloudServerStorage,
 
-		"accservers": cloudServerStorage,
+		// "acc": cloudServerStorage,
 
-		"nodes":               nodeStorage,
-		"nodes/bindingusers":  nodeBindingUserStorage,
-		"nodes/activeapinode": nodeAPINodeStorage,
+		"nodes":         nodeStorage,
+		"nodes/refresh": nodeRefreshStorage,
+
+		"activeapinode": nodeAPINodeStorage,
 
 		"nodes/nodeusers": nodeuserStorage,
 

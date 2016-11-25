@@ -9,7 +9,10 @@ import (
 	"apistack/examples/apiserver/pkg/api"
 	"apistack/examples/apiserver/pkg/registry/core/login"
 	"apistack/examples/apiserver/pkg/registry/core/user"
+	userdynamodb "apistack/examples/apiserver/pkg/registry/core/user/dynamodb"
+	useretcd "apistack/examples/apiserver/pkg/registry/core/user/etcd"
 	usermysql "apistack/examples/apiserver/pkg/registry/core/user/mysql"
+	userrest "apistack/examples/apiserver/pkg/registry/core/user/rest"
 	"apistack/examples/apiserver/pkg/registry/core/usertoken"
 	usertokenmysql "apistack/examples/apiserver/pkg/registry/core/usertoken/mysql"
 )
@@ -40,13 +43,18 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 
 	restStorage := LegacyRESTStorage{}
 
-	userStorage := usermysql.NewREST(restOptionsGetter(api.Resource("users")))
-	restStorage.UserRegistry = user.NewRegistry(userStorage)
+	userMysqlStorage := usermysql.NewREST(restOptionsGetter(api.Resource("users")))
+	userEtcdStorage := useretcd.NewREST(restOptionsGetter(api.Resource("users")))
+	userDynamodbStorage := userdynamodb.NewREST(restOptionsGetter(api.Resource("users")))
+	userStorage := userrest.NewREST(userEtcdStorage, userMysqlStorage, userDynamodbStorage)
+	userRegistry := user.NewRegistry(userStorage, userStorage, userStorage, userStorage, userStorage)
 
 	tokenStorage := usertokenmysql.NewREST(restOptionsGetter(api.Resource("usertokens")))
 	restStorage.TokenRegistry = usertoken.NewRegistry(tokenStorage, tokenStorage, tokenStorage)
 
 	loginStorage := login.NewREST(restStorage.UserRegistry, restStorage.TokenRegistry)
+
+	restStorage.UserRegistry = userRegistry
 
 	restStorageMap := map[string]rest.Storage{
 		"users": userStorage,

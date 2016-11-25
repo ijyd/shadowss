@@ -6,6 +6,7 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pagination"
 	"gofreezer/pkg/runtime"
 	apistorage "gofreezer/pkg/storage"
 	"gofreezer/pkg/util/validation/field"
@@ -66,10 +67,11 @@ func (shadowuserStrategy) AllowUnconditionalUpdate() bool {
 }
 
 // MatchNode returns a generic matcher for a given label and field selector.
-func MatchNodeUser(label labels.Selector, field fields.Selector) apistorage.SelectionPredicate {
+func MatchNodeUser(label labels.Selector, field fields.Selector, page pagination.Pager) apistorage.SelectionPredicate {
 	return apistorage.SelectionPredicate{
 		Label: label,
 		Field: field,
+		Pager: page,
 		GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
 			cls, ok := obj.(*api.NodeUser)
 			if !ok {

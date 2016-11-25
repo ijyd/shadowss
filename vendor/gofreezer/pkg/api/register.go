@@ -76,7 +76,7 @@ var (
 // 	}
 // }
 
-func InitInternalAPI(unver unversioned.GroupVersion) {
+func InitInternalAPI(unver unversioned.GroupVersion, scheme *runtime.Scheme) {
 	Unversioned = unver
 
 	// TODO(lavalamp): move this call to scheme builder above.  Can't
@@ -86,7 +86,7 @@ func InitInternalAPI(unver unversioned.GroupVersion) {
 	// current state is that it only ever gets registered in the main
 	// api.Scheme, even though everyone that uses anything from unversioned
 	// needs these.
-	if err := addConversionFuncs(Scheme); err != nil {
+	if err := addConversionFuncs(scheme); err != nil {
 		// Programmer error.
 		panic(err)
 	}

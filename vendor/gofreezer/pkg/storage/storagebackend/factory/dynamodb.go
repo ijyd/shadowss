@@ -13,12 +13,20 @@ import (
 
 //newDynamodbSession create session with config and credentials
 func newDynamodbSession(cfg storagebackend.AWSDynamoDBConfig) (*session.Session, error) {
+
+	config := aws.Config{
+		Region: aws.String(cfg.Region),
+	}
+
+	if len(cfg.AccessID) > 0 && len(cfg.AccessKey) > 0 {
+		config.Credentials = credentials.NewStaticCredentials(cfg.AccessID, cfg.AccessKey, cfg.Token)
+	} else {
+		config.Credentials = credentials.NewSharedCredentials("", "default")
+	}
+
 	// Specify profile for config and region for requests
 	sess, err := session.NewSessionWithOptions(session.Options{
-		Config: aws.Config{
-			Region:      aws.String(cfg.Region),
-			Credentials: credentials.NewSharedCredentials("", "default"),
-		},
+		Config: config,
 	})
 	if err != nil {
 		glog.Fatalf("create aws session error %v\r\n", err.Error())

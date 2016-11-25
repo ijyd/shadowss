@@ -571,6 +571,8 @@ func (g *genConversion) generateFor(inType, outType *types.Type, sw *generator.S
 	glog.V(5).Infof("generating %v -> %v", inType, outType)
 	var f func(*types.Type, *types.Type, *generator.SnippetWriter)
 
+	glog.V(5).Infof("inType.kind", inType.Kind)
+	fmt.Printf("generating %v(%v) -> %v\r\n", inType, inType.Kind, outType)
 	switch inType.Kind {
 	case types.Builtin:
 		f = g.doBuiltin

@@ -2,8 +2,6 @@ package v1
 
 import (
 	"gofreezer/pkg/api/unversioned"
-	"gofreezer/pkg/fields"
-	"gofreezer/pkg/labels"
 	"gofreezer/pkg/types"
 	"time"
 )
@@ -270,20 +268,31 @@ type ExportOptions struct {
 type ListOptions struct {
 	unversioned.TypeMeta `json:",inline"`
 
-	// A selector based on labels
-	LabelSelector labels.Selector
-	// A selector based on fields
-	FieldSelector fields.Selector
-	//If true, watch for changes to this list
-	Watch bool
-	// For watch, it's the resource version to watch.
-	// For list,
-	// - if unset, then the result is returned from remote storage based on quorum-read flag;
-	// - if it's 0, then we simply return what we currently have in cache, no guarantee;
-	// - if set to non zero, then the result is as fresh as given rv.
-	ResourceVersion string
+	// A selector to restrict the list of returned objects by their labels.
+	// Defaults to everything.
+	// +optional
+	LabelSelector string `json:"labelSelector,omitempty" protobuf:"bytes,1,opt,name=labelSelector"`
+	// A selector to restrict the list of returned objects by their fields.
+	// Defaults to everything.
+	// +optional
+	FieldSelector string `json:"fieldSelector,omitempty" protobuf:"bytes,2,opt,name=fieldSelector"`
+	// Watch for changes to the described resources and return them as a stream of
+	// add, update, and remove notifications. Specify resourceVersion.
+	// +optional
+	Watch bool `json:"watch,omitempty" protobuf:"varint,3,opt,name=watch"`
+	// When specified with a watch call, shows changes that occur after that particular version of a resource.
+	// Defaults to changes from the beginning of history.
+	// +optional
+	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,4,opt,name=resourceVersion"`
 	// Timeout for the list/watch call.
-	TimeoutSeconds *int64
+	// +optional
+	TimeoutSeconds *int64 `json:"timeoutSeconds,omitempty" protobuf:"varint,5,opt,name=timeoutSeconds"`
+
+	// A selector to restrict the list of returned objects by Pagination.
+	// Defaults to everything.
+	// +optional
+	//A selector based on pagination
+	PageSelector string `json:"pageSelector,omitempty" protobuf:"varint,6,opt,name=pageSelector"`
 }
 
 type LoginUser struct {
@@ -343,24 +352,24 @@ type UserInfo struct {
 	ID                   int64            `json:"id,omitempty" column:"id"`
 	Passwd               string           `json:"passwd,omitempty" column:"passwd"`
 	Email                string           `json:"email,omitempty" column:"email"`
-	EnableOTA            int64            `json:"enableOTA,omitempty" column:"enable_ota"`
+	EnableOTA            bool             `json:"enableOTA,omitempty" column:"enable_ota"`
 	TrafficLimit         int64            `json:"trafficLimit,omitempty" column:"traffic_limit" gorm:"column:traffic_limit"` //traffic for per user
 	UploadTraffic        int64            `json:"uploadTraffic,omitempty" column:"upload" gorm:"column:upload"`              //upload traffic for per user
 	DownloadTraffic      int64            `json:"downloadTraffic,omitempty" column:"download" gorm:"column:download"`        //download traffic for per user
 	Name                 string           `json:"name,omitempty" column:"user_name" gorm:"column:user_name"`
 	ManagePasswd         string           `json:"managePasswd,omitempty" column:"manage_pass" gorm:"column:manage_pass"`
 	ExpireTime           unversioned.Time `json:"expireTime,omitempty" column:"expire_time" gorm:"column:expire_time"`
-	EmailVerify          int16            `json:"emailVerify,omitempty" column:"is_email_verify" gorm:"column:is_email_verify"`
+	EmailVerify          bool             `json:"emailVerify,omitempty" column:"is_email_verify" gorm:"column:is_email_verify"`
 	RegIPAddr            string           `json:"regIPAddr,omitempty" column:"reg_ip" gorm:"column:reg_ip"`
 	RegDBTime            unversioned.Time `json:"regTime,omitempty" column:"reg_date" gorm:"column:reg_date"`
 	Description          string           `json:"description,omitempty" column:"description" gorm:"column:description"`
 	TrafficRate          float64          `json:"trafficRate,omitempty" column:"traffic_rate" gorm:"column:traffic_rate"`
-	IsAdmin              int64            `json:"isAdmin,omitempty" column:"is_admin" gorm:"column:is_admin"`
+	IsAdmin              bool             `json:"isAdmin,omitempty" column:"is_admin" gorm:"column:is_admin"`
 	LastCheckInTime      unversioned.Time `json:"-" column:"last_check_in_time" gorm:"column:last_check_in_time"`
 	LastResetPwdTime     unversioned.Time `json:"-" column:"last_reset_pass_time" gorm:"column:last_reset_pass_time"`
 	TotalUploadTraffic   int64            `json:"totalUploadTraffic,omitempty" column:"total_upload" gorm:"column:total_upload"`
 	TotalDownloadTraffic int64            `json:"totalDownloadTraffic,omitempty" column:"total_download" gorm:"column:total_download"`
-	Status               int64            `json:"status,omitempty" column:"status" gorm:"column:status"`
+	Status               bool             `json:"status,omitempty" column:"status" gorm:"column:status"`
 }
 
 type UserSpec struct {

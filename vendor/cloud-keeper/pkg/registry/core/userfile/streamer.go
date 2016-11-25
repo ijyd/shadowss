@@ -3,9 +3,12 @@ package userfile
 import (
 	"gofreezer/pkg/api"
 	"gofreezer/pkg/api/errors"
+	"gofreezer/pkg/api/unversioned"
+	"gofreezer/pkg/runtime"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strings"
 
@@ -20,6 +23,7 @@ type FileStreamer struct {
 // error format.
 type ErrorResponder interface {
 	Error(err error)
+	Object(statusCode int, obj runtime.Object)
 }
 
 func NewFileStreamer(responder ErrorResponder) *FileStreamer {
@@ -31,6 +35,8 @@ func NewFileStreamer(responder ErrorResponder) *FileStreamer {
 // ServeHTTP handles the streamer request
 func (h *FileStreamer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	path := req.URL.Path
+
+	glog.V(5).Infof("stream server http :%v\r\n", path)
 
 	fields := strings.Split(path, "/")
 	if len(fields) < 3 {
@@ -60,6 +66,8 @@ func (h *FileStreamer) UploadFile(w http.ResponseWriter, req *http.Request) {
 	glog.V(5).Infof("got req %+v \r\n", httpReq)
 	file, handler, err := httpReq.FormFile("file")
 	if err != nil {
+		reqstr, err := httputil.DumpRequestOut(httpReq, true)
+		glog.V(5).Infof("got reqstr:%v err:%v\r\n", string(reqstr), err)
 		h.Responder.Error(errors.NewBadRequest("Form boyd required"))
 		return
 	}
@@ -86,7 +94,31 @@ func (h *FileStreamer) UploadFile(w http.ResponseWriter, req *http.Request) {
 	err = ioutil.WriteFile(contentDescFile, []byte(content), 0666)
 	if err != nil {
 		h.Responder.Error(errors.NewInternalError(err))
+		return
 	}
+
+	result := &unversioned.Status{
+		Status: unversioned.StatusSuccess,
+		Code:   http.StatusOK,
+		Details: &unversioned.StatusDetails{
+			Name: handler.Filename,
+			Kind: "UserPublicFile",
+		},
+	}
+
+	h.Responder.Object(200, result)
+
+	return
+	// resultByte, err := json.Marshal(result)
+	// if err != nil {
+	// 	h.Responder.Error(errors.NewInternalError(err))
+	// 	return
+	// }
+	//
+	// w.Header().Set("Content-Type", "application/json")
+	// w.WriteHeader(200)
+	// w.Write(resultByte)
+
 }
 
 func (h *FileStreamer) DownLoadFile(w http.ResponseWriter, req *http.Request, fileName string) {

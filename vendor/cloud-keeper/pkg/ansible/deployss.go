@@ -53,10 +53,13 @@ func DeployShadowss(typ api.OperatorType, hosts []string, sshkey string, attr ma
 	out, err := cmd.CombinedOutput()
 	if err == exec.ErrExecutableNotFound {
 		glog.Errorf("Expected error ErrExecutableNotFound but got %v", err)
-		return err
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
 	}
-	glog.V(5).Infof("playbook result %s", string(out))
-	return err
+
+	if err != nil {
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
+	}
+	return nil
 }
 
 func RestartShadowss(typ api.OperatorType, hosts []string, sshkey string) error {
@@ -82,10 +85,13 @@ func RestartShadowss(typ api.OperatorType, hosts []string, sshkey string) error 
 	out, err := cmd.CombinedOutput()
 	if err == exec.ErrExecutableNotFound {
 		glog.Errorf("Expected error ErrExecutableNotFound but got %v", err)
-		return err
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
 	}
-	glog.V(5).Infof("playbook result %s", string(out))
-	return err
+
+	if err != nil {
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
+	}
+	return nil
 }
 
 func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
@@ -128,11 +134,13 @@ func DeployVPS(typ api.OperatorType, srv *api.AccServer, key string) error {
 	out, err := cmd.CombinedOutput()
 	if err == exec.ErrExecutableNotFound {
 		glog.Errorf("Expected error ErrExecutableNotFound but got %v", err)
-		return err
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
 	}
-	glog.V(5).Infof("playbook result %s", string(out))
 
-	return err
+	if err != nil {
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
+	}
+	return nil
 }
 
 func DeleteVPS(typ api.OperatorType, id int64, key string) error {
@@ -163,9 +171,11 @@ func DeleteVPS(typ api.OperatorType, id int64, key string) error {
 	out, err := cmd.CombinedOutput()
 	if err == exec.ErrExecutableNotFound {
 		glog.Errorf("Expected error ErrExecutableNotFound but got %v", err)
-		return err
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
 	}
-	glog.V(5).Infof("playbook result %s", string(out))
 
-	return err
+	if err != nil {
+		return fmt.Errorf("ansible-playbook error:%v output:%v", err, out)
+	}
+	return nil
 }

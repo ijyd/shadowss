@@ -29,7 +29,8 @@ type store struct {
 }
 
 type RowResult struct {
-	data []byte
+	data        []byte
+	resourceKey string
 }
 
 //New create a mysql store
@@ -60,22 +61,11 @@ func (s *store) Versioner() storage.Versioner {
 }
 
 func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object) error {
-	// table, err := GetTable(ctx, obj)
-	// if err != nil {
-	// 	return err
-	// }
-
 	err := s.GetResourceWithKey(ctx, key, out, true)
 	if err != nil {
 		return err
 	}
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, out)
-		if err != nil {
-			return storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, out)
 
 	err = table.ExtractTableObj(obj, func(tObj reflect.Value) error {
 		glog.V(9).Infof("insert into %s with obj (%+v)  ", table.name, tObj)
@@ -98,13 +88,7 @@ func (s *store) Delete(ctx context.Context, key string, out runtime.Object, prec
 	if err != nil {
 		return err
 	}
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, out)
-		if err != nil {
-			return storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, out)
 
 	delObj := reflect.New(table.obj.Type())
 
@@ -151,19 +135,14 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Ob
 	exist := true
 	err := s.GetResourceWithKey(ctx, key, out, false)
 	if err != nil {
-		if storage.IsItemNotFound(err) {
+		if storage.IsNotFound(err) {
+			glog.V(9).Infof("item not found check if allow create on update(%v)\r\n", err)
 			exist = false
 		} else {
 			return err
 		}
 	}
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, out)
-		if err != nil {
-			return storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, out)
 
 	ret, fields, err := userUpdate(out, tryUpdate)
 	if err != nil {
@@ -210,18 +189,11 @@ func (s *store) doQuery(ctx context.Context, key string, objPtr runtime.Object, 
 
 	glog.V(9).Infof("input objPtr %v type %v", objPtr, reflect.TypeOf(objPtr))
 
-	var err error
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, objPtr)
-		if err != nil {
-			return nil, nil, storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, objPtr)
 
 	//get count
 	var count uint64
-	err = s.GetCount(ctx, key, objPtr, p, &count)
+	err := s.GetCount(ctx, key, objPtr, p, &count)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -264,17 +236,17 @@ func userUpdate(input runtime.Object, userUpdate mysqls.UpdateFunc) (runtime.Obj
 
 // decode decodes value of bytes into object. It will also set the object resource version to rev.
 // On success, objPtr would be set to the object.
-func decode(codec runtime.Codec, versioner storage.Versioner, value []byte, objPtr runtime.Object) error {
+func decode(codec runtime.Codec, versioner storage.Versioner, elem *RowResult, objPtr runtime.Object) error {
 	if _, err := conversion.EnforcePtr(objPtr); err != nil {
 		panic("unable to convert output object to pointer")
 	}
-	glog.V(5).Infof("decode byte to obj %v\r\n", string(value))
-	_, _, err := codec.Decode(value, nil, objPtr)
+	_, _, err := codec.Decode(elem.data, nil, objPtr)
 	if err != nil {
 		return err
 	}
 	// being unable to set the version does not prevent the object from being extracted
 	versioner.UpdateObject(objPtr, uint64(resourceVersion))
+	UpdateNameWithResouceKey(objPtr, elem.resourceKey)
 	return nil
 }
 
@@ -292,6 +264,7 @@ func decodeList(elems []*RowResult, ListPtr interface{}, codec runtime.Codec, ve
 		}
 		// being unable to set the version does not prevent the object from being extracted
 		versioner.UpdateObject(obj, resourceVersion)
+		UpdateNameWithResouceKey(obj, elem.resourceKey)
 		v.Set(reflect.Append(v, reflect.ValueOf(obj).Elem()))
 	}
 	return nil
@@ -300,19 +273,12 @@ func decodeList(elems []*RowResult, ListPtr interface{}, codec runtime.Codec, ve
 //filter support query arg
 func (s *store) GetCount(ctx context.Context, key string, objPtr runtime.Object, p storage.SelectionPredicate, result *uint64) error {
 
-	var err error
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, objPtr)
-		if err != nil {
-			return storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, objPtr)
 
 	dbHandle := s.client.Table(table.name).Model(table.obj.Type())
 
 	dbHandle = table.BaseCondition(dbHandle, p)
-	err = dbHandle.Count(result).Error
+	err := dbHandle.Count(result).Error
 	if err != nil {
 		return storage.NewInternalErrorf("key %v, query count error %v", key, err)
 	}
@@ -323,14 +289,7 @@ func (s *store) GetCount(ctx context.Context, key string, objPtr runtime.Object,
 //GetResourceWithKey build a sql request with key
 func (s *store) GetResourceWithKey(ctx context.Context, key string, out runtime.Object, ignoreNotFound bool) error {
 
-	var err error
-	table, ok := s.table(ctx)
-	if !ok {
-		table, err = GetTable(ctx, out)
-		if err != nil {
-			return storage.NewInvalidObjError(key, err.Error())
-		}
-	}
+	table := s.table(ctx, out)
 
 	glog.V(9).Infof("Get resource with key %s", key)
 
@@ -340,26 +299,34 @@ func (s *store) GetResourceWithKey(ctx context.Context, key string, out runtime.
 
 	rowList, _, err := s.doQuery(ctx, key, out, p)
 	if err != nil {
-		return err
+		return storage.NewUnreachableError(key, resourceVersion)
 	}
 
 	if len(rowList) == 0 {
 		if ignoreNotFound {
 			return runtime.SetZeroValue(out)
 		}
-		return storage.NewItemNotFoundError(key)
+		return storage.NewKeyNotFoundError(key, resourceVersion)
 	} else if len(rowList) > 1 {
-		return storage.NewTooManyItemError(key, fmt.Sprintf("itme count %v", len(rowList)))
+		panic(fmt.Sprintf("resource key(%s) must to be unique", key))
 	}
 
-	if err := decode(s.codec, s.versioner, rowList[0].data, out); err != nil {
+	if err := decode(s.codec, s.versioner, rowList[0], out); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *store) table(ctx context.Context) (*Table, bool) {
-	table, ok := ctx.Value(tablecontextKey).(*Table)
-	return table, ok
+func (s *store) table(ctx context.Context, obj runtime.Object) *Table {
+	ctxTable, ok := ctx.Value(tablecontextKey).(*Table)
+	if !ok {
+		table, err := GetTable(ctx, obj)
+		if err != nil {
+			panic(fmt.Sprintf("struct must to be as a table. error(%v).", err))
+		}
+		return table
+	}
+
+	return ctxTable
 }

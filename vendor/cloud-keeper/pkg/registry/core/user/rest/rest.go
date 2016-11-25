@@ -2,24 +2,39 @@ package rest
 
 import (
 	"cloud-keeper/pkg/api"
-	"cloud-keeper/pkg/registry/core/user"
-	"cloud-keeper/pkg/registry/core/userservice"
-	apierr "gofreezer/pkg/api/errors"
+	"cloud-keeper/pkg/registry/core/node"
+	"cloud-keeper/pkg/registry/core/nodeuser"
+	"cloud-keeper/pkg/registry/core/user/dynamodb"
+	"cloud-keeper/pkg/registry/core/user/etcd"
+	"cloud-keeper/pkg/registry/core/user/mysql"
+	"fmt"
+	"gofreezer/pkg/api/errors"
 	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/runtime"
+
+	"github.com/golang/glog"
 
 	freezerapi "gofreezer/pkg/api"
 )
 
 type UserREST struct {
-	userservice userservice.Registry
-	user        user.Registry
+	etcd   *etcd.REST
+	mysql  *mysql.REST
+	dynamo *dynamodb.REST
+
+	node     node.Registry
+	nodeuser nodeuser.Registry
+	//userservice userservice.Registry
+	//user user.Registry
 }
 
-func NewREST(user user.Registry, userservice userservice.Registry) *UserREST {
+func NewREST(etcdHandler *etcd.REST, mysqlHandler *mysql.REST, dynamo *dynamodb.REST, node node.Registry, nodeuser nodeuser.Registry) *UserREST {
 	return &UserREST{
-		userservice: userservice,
-		user:        user,
+		etcd:     etcdHandler,
+		mysql:    mysqlHandler,
+		dynamo:   dynamo,
+		node:     node,
+		nodeuser: nodeuser,
 	}
 }
 
@@ -31,54 +46,178 @@ func (*UserREST) NewList() runtime.Object {
 	return &api.UserList{}
 }
 
-func (rs *UserREST) Get(ctx freezerapi.Context, name string) (runtime.Object, error) {
-	return rs.user.GetUser(ctx, name)
+func (r *UserREST) mergeUser(left *api.User, out *api.User) {
+	out.Annotations = make(map[string]string)
+	for k, v := range left.Annotations {
+		out.Annotations[k] = v
+	}
+
+	out.Spec.UserService.NodeCnt = left.Spec.UserService.NodeCnt
+	out.Spec.UserService.Status = left.Spec.UserService.Status
+
+	out.Spec.UserService.Nodes = make(map[string]api.NodeReferences)
+	for nodeName, nodeRefer := range left.Spec.UserService.Nodes {
+		refer := api.NodeReferences{
+			Host: nodeRefer.Host,
+		}
+		refer.User.DownloadTraffic = nodeRefer.User.DownloadTraffic
+		refer.User.UploadTraffic = nodeRefer.User.UploadTraffic
+		refer.User.Name = nodeRefer.User.Name
+		refer.User.EnableOTA = nodeRefer.User.EnableOTA
+		refer.User.ID = nodeRefer.User.ID
+		refer.User.Method = nodeRefer.User.Method
+		refer.User.Port = nodeRefer.User.Port
+		refer.User.Password = nodeRefer.User.Password
+
+		out.Spec.UserService.Nodes[nodeName] = refer
+	}
+
 }
 
-func (rs *UserREST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
-	return rs.user.ListUsers(ctx, options)
+func (r *UserREST) Get(ctx freezerapi.Context, name string) (runtime.Object, error) {
+
+	obj, err := r.mysql.Get(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	user := obj.(*api.User)
+	user.Name = user.Spec.DetailInfo.Name
+
+	etcdobj, err := r.dynamo.Get(ctx, name)
+	if err == nil {
+		left := etcdobj.(*api.User)
+		// user.Annotations = make(map[string]string)
+		// for k, v := range etcdUser.Annotations {
+		// 	user.Annotations[k] = v
+		// }
+		r.mergeUser(left, user)
+	}
+
+	return user, nil
+}
+
+func (r *UserREST) FilterUserWithNodeName(ctx freezerapi.Context, nodename string, options *freezerapi.ListOptions) (*api.UserList, error) {
+	obj, err := r.dynamo.List(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	userlist := obj.(*api.UserList)
+
+	return userlist, nil
+}
+
+func (r *UserREST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
+
+	if (options == nil) || (options != nil && options.PageSelector == nil) ||
+		(options.PageSelector != nil && options.PageSelector.Empty()) {
+		return nil, errors.NewInternalError(fmt.Errorf("you must give a pagination selector.\r\n"))
+	}
+
+	_, perPage := options.PageSelector.RequirePage()
+	if perPage > 20 {
+		return nil, errors.NewInternalError(fmt.Errorf("you must give a (perPage < 15) for pagination selector.\r\n"))
+	}
+
+	mysqlobj, err := r.mysql.List(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+	userlist := mysqlobj.(*api.UserList)
+
+	// obj, err := r.dynamo.List(ctx, nil)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// dynamoUserList := obj.(*api.UserList)
+	// dynamodbUserListMap := make(map[string]*api.User)
+	// for k, v := range dynamoUserList.Items {
+	// 	glog.V(5).Infof("found user(%v) in dynamodb\r\n", v.Name)
+	// 	dynamodbUserListMap[v.Name] = &dynamoUserList.Items[k]
+	// }
+
+	for k, v := range userlist.Items {
+		userlist.Items[k].Name = v.Spec.DetailInfo.Name
+		name := v.Spec.DetailInfo.Name
+
+		dynamoObj, err := r.dynamo.Get(ctx, name)
+		if err != nil {
+			glog.Warningf("not found user(%v) in dynamodb\r\n", name)
+			continue
+		}
+		dynamoUser, ok := dynamoObj.(*api.User)
+
+		//dynamoUser, ok := dynamodbUserListMap[name]
+		if ok {
+			r.mergeUser(dynamoUser, &userlist.Items[k])
+		} else {
+			glog.Warningf("not found user(%v) in dynamodb\r\n", name)
+		}
+	}
+
+	return userlist, nil
 }
 
 func (r *UserREST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
-	return r.user.Update(ctx, name, objInfo)
+	_, flag, err := r.dynamo.Update(ctx, name, objInfo)
+	if err != nil {
+		glog.Errorf("update user(%+v) error:%v\r\n", name, err)
+		return nil, false, err
+	}
+
+	user, flag, err := r.mysql.Update(ctx, name, objInfo)
+	if err != nil {
+		glog.Errorf("update user(%+v) error:%v\r\n", name, err)
+		return nil, false, err
+	}
+
+	glog.V(5).Infof("update user(%+v) done(%v)\r\n", name, err)
+
+	return user, flag, nil
 }
 
 func (r *UserREST) Delete(ctx freezerapi.Context, name string, options *freezerapi.DeleteOptions) (runtime.Object, error) {
-	return r.user.DeleteUser(ctx, name)
+	obj, err := r.mysql.Get(ctx, name)
+	if err != nil {
+		return nil, errors.NewNotFound(api.Resource("users"), err.Error())
+	}
+	user := obj.(*api.User)
+
+	user.Spec.DetailInfo.Status = false
+	_, _, err = r.dynamo.Update(ctx, user.Name, rest.DefaultUpdatedObjectInfo(user, api.Scheme))
+	if err != nil {
+		return nil, err
+	}
+
+	// user := obj.(*api.User)
+	// user.Spec.DetailInfo.Status = false
+
+	//disable user
+	upobj, _, err := r.mysql.Update(ctx, user.Name, rest.DefaultUpdatedObjectInfo(user, api.Scheme))
+	return upobj, err
 }
 
 func (r *UserREST) Create(ctx freezerapi.Context, obj runtime.Object) (runtime.Object, error) {
 	user, ok := obj.(*api.User)
 	if !ok {
-		return nil, apierr.NewBadRequest("not a User object")
+		return nil, errors.NewBadRequest("not a User object")
 	}
 
-	//for user default info
-	userRefer := api.UserReferences{
-		ID:        user.Spec.DetailInfo.ID,
-		Name:      user.Name,
-		Port:      0,
-		Method:    string("aes-256-cfb"),
-		Password:  user.Spec.DetailInfo.Passwd,
-		EnableOTA: true,
-	}
-	spec := api.UserServiceSpec{
-		Nodes: map[string]api.NodeReferences{
-			api.UserServicetDefaultNode: api.NodeReferences{
-				User: userRefer,
-			},
-		},
-		NodeCnt: 0,
-	}
-
-	userSrv := &api.UserService{}
-	userSrv.Spec = spec
-	userSrv.Name = user.Name
-
-	_, err := r.userservice.CreateUserService(ctx, userSrv)
+	err := r.InitNodeUser(ctx, user)
 	if err != nil {
-		return nil, apierr.NewInternalError(err)
+		return nil, err
 	}
 
-	return r.user.CreateUser(ctx, user)
+	_, err = r.mysql.Create(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	resObj, err := r.dynamo.Create(ctx, user)
+	if err != nil {
+		glog.Errorf("create user error:%v will delete from mysql\r\n", err)
+		r.mysql.Delete(ctx, user.Name, nil)
+		return nil, err
+	}
+
+	return resObj, nil
 }
