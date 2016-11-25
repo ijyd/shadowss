@@ -123,64 +123,17 @@ func (u *Users) DelUsers(nodeUser *api.NodeUser) {
 	u.refresh(nodeUser, true)
 }
 
-func (u *Users) ListUserLoop() {
+func (u *Users) ListUserLoop(nodename string) {
 
-	expireTime := time.Duration(60)
+	var loopcnt int
+loop:
+	loopcnt++
+	err := u.WatchUserLoop(nodename)
 
-	for {
-		select {
-		case <-time.After(time.Second * expireTime):
-			glog.V(5).Infof("**********sync user begin**********\r\n")
-			userlist, err := u.getusers()
-			if err == nil {
-				for _, v := range userlist.Items {
-					nodeUser := &v
-					switch nodeUser.Spec.Phase {
-					case api.NodeUserPhaseAdd:
-						glog.V(5).Infof("add new node user %v\r\n", nodeUser)
-						u.AddUsers(nodeUser)
-					case api.NodeUserPhaseDelete:
-						glog.V(5).Infof("delete node user %v\r\n", nodeUser)
-						u.DelUsers(nodeUser)
-					case api.NodeUserPhaseUpdate:
-						glog.V(5).Infof("update node user not need implement %v", *nodeUser)
-					default:
-						glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
-					}
-				}
-			} else {
-				glog.Warningf("sync user failure %v \r\n", err)
-			}
-		}
-	}
+	rand.Seed(time.Now().UTC().UnixNano())
+	waitTime := rand.Intn(60) + 10
+	glog.Errorf("watch user loop quit %v, restart after %v(s) \r\n", err, waitTime)
+	time.Sleep(time.Second * time.Duration((waitTime)))
+	goto loop
 
 }
-
-//
-// func (u *Users) AddObj(obj runtime.Object) {
-// 	nodeUser := obj.(*api.NodeUser)
-//
-// 	switch nodeUser.Spec.Phase {
-// 	case api.NodeUserPhaseAdd:
-// 		glog.V(5).Infof("add new node user %v\r\n", nodeUser)
-// 		u.AddUsers(nodeUser)
-// 	case api.NodeUserPhaseDelete:
-// 		glog.V(5).Infof("delete node user %v\r\n", nodeUser)
-// 		u.DelUsers(nodeUser)
-// 	case api.NodeUserPhaseUpdate:
-// 		glog.V(5).Infof("update node user not need implement %v", *nodeUser)
-// 	default:
-// 		glog.Warningf("invalid phase %v for user %v \r\n", nodeUser.Spec.Phase, *nodeUser)
-// 	}
-//
-// 	return
-// }
-//
-// func (u *Users) ModifyObj(obj runtime.Object) {
-// }
-//
-// func (u *Users) DelObj(obj runtime.Object) {
-// }
-//
-// func (u *Users) Error(obj runtime.Object) {
-// }

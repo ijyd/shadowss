@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"cloud-keeper/pkg/api"
@@ -137,8 +136,6 @@ func UpdateNodeUser(user *api.NodeUser) error {
 			return err
 		}
 		defer resp.Body.Close()
-		dump, err := httputil.DumpRequestOut(req, true)
-		glog.V(5).Infof("xmit request:%v error:%v\r\n", string(dump), err)
 
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
