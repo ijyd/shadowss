@@ -11,15 +11,12 @@ import (
 
 	"cloud-keeper/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
+	"shadowss/pkg/multiuser/common"
 
 	"github.com/golang/glog"
 )
 
 type DoReq func(client *http.Client, url string) error
-
-const (
-	token = "Bearer 49acafe7e63682e1e6b6983580c4ee56"
-)
 
 func Request(req DoReq) error {
 	secure := &http.Transport{
@@ -52,7 +49,7 @@ func GetAPIServers(urladdr string) (*api.APIServerList, error) {
 			return err
 		}
 
-		req.Header.Add("Authorization", token)
+		common.AddAuthHttpHeader(req)
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -89,7 +86,7 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 			return err
 		}
 
-		req.Header.Add("Authorization", token)
+		common.AddAuthHttpHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
@@ -128,7 +125,7 @@ func UpdateNodeUser(user *api.NodeUser) error {
 			return err
 		}
 
-		req.Header.Add("Authorization", token)
+		common.AddAuthHttpHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
@@ -160,7 +157,7 @@ func ListNodeUser(nodename string) (*api.NodeUserList, error) {
 			return err
 		}
 
-		req.Header.Add("Authorization", token)
+		common.AddAuthHttpHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
@@ -202,7 +199,7 @@ func WatchNodeUser(name string) error {
 			return err
 		}
 
-		req.Header.Add("Authorization", token)
+		common.AddAuthHttpHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)

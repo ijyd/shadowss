@@ -1,21 +1,16 @@
-hash: 0ab305e70c718ef4bc0f80da54644767c833ebff8053f939b1d9bbf0f6d8caf3
-updated: 2016-11-17T16:14:50.577126629+08:00
+hash: caf7a0bb5ab35a7353ff6287125cca45b862483e5d7f9d51aede87db47135db0
+updated: 2016-11-25T12:40:17.878348612+08:00
 imports:
 - name: apistack
-  version: e19438580f4a5a42e9015f50483981e7fdec8d72
+  version: dbd8d913717c23c49c8bcf5834cb4f76e3c81c94
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
   subpackages:
   - pkg/genericapiserver/openapi/common
 - name: cloud-keeper
-  version: 04060a53e9c69403ab33ca7e187921b631111cc3
+  version: 09951f5d2dffc2943851eeb1d7f9e229e5493321
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
-  - pkg/api/install
-  - pkg/controller/apiserverctl
-  - pkg/controller/nodectl
-  - pkg/etcdhelper
-  - pkg/watcher
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
 - name: github.com/coreos/etcd
@@ -36,7 +31,7 @@ imports:
 - name: github.com/go-openapi/jsonreference
   version: 36d33bfe519efae5632669801b180bf1a245da3b
 - name: github.com/go-openapi/spec
-  version: d1c18b339aece4b16ead6d253b85b6ad7180ea54
+  version: f7ae86df5bc115a2744343016c789a89f065a4bd
 - name: github.com/go-openapi/swag
   version: 3b6d86cd965820f968760d5d419cb4add096bdd7
 - name: github.com/godbus/dbus
@@ -53,7 +48,9 @@ imports:
   subpackages:
   - lru
 - name: github.com/google/gofuzz
-  version: fd52762d25a41827db7ef64c43756fd4b9f7e382
+  version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
+- name: github.com/gorilla/websocket
+  version: e8f0f8aaa98dfb6586cbdf2978d511e3199a960a
 - name: github.com/mailru/easyjson
   version: 159cdb893c982e3d1bc6450322fedd514f9c9de3
   subpackages:
@@ -73,7 +70,7 @@ imports:
   subpackages:
   - codec
 - name: gofreezer
-  version: cdae0294bf6c4bf50affa6e0b84a8129cbe084bb
+  version: e7113f3a8d271f5b4f0167cac8dfdba649244fda
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -88,6 +85,7 @@ imports:
   - pkg/genericstoragecodec
   - pkg/genericstoragecodec/options
   - pkg/labels
+  - pkg/pagination
   - pkg/runtime
   - pkg/runtime/serializer
   - pkg/runtime/serializer/json
@@ -123,7 +121,7 @@ imports:
   - context
   - idna
 - name: golang.org/x/text
-  version: a263ba8db058568bb9beba166777d9c9dbe75d68
+  version: b01949dc0793a9af5e4cb3fce4d42999e76e8ca1
   subpackages:
   - transform
   - unicode/norm

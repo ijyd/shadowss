@@ -2,13 +2,9 @@ package: shadowss
 import:
 - package: cloud-keeper
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: 04060a53e9c69403ab33ca7e187921b631111cc3
+  version: 09951f5d2dffc2943851eeb1d7f9e229e5493321
   subpackages:
-  - pkg/api/install
-  - pkg/controller/apiserverctl
-  - pkg/controller/nodectl
-  - pkg/etcdhelper
-  - pkg/watcher
+  - pkg/api
 
 - package: golib
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git

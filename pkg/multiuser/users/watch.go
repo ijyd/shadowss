@@ -9,6 +9,7 @@ import (
 
 	"cloud-keeper/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
+	"shadowss/pkg/multiuser/common"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
@@ -74,7 +75,8 @@ func (u *Users) WatchUserLoop(nodeName string) error {
 	websocket.DefaultDialer.ReadBufferSize = 1024 * 5
 
 	wsHeaders := http.Header{
-		"Origin": {"http://localhost"},
+		"Origin":        {"http://localhost"},
+		"Authorization": {common.Token},
 	}
 	wsc, _, err := websocket.DefaultDialer.Dial(url.String(), wsHeaders)
 	if err != nil {
