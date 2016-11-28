@@ -29,7 +29,7 @@ type rawMsg struct {
 	data    []byte
 }
 
-func (u *Users) syncUsers(nodeev *nodeEvent) error {
+func (u *Users) syncUsers(nodeev *nodeEvent, nodeName string) error {
 
 	nodeUser := &nodeev.Object
 	glog.V(5).Infof("event(%v) node user %v\r\n", nodeev.Type, nodeUser)
@@ -41,19 +41,22 @@ func (u *Users) syncUsers(nodeev *nodeEvent) error {
 	// nodeUser.Spec.Phase = userRefer.Phase
 	// nodeUser.Spec.User = userRefer.User
 
+	lables, ok := nodeUser.Labels[nodeName]
+	if !ok {
+		return fmt.Errorf("user(%s) not for node(%s)\r\n", nodeUser.Spec.User.Name, nodeName)
+	}
+
 	switch nodeev.Type {
 	case "MODIFIED":
 		fallthrough
 	case "ADDED":
-		switch nodeUser.Spec.Phase {
+		switch lables {
 		case api.NodeUserPhaseAdd:
 			glog.V(5).Infof("add new node user %v\r\n", *nodeUser)
 			u.AddUsers(nodeUser)
 		case api.NodeUserPhaseDelete:
 			glog.V(5).Infof("delete node user %v\r\n", *nodeUser)
 			u.DelUsers(nodeUser)
-		// case api.NodeUserPhaseUpdate:
-		// 	glog.V(5).Infof("update node user not need implement %v", *nodeUser)
 		default:
 			glog.Warningf("ignore phase %v for user %v \r\n", phase, *nodeUser)
 		}
@@ -71,7 +74,7 @@ func (u *Users) WatchUserLoop(nodeName string) error {
 		Path:   fmt.Sprintf("/api/v1/watch/nodeusers"),
 	}
 
-	url.Query().Add("fieldSelector", fmt.Sprintf("spec.nodeName=%s", nodeName))
+	url.Query().Add("lableSelector", fmt.Sprintf("%s", nodeName))
 
 	glog.V(5).Infof("start watch on %+v\r\n", url.String())
 
@@ -117,7 +120,7 @@ func (u *Users) WatchUserLoop(nodeName string) error {
 				if err != nil {
 					return err
 				}
-				u.syncUsers(nodeev)
+				u.syncUsers(nodeev, nodeName)
 			case websocket.CloseMessage:
 				return fmt.Errorf("recevice close message")
 			case websocket.BinaryMessage:
