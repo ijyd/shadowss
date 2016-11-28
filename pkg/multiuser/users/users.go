@@ -11,20 +11,17 @@ import (
 )
 
 type RefreshUser func(user *api.NodeUser, del bool)
-type GetUsers func() (*api.NodeUserList, error)
 
 type Users struct {
 	proxyHandle *proxyserver.Servers
 	refresh     RefreshUser
-	getusers    GetUsers
 }
 
-func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser, getusers GetUsers) *Users {
+func NewUsers(proxyserver *proxyserver.Servers, refresh RefreshUser) *Users {
 
 	return &Users{
 		proxyHandle: proxyserver,
 		refresh:     refresh,
-		getusers:    getusers,
 	}
 }
 

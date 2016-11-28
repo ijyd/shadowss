@@ -144,7 +144,7 @@ func (mu *MultiUser) StartUp() error {
 
 	go mu.KeepHealth()
 
-	userMgr := users.NewUsers(mu.proxyHandle, RefreshUser, mu.GetUsersFromAPIServer)
+	userMgr := users.NewUsers(mu.proxyHandle, RefreshUser)
 	mu.userHandle = userMgr
 
 	if mu.apiProxy {

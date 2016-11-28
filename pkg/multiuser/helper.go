@@ -78,10 +78,6 @@ func (mu *MultiUser) refreshNode(loopcnt int64) {
 	}
 }
 
-func (mu *MultiUser) GetUsersFromAPIServer() (*api.NodeUserList, error) {
-	return ListNodeUser(mu.nodeName)
-}
-
 func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error) {
 
 	userList := mu.userHandle.GetUsers()
@@ -156,7 +152,6 @@ func UpdateNodeUserFromNode(spec api.NodeUserSpec) error {
 func RefreshUser(user *api.NodeUser, del bool) {
 	if !del {
 		//need update node user port
-		glog.V(5).Infof("update node user %+v", *user)
 		err := UpdateNodeUserFromNode(user.Spec)
 		if err != nil {
 			glog.Errorf("update node user err %v \r\n", err)

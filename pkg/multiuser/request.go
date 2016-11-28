@@ -12,8 +12,6 @@ import (
 	"cloud-keeper/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
 	"shadowss/pkg/multiuser/common"
-
-	"github.com/golang/glog"
 )
 
 type DoReq func(client *http.Client, url string) error
@@ -110,7 +108,7 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 }
 
 func UpdateNodeUser(user *api.NodeUser) error {
-	name := user.Spec.NodeName
+	name := user.Spec.User.Name
 	//need to update our node user
 	user.Name = name
 	body, err := json.Marshal(user)
@@ -119,7 +117,7 @@ func UpdateNodeUser(user *api.NodeUser) error {
 	}
 
 	err = Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodes/%s/nodeusers", url, name)
+		url = fmt.Sprintf("%s/api/v1/nodeusers/%s", url, name)
 		req, err := http.NewRequest("PUT", url, bytes.NewBuffer(body))
 		if err != nil {
 			return err
@@ -141,82 +139,6 @@ func UpdateNodeUser(user *api.NodeUser) error {
 		if resp.StatusCode != 200 {
 			return fmt.Errorf("update nodeuser %v  error:%v", name, string(body))
 		}
-
-		return nil
-	})
-
-	return err
-}
-
-func ListNodeUser(nodename string) (*api.NodeUserList, error) {
-	nodeUserList := &api.NodeUserList{}
-	err := Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodes/%s/nodeusers", url, nodename)
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return err
-		}
-
-		common.AddAuthHttpHeader(req)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != 200 {
-			return fmt.Errorf("list nodeuser %v  error:%v", nodename, string(body))
-		}
-
-		//node := &api.Node{}
-		err = json.Unmarshal(body, nodeUserList)
-		if err != nil {
-			return fmt.Errorf("marshal node json error:%v", err)
-		}
-
-		// for k, v := range node.Spec.Users {
-		// 	nodeusers[k] = v
-		// }
-
-		return err
-	})
-
-	return nodeUserList, err
-}
-
-func WatchNodeUser(name string) error {
-
-	err := Request(func(client *http.Client, url string) error {
-		url = fmt.Sprintf("%s/api/v1/nodeusers/%s?watch=true", url, name)
-		req, err := http.NewRequest("GET", url, nil)
-		if err != nil {
-			return err
-		}
-
-		common.AddAuthHttpHeader(req)
-		req.Header.Set("Content-Type", "application/json")
-
-		resp, err := client.Do(req)
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		if resp.StatusCode != 200 {
-			return fmt.Errorf("update nodeuser %v  error:%v", name, string(body))
-		}
-
-		glog.Infof("Get response %+v", *resp)
 
 		return nil
 	})

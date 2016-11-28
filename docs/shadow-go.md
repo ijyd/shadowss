@@ -143,6 +143,7 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 
 ```
 ./shadowss --alsologtostderr=true  -v=6 --enable-udp-relay --apiserver-url="https://192.168.60.128:18090"
+./shadowss --alsologtostderr=true  -v=6 --enable-udp-relay --apiserver-url="https://etcd.vps.i-jyd.com:18088"
 ```
 
 
@@ -150,7 +151,7 @@ The output of HMAC-SHA is truncated to 10 bytes (leftmost bits).
 use logdir
 
 ```
-./shadowss --log-dir="/var/log/shadowss" --config-file="./server-multi-port.json" --enable-udp-relay --apiserver-url="https://192.168.60.128:18090"
+./shadowss --log-dir="/var/log/shadowss" -v=6 --enable-udp-relay --apiserver-url="https://192.168.60.128:18090"
 ```
 
 ## run client
