@@ -32,7 +32,7 @@ type rawMsg struct {
 func (u *Users) syncUsers(nodeev *nodeEvent, nodeName string) error {
 
 	nodeUser := &nodeev.Object
-	glog.V(5).Infof("event(%v) node user %v\r\n", nodeev.Type, nodeUser)
+	glog.V(5).Infof("event(%v) node user %v\r\n", nodeev.Type, *nodeUser)
 	phase := nodeUser.Spec.Phase
 	//userRefer := &nodeev.Object.Spec.User
 
@@ -52,10 +52,8 @@ func (u *Users) syncUsers(nodeev *nodeEvent, nodeName string) error {
 	case "ADDED":
 		switch lables {
 		case api.NodeUserPhaseAdd:
-			glog.V(5).Infof("add new node user %v\r\n", *nodeUser)
 			u.AddUsers(nodeUser)
 		case api.NodeUserPhaseDelete:
-			glog.V(5).Infof("delete node user %v\r\n", *nodeUser)
 			u.DelUsers(nodeUser)
 		default:
 			glog.Warningf("ignore phase %v for user %v \r\n", phase, *nodeUser)

@@ -136,7 +136,7 @@ func UpdateNodeUser(user *api.NodeUser) error {
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != 200 {
+		if resp.StatusCode >= 300 {
 			return fmt.Errorf("update nodeuser %v  error:%v", name, string(body))
 		}
 
