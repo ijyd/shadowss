@@ -27,11 +27,11 @@ import (
 
 type A struct{}
 
-func (A) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+func (A) GetObjectKind() schema.ObjectKind { return schema.EmptyObjectKind }
 
 func TestRecognizer(t *testing.T) {
 	s := runtime.NewScheme()
-	s.AddKnownTypes(unversioned.GroupVersion{Version: "v1"}, &A{})
+	s.AddKnownTypes(schema.GroupVersion{Version: "v1"}, &A{})
 	d := recognizer.NewDecoder(
 		json.NewSerializer(json.DefaultMetaFactory, s, s, false),
 		json.NewYAMLSerializer(json.DefaultMetaFactory, s, s),

@@ -1,0 +1,14 @@
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"admin", "group":"system:masters", "apiGroup": "*", "namespace": "*", "resource": "*"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"system:apiserver", "group":"system:masters", "apiGroup": "*", "namespace": "*","resource": "*"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"system:masters", "apiGroup": "*", "namespace": "*", "nonResourcePath": "*","readonly": true}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"*", "apiGroup": "*", "namespace": "*", "nonResourcePath": "*","readonly": true}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"*", "apiGroup": "*", "namespace": "*", "resource": "logins"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"ops", "apiGroup": "*", "namespace": "*","resource": "policys"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"ops", "apiGroup": "*", "namespace": "*","resource": "users", "readonly": true}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"ops", "apiGroup": "*", "namespace": "*","resource": "users/bindingnodes"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"ops", "apiGroup": "*", "namespace": "*","resource": "activeapinode", "readonly": true}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"general", "apiGroup": "*", "namespace": "*", "resource": "users/bindingnodes", "readonly": true }}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"general", "apiGroup": "*", "namespace": "*", "resource": "users/properties"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"general", "apiGroup": "*", "namespace": "*", "resource": "userfile/desc"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"general", "apiGroup": "*", "namespace": "*", "resource": "userfile/stream"}}
+{"apiVersion": "abac.authorization.apistack.io/v1beta1", "kind": "Policy", "spec": {"user":"*", "group":"general", "apiGroup": "*", "namespace": "*", "resource": "userfile/activation"}}

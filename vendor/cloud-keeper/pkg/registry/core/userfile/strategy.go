@@ -6,6 +6,7 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/runtime"
 	apistorage "gofreezer/pkg/storage"
 	"gofreezer/pkg/util/validation/field"
@@ -66,10 +67,11 @@ func (userfileStrategy) AllowUnconditionalUpdate() bool {
 }
 
 // MatchLogin returns a generic matcher for a given label and field selector.
-func MatchUserToken(label labels.Selector, field fields.Selector) apistorage.SelectionPredicate {
+func MatchUserToken(label labels.Selector, field fields.Selector, page pages.Selector) apistorage.SelectionPredicate {
 	return apistorage.SelectionPredicate{
 		Label: label,
 		Field: field,
+		Page:  page,
 		GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
 			cls, ok := obj.(*api.UserPublicFile)
 			if !ok {

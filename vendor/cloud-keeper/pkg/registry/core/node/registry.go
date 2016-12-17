@@ -5,6 +5,7 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/labels"
+	"gofreezer/pkg/watch"
 )
 
 // Registry is an interface for things that know how to store node.
@@ -13,6 +14,7 @@ type Registry interface {
 	GetNode(ctx freezerapi.Context, name string) (*api.Node, error)
 	ListNodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.NodeList, error)
 	UpdateNode(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error)
+	WatchNodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (watch.Interface, error)
 	//UpdateNodeUser(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (*api.Node, bool, error)
 }
 
@@ -21,15 +23,17 @@ type storage struct {
 	rest.Updater
 	rest.Getter
 	rest.Lister
+	rest.Watcher
 }
 
 // NewRegistry returns a new Registry interface for the given Storage. Any mismatched
 // types will panic.
-func NewRegistry(u rest.Updater, g rest.Getter, l rest.Lister) Registry {
+func NewRegistry(u rest.Updater, g rest.Getter, l rest.Lister, w rest.Watcher) Registry {
 	return &storage{
 		Updater: u,
 		Getter:  g,
 		Lister:  l,
+		Watcher: w,
 	}
 }
 
@@ -74,4 +78,8 @@ func (s *storage) ListNodes(ctx freezerapi.Context, options *freezerapi.ListOpti
 	}
 
 	return obj.(*api.NodeList), nil
+}
+
+func (s *storage) WatchNodes(ctx freezerapi.Context, options *freezerapi.ListOptions) (watch.Interface, error) {
+	return s.Watch(ctx, options)
 }

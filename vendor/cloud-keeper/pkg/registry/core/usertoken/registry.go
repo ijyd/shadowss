@@ -10,7 +10,8 @@ import (
 
 // Registry is an interface for things that know how to store node.
 type Registry interface {
-	GetUserTokenByToken(ctx freezerapi.Context, token string) (*api.UserToken, error)
+	//GetUserTokenByToken(ctx freezerapi.Context, token string) (*api.UserToken, error)
+	GetUserToken(ctx freezerapi.Context, token string) (*api.UserToken, error)
 	UpdateUserToken(ctx freezerapi.Context, token *api.UserToken) (*api.UserToken, error)
 }
 
@@ -31,7 +32,7 @@ func NewRegistry(s rest.Getter, c rest.Updater, l rest.Lister) Registry {
 	}
 }
 
-func (s *storage) GetUserTokenByToken(ctx freezerapi.Context, token string) (*api.UserToken, error) {
+func (s *storage) GetUserToken(ctx freezerapi.Context, token string) (*api.UserToken, error) {
 	options := &freezerapi.ListOptions{}
 	options.FieldSelector = fields.ParseSelectorOrDie(fmt.Sprintf("spec.token=%s", token))
 	obj, err := s.List(ctx, options)

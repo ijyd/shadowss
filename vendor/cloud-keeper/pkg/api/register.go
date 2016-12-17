@@ -2,11 +2,11 @@ package api
 
 import (
 	prototype "gofreezer/pkg/api"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 )
 
-var Unversioned = unversioned.GroupVersion{Group: "", Version: "v1"}
+var Unversioned = schema.GroupVersion{Group: "", Version: "v1"}
 
 var Scheme = prototype.Scheme
 
@@ -72,6 +72,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&UserTokenList{},
 		&UserPublicFile{},
 		&UserPublicFileList{},
+
+		&BatchUsers{},
+		&BatchShadowss{},
 	)
 	return nil
 }

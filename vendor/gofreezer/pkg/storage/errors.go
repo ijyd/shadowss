@@ -113,8 +113,8 @@ type StorageError struct {
 }
 
 func (e *StorageError) Error() string {
-	return fmt.Sprintf("StorageError: %s, Code: %d, Key: %s,  AdditionalErrorMsg: %s",
-		errCodeToMessage[e.Code], e.Code, e.Key, e.AdditionalErrorMsg)
+	return fmt.Sprintf("StorageError: %s, Code: %d, Key: %s, ResourceVersion: %d, AdditionalErrorMsg: %s",
+		errCodeToMessage[e.Code], e.Code, e.Key, e.ResourceVersion, e.AdditionalErrorMsg)
 }
 
 // IsNotFound returns true if and only if err is "key" not found error.

@@ -115,6 +115,12 @@ type AccServerDeploySS struct {
 	Attribute map[string]string `json:"attr,omitempty"`
 }
 
+const (
+	AccExecCommandDeployss  = "deployss"
+	AccExecCommandRestartss = "restartSS"
+	AccExecCommandReboot    = "reboot"
+)
+
 type AccExecSpec struct {
 	SSHKey  string            `json:"sshKey,omitempty"`
 	Command string            `json:"command,omitempty"`
@@ -287,9 +293,10 @@ const (
 )
 
 const (
-	NodeAnnotationUserCnt    = "userCount"
-	NodeAnnotationRefreshCnt = "Refresh"
-	NodeAnnotationVersion    = "version"
+	NodeAnnotationUserCnt     = "userCount"
+	NodeAnnotationRefreshCnt  = "Refresh"
+	NodeAnnotationVersion     = "version"
+	NodeAnnotationRefreshTime = "refreshTime"
 )
 
 type NodeServer struct {
@@ -397,6 +404,18 @@ type UserServiceBindingNodes struct {
 	Spec UserServiceBindingNodesSpec `json:"spec,omitempty"`
 }
 
+const (
+	UserTypeDesktopRouter = "desktopRouter"
+)
+
+const (
+	PackageTypeDefault = "default"
+)
+
+const (
+	UserBandwidthUnlimited = "Unlimited"
+)
+
 type UserInfo struct {
 	ID                   int64            `json:"id,omitempty" freezer:"column:id"`
 	Passwd               string           `json:"passwd,omitempty" freezer:"column:passwd"`
@@ -419,6 +438,13 @@ type UserInfo struct {
 	TotalUploadTraffic   int64            `json:"totalUploadTraffic,omitempty" freezer:"column:total_upload" gorm:"column:total_upload"`
 	TotalDownloadTraffic int64            `json:"totalDownloadTraffic,omitempty" freezer:"column:total_download" gorm:"column:total_download"`
 	Status               bool             `json:"status,omitempty" freezer:"column:status" gorm:"column:status"`
+	Delete               bool             `json:"delete,omitempty" freezer:"column:delete" gorm:"column:delete"`
+	Activation           bool             `json:"activation,omitempty" freezer:"column:activation" gorm:"column:activation"`
+	UserType             string           `json:"type,omitempty" freezer:"column:type" gorm:"column:type"`
+	Bandwidth            string           `json:"bandwidth,omitempty" freezer:"column:bandwidth" gorm:"column:bandwidth"`
+	PackageType          string           `json:"packagetype,omitempty" freezer:"column:packagetype" gorm:"column:packagetype"`
+	Note                 string           `json:"note,omitempty" freezer:"column:note" gorm:"column:note"`
+	Extra                *string          `json:"extra,omitempty" freezer:"column:extra" gorm:"column:extra" sql:"type:text"`
 }
 
 type NodeReferences struct {
@@ -433,9 +459,13 @@ type BindingNodes struct {
 }
 
 type UserSpec struct {
-	DetailInfo  UserInfo     `json:"detailInfo,omitempty" freezer:"table:vps_new_user"`
+	DetailInfo  UserInfo     `json:"detailInfo,omitempty" freezer:"table:vps_user"`
 	UserService BindingNodes `json:"userService,omitempty"`
 }
+
+const (
+	UserFakeAnnotationLastActiveTime = "lastActiveTime"
+)
 
 type User struct {
 	unversioned.TypeMeta `json:",inline"`
@@ -490,4 +520,36 @@ type ActiveAPINodeList struct {
 
 	Items       []ActiveAPINode `json:"items,omitempty"`
 	EncryptData string          `json:"encData,omitempty"`
+}
+
+type BatchUsersSpec struct {
+	TargetUser     []string         `json:"targetUser,omitempty"`
+	SchedulingTime unversioned.Time `json:"schedulingTime,omitempty"`
+	Resume         bool             `json:"resume,omitempty"`
+}
+
+type BatchUsers struct {
+	unversioned.TypeMeta `json:",inline"`
+	prototype.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec BatchUsersSpec `json:"spec,omitempty"`
+}
+
+type TargetAccServer struct {
+	Name string `json:"name,omitempty"`
+	ID   string `json:"id,omitempty"`
+	Host string `json:"host,omitempty"`
+}
+
+type BatchShadowssSpec struct {
+	Target         []TargetAccServer `json:"target,omitempty"`
+	SchedulingTime unversioned.Time  `json:"schedulingTime,omitempty"`
+	Upgrade        bool              `json:"upgrade,omitempty"`
+}
+
+type BatchShadowss struct {
+	unversioned.TypeMeta `json:",inline"`
+	prototype.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec BatchShadowssSpec `json:"spec,omitempty"`
 }

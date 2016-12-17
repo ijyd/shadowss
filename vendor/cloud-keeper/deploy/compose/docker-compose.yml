@@ -55,7 +55,8 @@ services:
       --anonymous-auth=true
       --aws-cred-accessid=""
       --aws-cred-accesskey=""
-      --aws-region=""
-      --aws-table="vpstest"
+      --aws-region="us-west-2"
+      --aws-table="vpsdevelopment"
+      --authorization-mode="ABAC"
     depends_on:
       - etcd3

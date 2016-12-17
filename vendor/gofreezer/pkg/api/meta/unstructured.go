@@ -17,13 +17,13 @@ limitations under the License.
 package meta
 
 import (
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 )
 
 // InterfacesForUnstructured returns VersionInterfaces suitable for
 // dealing with runtime.Unstructured objects.
-func InterfacesForUnstructured(unversioned.GroupVersion) (*VersionInterfaces, error) {
+func InterfacesForUnstructured(schema.GroupVersion) (*VersionInterfaces, error) {
 	return &VersionInterfaces{
 		ObjectConvertor:  &runtime.UnstructuredObjectConverter{},
 		MetadataAccessor: NewAccessor(),

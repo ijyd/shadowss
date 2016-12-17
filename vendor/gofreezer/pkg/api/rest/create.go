@@ -19,10 +19,10 @@ package rest
 import (
 	"gofreezer/pkg/api"
 	"gofreezer/pkg/api/errors"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/api/validation"
 	path "gofreezer/pkg/api/validation/path"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/util/validation/field"
 )
 
@@ -111,15 +111,15 @@ func CheckGeneratedNameError(strategy RESTCreateStrategy, err error, obj runtime
 }
 
 // objectMetaAndKind retrieves kind and ObjectMeta from a runtime object, or returns an error.
-func objectMetaAndKind(typer runtime.ObjectTyper, obj runtime.Object) (*api.ObjectMeta, unversioned.GroupVersionKind, error) {
+func objectMetaAndKind(typer runtime.ObjectTyper, obj runtime.Object) (*api.ObjectMeta, schema.GroupVersionKind, error) {
 	objectMeta, err := api.ObjectMetaFor(obj)
 	if err != nil {
-		return nil, unversioned.GroupVersionKind{}, errors.NewInternalError(err)
+		return nil, schema.GroupVersionKind{}, errors.NewInternalError(err)
 	}
 
 	kinds, _, err := typer.ObjectKinds(obj)
 	if err != nil {
-		return nil, unversioned.GroupVersionKind{}, errors.NewInternalError(err)
+		return nil, schema.GroupVersionKind{}, errors.NewInternalError(err)
 	}
 	return objectMeta, kinds[0], nil
 }

@@ -4,3 +4,5 @@ vpslicense
 .license
 webhook
 !webhook/
+.ftpconfig
+.ftpignore

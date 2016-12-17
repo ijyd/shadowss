@@ -110,23 +110,6 @@ func FindTableTag(typ reflect.Type, index int, t *Table) bool {
 			}
 		}
 
-		// var column string
-		// for k, v := range tagMap {
-		// 	glog.V(9).Infof("in %s range tag map %v:%v", jsonKey, k, v)
-		// 	switch k {
-		// 	case tagTable:
-		// 		t.columnToFreezerTagKey[k] = field.Name
-		// 		t.name = v
-		// 		findTable = true
-		// 	case tagColumn:
-		// 		column = v
-		// 		t.columnToFreezerTagKey[v] = field.Name
-		// 	case tagResourceKey:
-		// 		//we used column value in  this tag line
-		// 		t.resoucekey = column
-		// 		glog.V(9).Infof("in %s find resource key %s", jsonKey, t.resoucekey)
-		// 	}
-
 	}
 
 	return findTable
@@ -255,7 +238,6 @@ func (t *Table) ExtractTableObj(obj runtime.Object, afterFunc AfterFindTable) er
 	for i := 0; i < vType.NumField(); i++ {
 		embV := v.Field(i)
 
-		glog.V(9).Infof("search table %v table:%v", embV.Kind(), tableFiledName)
 		switch embV.Kind() {
 		case reflect.Struct:
 			val := embV.FieldByName(tableFiledName)
@@ -320,13 +302,25 @@ func (t *Table) GetColumnByField(filed string) (column string) {
 		column = tag.column
 	}
 
-	glog.V(9).Infof("Get fileds %v", column)
+	return
+}
+
+func (t *Table) ConvertFieldsValue(value string) (sqlValue string) {
+
+	switch value {
+	case "true":
+		sqlValue = fmt.Sprintf("1")
+	case "false":
+		sqlValue = fmt.Sprintf("0")
+	default:
+		sqlValue = value
+	}
 
 	return
 }
 
 func (t *Table) Fields(dbHandle *gorm.DB, p storage.SelectionPredicate) *gorm.DB {
-	if p.Field.Empty() {
+	if p.Field == nil || (p.Field != nil && p.Field.Empty()) {
 		return dbHandle
 	}
 
@@ -338,12 +332,21 @@ func (t *Table) Fields(dbHandle *gorm.DB, p storage.SelectionPredicate) *gorm.DB
 			fallthrough
 		case selection.DoubleEquals:
 			query := fmt.Sprintf("%s = ?", column)
-			queryArgs := v.Value
+			queryArgs := t.ConvertFieldsValue(v.Value)
 			dbHandle = dbHandle.Where(query, queryArgs)
 		case selection.NotEquals:
 			query := fmt.Sprintf("%s != ?", column)
-			queryArgs := v.Value
+			queryArgs := t.ConvertFieldsValue(v.Value)
 			dbHandle = dbHandle.Where(query, queryArgs)
+		//TODO: this can't be support if have specific Requirements
+		case selection.In:
+			fallthrough
+		case selection.NotIn:
+			fallthrough
+		case selection.DoesNotExist:
+			fallthrough
+		case selection.Exists:
+			glog.Warningf("strange operator. check field exist in talbe(%v)", t.name)
 		}
 	}
 
@@ -352,17 +355,6 @@ func (t *Table) Fields(dbHandle *gorm.DB, p storage.SelectionPredicate) *gorm.DB
 
 func (t *Table) BaseCondition(dbHandle *gorm.DB, p storage.SelectionPredicate) *gorm.DB {
 	dbHandle = t.Fields(dbHandle, p)
-	// query, args := p.Where()
-	// if query != nil && args != nil {
-	// 	dbHandle = dbHandle.Where(query, args)
-	// }
-
-	// selectField := p.SelectField()
-	// if len(selectField) != 0 {
-	// 	dbHandle = dbHandle.Select(selectField)
-	// }
-
-	//always use resoucekey as sort field
 	dbHandle = dbHandle.Order(t.resoucekey)
 
 	return dbHandle

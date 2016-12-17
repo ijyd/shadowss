@@ -68,13 +68,9 @@ func (s *store) Create(ctx context.Context, key string, obj, out runtime.Object,
 	glog.V(9).Infof("dynamodb create resource  %v \r\n", key)
 
 	//check item with this key if exist
-	_, err := s.queryObjByKey(key, out, false)
+	_, err := s.queryObjByKey(key, out, true)
 	if err != nil {
-		if storage.IsItemNotFound(err) == false {
-			return storage.NewInternalErrorf("key %v, object search error %v", err.Error())
-		}
-	} else if err == nil {
-		return storage.NewItemExistsError(key, string("object exist"))
+		return storage.NewInternalErrorf("key %v, object search error %v", err.Error())
 	}
 
 	data, err := runtime.Encode(s.codec, obj)
@@ -141,7 +137,7 @@ func (s *store) Get(ctx context.Context, key string, out runtime.Object, ignoreN
 }
 
 func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPredicate, listObj runtime.Object) error {
-	listPtr, _, err := storagehelper.GetListItemObj(listObj)
+	listPtr, itemPtr, err := storagehelper.GetListItemObj(listObj)
 	if err != nil {
 		return storage.NewInvalidObjError(key, err.Error())
 	}
@@ -159,9 +155,21 @@ func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPr
 
 	hasPage, perPage, skip := p.BuildPagerCondition(uint64(*output.Count))
 
+	filter, expressionAttrName, expressionAttrValue := BuildScanFilterAttr(itemPtr, p)
+
 	scanParam = &awsdb.ScanInput{
 		TableName: aws.String(s.table),
 	}
+	if len(filter) > 0 {
+		scanParam.FilterExpression = aws.String(filter)
+	}
+	if len(expressionAttrName) > 0 {
+		scanParam.ExpressionAttributeNames = expressionAttrName
+	}
+	if len(expressionAttrValue) > 0 {
+		scanParam.ExpressionAttributeValues = expressionAttrValue
+	}
+
 	if hasPage && perPage != 0 {
 		limit := int64(perPage)
 		scanParam.Limit = &(limit)
@@ -179,7 +187,7 @@ func (s *store) GetToList(ctx context.Context, key string, p storage.SelectionPr
 		return storage.NewInternalErrorf("key %v, scan list  error %v", err.Error())
 	}
 
-	glog.V(9).Infof("Get query output %+v\r\n", output)
+	glog.V(9).Infof("Get query output %+v\r\n", *output.Count)
 
 	jsonData, cnt, err := ConvertTOJson(&output.Items)
 	if cnt == 0 {
@@ -194,7 +202,7 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Ob
 	_, err := s.queryObjByKey(key, out, false)
 	if err != nil {
 		if !storage.IsNotFound(err) {
-			return storage.NewInternalErrorf("key %s, search error %v", err.Error())
+			return storage.NewInternalErrorf("key %s, search error %v", key, err.Error())
 		}
 	}
 
@@ -359,8 +367,9 @@ func (s *store) getObject(key string, out runtime.Object, ignoreNotFound bool, a
 	firstObj := jsonData[0]
 	data, err := json.Marshal(firstObj)
 	if err != nil {
-		return storage.NewInternalError(err.Error())
+		return fmt.Errorf("marshal object(%+v) to json error:%v", firstObj, err)
 	}
+	//glog.V(9).Infof("marshal obj to json: %v\r\n", string(data))
 	return decode(s.codec, s.versioner, data, out)
 }
 

@@ -26,31 +26,23 @@ RUN easy_install-2.7 pip\
 
 
 COPY . /go/src/cloud-keeper/
-#COPY /build/build-image/files/keys/ /keys/
-#COPY /build/build-image/files/entrypoint.sh /entrypoint.sh
-#COPY /third_party/swagger-ui /swagger-ui
-
-
-# need ansible to deploy shadowss
-#COPY /build/build-image/files/ansible /go/bin/ansible
-
-#COPY /build/build-image/files/vpslicense /go/bin/vpslicense
-#RUN chmod +x /go/bin/vpslicense
 
 RUN set -ex \
   && cd /go/src/cloud-keeper/\
   && cp -rf contrib/keys/ /keys/\
+  && cp -rf contrib/authorizer/policy_file.json /policy_file.json\
   && cp -rf build/build-image/files/entrypoint.sh /entrypoint.sh\
   && cp -rf third_party/swagger-ui /swagger-ui\
   && cp -rf build/build-image/files/ansible /go/bin/ansible\
   && cp -rf build/build-image/files/vpslicense /go/bin/vpslicense\
   && chmod +x /go/bin/vpslicense
 
-
+ARG LDFLAGS
 RUN cd /go/src/cloud-keeper/ \
 	&& cp vendor/* /go/src/ -rf \
 	&& cd cmd/vpskeeper/ \
-	&& go build -v  -o  /go/bin/vpskeeper \
+  && chmod +x /go/src/cloud-keeper/hack/build.sh \
+  && go build -ldflags "${LDFLAGS}" -v -o  /go/bin/vpskeeper \
 	&& chmod +x /entrypoint.sh \
 	&& rm -rf /go/src/
 

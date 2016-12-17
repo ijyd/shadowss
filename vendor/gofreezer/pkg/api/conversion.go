@@ -23,7 +23,7 @@ import (
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/util/intstr"
 	utillabels "gofreezer/pkg/util/labels"
@@ -50,8 +50,8 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 		Convert_string_To_fields_Selector,
 		Convert_fields_Selector_To_string,
 
-		Convert_string_To_page_Selector,
-		Convert_page_Selector_To_string,
+		Convert_string_To_pages_Selector,
+		Convert_pages_Selector_To_string,
 
 		Convert_Pointer_bool_To_bool,
 		Convert_bool_To_Pointer_bool,
@@ -156,23 +156,27 @@ func Convert_bool_To_Pointer_bool(in *bool, out **bool, s conversion.Scope) erro
 	return nil
 }
 
+// +k8s:conversion-fn=drop
 func Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(in, out *unversioned.TypeMeta, s conversion.Scope) error {
-	//These values are explicitly not copied
-	out.APIVersion = in.APIVersion
-	out.Kind = in.Kind
+	// These values are explicitly not copied
+	//out.APIVersion = in.APIVersion
+	//out.Kind = in.Kind
 	return nil
 }
 
+// +k8s:conversion-fn=copy-only
 func Convert_unversioned_ListMeta_To_unversioned_ListMeta(in, out *unversioned.ListMeta, s conversion.Scope) error {
 	*out = *in
 	return nil
 }
 
+// +k8s:conversion-fn=copy-only
 func Convert_intstr_IntOrString_To_intstr_IntOrString(in, out *intstr.IntOrString, s conversion.Scope) error {
 	*out = *in
 	return nil
 }
 
+// +k8s:conversion-fn=copy-only
 func Convert_unversioned_Time_To_unversioned_Time(in *unversioned.Time, out *unversioned.Time, s conversion.Scope) error {
 	// Cannot deep copy these, because time.Time has unexported fields.
 	*out = *in
@@ -206,8 +210,8 @@ func Convert_string_To_fields_Selector(in *string, out *fields.Selector, s conve
 	return nil
 }
 
-func Convert_string_To_page_Selector(in *string, out *pagination.Pager, s conversion.Scope) error {
-	pager, err := pagination.ParsePaginaton(*in)
+func Convert_string_To_pages_Selector(in *string, out *pages.Selector, s conversion.Scope) error {
+	pager, err := pages.ParsePaginaton(*in)
 	if err != nil {
 		return err
 	}
@@ -231,7 +235,7 @@ func Convert_fields_Selector_To_string(in *fields.Selector, out *string, s conve
 	return nil
 }
 
-func Convert_page_Selector_To_string(in *pagination.Pager, out *string, s conversion.Scope) error {
+func Convert_pages_Selector_To_string(in *pages.Selector, out *string, s conversion.Scope) error {
 	if *in == nil {
 		return nil
 	}

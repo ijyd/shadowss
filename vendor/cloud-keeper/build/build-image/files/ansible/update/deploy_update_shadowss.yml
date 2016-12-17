@@ -1,0 +1,13 @@
+- hosts: cloud
+  remote_user: root
+  strategy: free
+
+  tasks:
+    - name: Wait for port 22 to become available
+      local_action: "wait_for port=22 host={{ inventory_hostname }}"
+
+    - name: Copy shadowss
+      copy: src=../ss/shadowss dest=/home/shadowsocks-node/shadowss owner=root group=root mode=0755
+      
+    - name: restart ssservice
+      service: name=ssservice state=restarted 

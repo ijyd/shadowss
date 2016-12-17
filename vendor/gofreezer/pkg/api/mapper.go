@@ -20,29 +20,19 @@ import (
 	"strings"
 
 	"gofreezer/pkg/api/meta"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/util/sets"
 )
 
-var RESTMapper meta.RESTMapper
-
-func init() {
-	RESTMapper = meta.MultiRESTMapper{}
-}
-
-func RegisterRESTMapper(m meta.RESTMapper) {
-	RESTMapper = append(RESTMapper.(meta.MultiRESTMapper), m)
-}
-
 // Instantiates a DefaultRESTMapper based on types registered in api.Scheme
-func NewDefaultRESTMapper(defaultGroupVersions []unversioned.GroupVersion, interfacesFunc meta.VersionInterfacesFunc,
+func NewDefaultRESTMapper(defaultGroupVersions []schema.GroupVersion, interfacesFunc meta.VersionInterfacesFunc,
 	importPathPrefix string, ignoredKinds, rootScoped sets.String) *meta.DefaultRESTMapper {
 	return NewDefaultRESTMapperFromScheme(defaultGroupVersions, interfacesFunc, importPathPrefix, ignoredKinds, rootScoped, Scheme)
 }
 
 // Instantiates a DefaultRESTMapper based on types registered in the given scheme.
-func NewDefaultRESTMapperFromScheme(defaultGroupVersions []unversioned.GroupVersion, interfacesFunc meta.VersionInterfacesFunc,
+func NewDefaultRESTMapperFromScheme(defaultGroupVersions []schema.GroupVersion, interfacesFunc meta.VersionInterfacesFunc,
 	importPathPrefix string, ignoredKinds, rootScoped sets.String, scheme *runtime.Scheme) *meta.DefaultRESTMapper {
 
 	mapper := meta.NewDefaultRESTMapper(defaultGroupVersions, interfacesFunc)

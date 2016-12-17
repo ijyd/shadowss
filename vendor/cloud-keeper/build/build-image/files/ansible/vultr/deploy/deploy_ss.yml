@@ -26,10 +26,14 @@
     - name: Copy crontab
       copy: src=../../ss/restartss.sh dest=/home/shadowsocks-node/restartss.sh  owner=root group=root mode=0755
 
+    - name: Copy crontab
+      copy: src=../../ss/checkss.sh dest=/home/shadowsocks-node/restartss.sh  owner=root group=root mode=0755
+
     - name: Copy attr.json
       copy: src=attr.json dest=/attr.json  owner=root group=root mode=0755
 
     #- cron: name="restart ssservice" minute="30" hour="5,18" job="/home/shadowsocks-node/restartss.sh"
+    - cron: name="check ssservice" minute="*/2" job="/home/shadowsocks-node/checkss.sh"
 
     - name: add hosts
       shell: sed -i '/i-jyd/d' /etc/hosts;echo "" >> /etc/hosts; echo 54.218.251.212 etcd.vps.i-jyd.com  >> /etc/hosts

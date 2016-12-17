@@ -2,7 +2,7 @@ package client
 
 import (
 	"fmt"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"sort"
 	"strconv"
 
@@ -65,7 +65,7 @@ func (c *Client) GetServer(id int) (*api.AccServer, error) {
 }
 
 //GetServers get account server information
-func (c *Client) GetServers(page pagination.Pager) ([]api.AccServer, error) {
+func (c *Client) GetServers(page pages.Selector) ([]api.AccServer, error) {
 	info, err := c.vultrClient.GetServers()
 	if err != nil {
 		return nil, err

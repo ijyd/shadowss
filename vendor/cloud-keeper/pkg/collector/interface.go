@@ -2,7 +2,7 @@ package collector
 
 import (
 	"cloud-keeper/pkg/api"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 )
 
 //Account server acc information
@@ -14,7 +14,7 @@ type Account interface {
 type Server interface {
 	CreateServer(server interface{}) error
 	DeleteServer(id int64) error
-	GetServers(page pagination.Pager) ([]api.AccServer, error)
+	GetServers(page pages.Selector) ([]api.AccServer, error)
 	GetServer(id int) (*api.AccServer, error)
 	ServerExec(serverid int, cmd string) error
 	Exec(exec *api.AccExec) error

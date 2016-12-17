@@ -153,10 +153,10 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Ob
 	if exist {
 		//build update fields
 		update := make(map[string]interface{})
-		p := storage.SelectionPredicate{}
-		p.Query = fmt.Sprintf("%s = ?", table.resoucekey)
-		p.QueryArgs = GetActualResourceKey(key)
-		dbhandler := s.client.Table(table.name).Where(p.Where())
+
+		query := fmt.Sprintf("%s = ?", table.resoucekey)
+		args := GetActualResourceKey(key)
+		dbhandler := s.client.Table(table.name).Where(query, args)
 		err = table.ExtractTableObj(ret, func(obj reflect.Value) error {
 			//update all fields
 			if len(fields) == 0 {
@@ -186,8 +186,6 @@ func (s *store) GuaranteedUpdate(ctx context.Context, key string, out runtime.Ob
 }
 
 func (s *store) doQuery(ctx context.Context, key string, objPtr runtime.Object, p storage.SelectionPredicate) ([]*RowResult, *Table, error) {
-
-	glog.V(9).Infof("input objPtr %v type %v", objPtr, reflect.TypeOf(objPtr))
 
 	table := s.table(ctx, objPtr)
 

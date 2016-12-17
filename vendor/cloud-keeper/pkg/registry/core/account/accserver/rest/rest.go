@@ -152,7 +152,10 @@ func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedO
 	if len(accsrv.Spec.ID) == 0 {
 		err = r.newCloudServer(ctx, accsrv, name)
 	} else {
+
 		err = r.deleteCloudServer(ctx, accsrv, name)
+		//TODO need to update userservice in user resouce,delete this node contains user
+
 	}
 
 	return obj, true, err

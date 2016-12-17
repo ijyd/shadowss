@@ -1,4 +1,0 @@
-apiserver
-!apiserver/
-vendor/
-glide.*

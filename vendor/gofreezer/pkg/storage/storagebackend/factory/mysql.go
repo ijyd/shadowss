@@ -18,7 +18,7 @@ func newMysqlClient(connectionStr string) (*dbmysql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db = db.Debug()
+	//db = db.Debug()
 
 	return db, db.DB().Ping()
 }

@@ -50,12 +50,3 @@ func InitFlags() {
 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 	pflag.Parse()
 }
-
-// InitFlags normalizes and parses the command line flags
-// func InitFlagsWithGLOG() {
-// 	glog.AddDefaultFlag(goflag.CommandLine)
-// 	glog.StartFlush()
-// 	pflag.CommandLine.SetNormalizeFunc(WordSepNormalizeFunc)
-// 	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
-// 	pflag.Parse()
-// }

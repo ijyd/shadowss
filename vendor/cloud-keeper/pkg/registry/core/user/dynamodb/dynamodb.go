@@ -10,7 +10,7 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/runtime"
 	"gofreezer/pkg/storage"
 	"gofreezer/pkg/storage/storagebackend"
@@ -51,11 +51,11 @@ func NewREST(opts generic.RESTOptions) *REST {
 			return obj.(*api.User).Name, nil
 		},
 		// Used to match objects based on labels/fields for list.
-		PredicateFunc: func(label labels.Selector, field fields.Selector, page pagination.Pager) storage.SelectionPredicate {
+		PredicateFunc: func(label labels.Selector, field fields.Selector, page pages.Selector) storage.SelectionPredicate {
 			return storage.SelectionPredicate{
 				Label: label,
 				Field: field,
-				Pager: page,
+				Page:  page,
 				GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
 					user, ok := obj.(*api.User)
 					if !ok {

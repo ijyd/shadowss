@@ -10,10 +10,8 @@ package v1
 
 import (
 	api "cloud-keeper/pkg/api"
-	pkg_api "gofreezer/pkg/api"
 	conversion "gofreezer/pkg/conversion"
 	runtime "gofreezer/pkg/runtime"
-	types "gofreezer/pkg/types"
 )
 
 func init() {
@@ -66,32 +64,26 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_api_ActiveAPINodeList_To_v1_ActiveAPINodeList,
 		Convert_v1_ActiveAPINodeSpec_To_api_ActiveAPINodeSpec,
 		Convert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec,
+		Convert_v1_BatchShadowss_To_api_BatchShadowss,
+		Convert_api_BatchShadowss_To_v1_BatchShadowss,
+		Convert_v1_BatchShadowssSpec_To_api_BatchShadowssSpec,
+		Convert_api_BatchShadowssSpec_To_v1_BatchShadowssSpec,
+		Convert_v1_BatchUsers_To_api_BatchUsers,
+		Convert_api_BatchUsers_To_v1_BatchUsers,
+		Convert_v1_BatchUsersSpec_To_api_BatchUsersSpec,
+		Convert_api_BatchUsersSpec_To_v1_BatchUsersSpec,
 		Convert_v1_BindingNodes_To_api_BindingNodes,
 		Convert_api_BindingNodes_To_v1_BindingNodes,
 		Convert_v1_DGAccountInfo_To_api_DGAccountInfo,
 		Convert_api_DGAccountInfo_To_v1_DGAccountInfo,
 		Convert_v1_DGServerInfo_To_api_DGServerInfo,
 		Convert_api_DGServerInfo_To_v1_DGServerInfo,
-		Convert_v1_DeleteOptions_To_api_DeleteOptions,
-		Convert_api_DeleteOptions_To_v1_DeleteOptions,
-		Convert_v1_ExportOptions_To_api_ExportOptions,
-		Convert_api_ExportOptions_To_v1_ExportOptions,
-		Convert_v1_ListOptions_To_api_ListOptions,
-		Convert_api_ListOptions_To_v1_ListOptions,
 		Convert_v1_Login_To_api_Login,
 		Convert_api_Login_To_v1_Login,
 		Convert_v1_LoginList_To_api_LoginList,
 		Convert_api_LoginList_To_v1_LoginList,
 		Convert_v1_LoginSpec_To_api_LoginSpec,
 		Convert_api_LoginSpec_To_v1_LoginSpec,
-		Convert_v1_Namespace_To_api_Namespace,
-		Convert_api_Namespace_To_v1_Namespace,
-		Convert_v1_NamespaceList_To_api_NamespaceList,
-		Convert_api_NamespaceList_To_v1_NamespaceList,
-		Convert_v1_NamespaceSpec_To_api_NamespaceSpec,
-		Convert_api_NamespaceSpec_To_v1_NamespaceSpec,
-		Convert_v1_NamespaceStatus_To_api_NamespaceStatus,
-		Convert_api_NamespaceStatus_To_v1_NamespaceStatus,
 		Convert_v1_Node_To_api_Node,
 		Convert_api_Node_To_v1_Node,
 		Convert_v1_NodeList_To_api_NodeList,
@@ -108,14 +100,10 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 		Convert_api_NodeUserList_To_v1_NodeUserList,
 		Convert_v1_NodeUserSpec_To_api_NodeUserSpec,
 		Convert_api_NodeUserSpec_To_v1_NodeUserSpec,
-		Convert_v1_ObjectMeta_To_api_ObjectMeta,
-		Convert_api_ObjectMeta_To_v1_ObjectMeta,
-		Convert_v1_OwnerReference_To_api_OwnerReference,
-		Convert_api_OwnerReference_To_v1_OwnerReference,
-		Convert_v1_Preconditions_To_api_Preconditions,
-		Convert_api_Preconditions_To_v1_Preconditions,
 		Convert_v1_SSHKey_To_api_SSHKey,
 		Convert_api_SSHKey_To_v1_SSHKey,
+		Convert_v1_TargetAccServer_To_api_TargetAccServer,
+		Convert_api_TargetAccServer_To_v1_TargetAccServer,
 		Convert_v1_User_To_api_User,
 		Convert_api_User_To_v1_User,
 		Convert_v1_UserInfo_To_api_UserInfo,
@@ -156,10 +144,8 @@ func RegisterConversions(scheme *runtime.Scheme) error {
 }
 
 func autoConvert_v1_APIServer_To_api_APIServer(in *APIServer, out *api.APIServer, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_APIServerSpec_To_api_APIServerSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -173,10 +159,8 @@ func Convert_v1_APIServer_To_api_APIServer(in *APIServer, out *api.APIServer, s 
 }
 
 func autoConvert_api_APIServer_To_v1_APIServer(in *api.APIServer, out *APIServer, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_APIServerSpec_To_v1_APIServerSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -218,12 +202,7 @@ func Convert_api_APIServerInfor_To_v1_APIServerInfor(in *api.APIServerInfor, out
 }
 
 func autoConvert_v1_APIServerList_To_api_APIServerList(in *APIServerList, out *api.APIServerList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.APIServer, len(*in))
@@ -243,12 +222,7 @@ func Convert_v1_APIServerList_To_api_APIServerList(in *APIServerList, out *api.A
 }
 
 func autoConvert_api_APIServerList_To_v1_APIServerList(in *api.APIServerList, out *APIServerList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]APIServer, len(*in))
@@ -292,10 +266,8 @@ func Convert_api_APIServerSpec_To_v1_APIServerSpec(in *api.APIServerSpec, out *A
 }
 
 func autoConvert_v1_AccExec_To_api_AccExec(in *AccExec, out *api.AccExec, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_AccExecSpec_To_api_AccExecSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -309,10 +281,8 @@ func Convert_v1_AccExec_To_api_AccExec(in *AccExec, out *api.AccExec, s conversi
 }
 
 func autoConvert_api_AccExec_To_v1_AccExec(in *api.AccExec, out *AccExec, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_AccExecSpec_To_v1_AccExecSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -356,10 +326,8 @@ func Convert_api_AccExecSpec_To_v1_AccExecSpec(in *api.AccExecSpec, out *AccExec
 }
 
 func autoConvert_v1_AccSSHKey_To_api_AccSSHKey(in *AccSSHKey, out *api.AccSSHKey, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_AccSSHKeySpec_To_api_AccSSHKeySpec(&in.Spec, &out.Spec, s); err != nil {
@@ -373,10 +341,8 @@ func Convert_v1_AccSSHKey_To_api_AccSSHKey(in *AccSSHKey, out *api.AccSSHKey, s 
 }
 
 func autoConvert_api_AccSSHKey_To_v1_AccSSHKey(in *api.AccSSHKey, out *AccSSHKey, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_AccSSHKeySpec_To_v1_AccSSHKeySpec(&in.Spec, &out.Spec, s); err != nil {
@@ -430,10 +396,8 @@ func Convert_api_AccSSHKeySpec_To_v1_AccSSHKeySpec(in *api.AccSSHKeySpec, out *A
 }
 
 func autoConvert_v1_AccServer_To_api_AccServer(in *AccServer, out *api.AccServer, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_AccServerSpec_To_api_AccServerSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -447,10 +411,8 @@ func Convert_v1_AccServer_To_api_AccServer(in *AccServer, out *api.AccServer, s 
 }
 
 func autoConvert_api_AccServer_To_v1_AccServer(in *api.AccServer, out *AccServer, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_AccServerSpec_To_v1_AccServerSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -484,12 +446,7 @@ func Convert_api_AccServerDeploySS_To_v1_AccServerDeploySS(in *api.AccServerDepl
 }
 
 func autoConvert_v1_AccServerList_To_api_AccServerList(in *AccServerList, out *api.AccServerList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.AccServer, len(*in))
@@ -509,12 +466,7 @@ func Convert_v1_AccServerList_To_api_AccServerList(in *AccServerList, out *api.A
 }
 
 func autoConvert_api_AccServerList_To_v1_AccServerList(in *api.AccServerList, out *AccServerList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]AccServer, len(*in))
@@ -576,10 +528,8 @@ func Convert_api_AccServerSpec_To_v1_AccServerSpec(in *api.AccServerSpec, out *A
 }
 
 func autoConvert_v1_Account_To_api_Account(in *Account, out *api.Account, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_AccountSpec_To_api_AccountSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -593,10 +543,8 @@ func Convert_v1_Account_To_api_Account(in *Account, out *api.Account, s conversi
 }
 
 func autoConvert_api_Account_To_v1_Account(in *api.Account, out *Account, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_AccountSpec_To_v1_AccountSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -617,12 +565,8 @@ func autoConvert_v1_AccountDetail_To_api_AccountDetail(in *AccountDetail, out *a
 	out.Descryption = in.Descryption
 	out.CreditCeilings = in.CreditCeilings
 	out.Lables = in.Lables
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreateTime, &out.CreateTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.CreateTime = in.CreateTime
+	out.ExpireTime = in.ExpireTime
 	return nil
 }
 
@@ -638,12 +582,8 @@ func autoConvert_api_AccountDetail_To_v1_AccountDetail(in *api.AccountDetail, ou
 	out.Descryption = in.Descryption
 	out.CreditCeilings = in.CreditCeilings
 	out.Lables = in.Lables
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreateTime, &out.CreateTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.CreateTime = in.CreateTime
+	out.ExpireTime = in.ExpireTime
 	return nil
 }
 
@@ -652,10 +592,8 @@ func Convert_api_AccountDetail_To_v1_AccountDetail(in *api.AccountDetail, out *A
 }
 
 func autoConvert_v1_AccountInfo_To_api_AccountInfo(in *AccountInfo, out *api.AccountInfo, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_AccountInfoSpec_To_api_AccountInfoSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -669,10 +607,8 @@ func Convert_v1_AccountInfo_To_api_AccountInfo(in *AccountInfo, out *api.Account
 }
 
 func autoConvert_api_AccountInfo_To_v1_AccountInfo(in *api.AccountInfo, out *AccountInfo, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_AccountInfoSpec_To_v1_AccountInfoSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -716,12 +652,7 @@ func Convert_api_AccountInfoSpec_To_v1_AccountInfoSpec(in *api.AccountInfoSpec, 
 }
 
 func autoConvert_v1_AccountList_To_api_AccountList(in *AccountList, out *api.AccountList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.Account, len(*in))
@@ -741,12 +672,7 @@ func Convert_v1_AccountList_To_api_AccountList(in *AccountList, out *api.Account
 }
 
 func autoConvert_api_AccountList_To_v1_AccountList(in *api.AccountList, out *AccountList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Account, len(*in))
@@ -788,10 +714,8 @@ func Convert_api_AccountSpec_To_v1_AccountSpec(in *api.AccountSpec, out *Account
 }
 
 func autoConvert_v1_ActiveAPINode_To_api_ActiveAPINode(in *ActiveAPINode, out *api.ActiveAPINode, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_ActiveAPINodeSpec_To_api_ActiveAPINodeSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -805,10 +729,8 @@ func Convert_v1_ActiveAPINode_To_api_ActiveAPINode(in *ActiveAPINode, out *api.A
 }
 
 func autoConvert_api_ActiveAPINode_To_v1_ActiveAPINode(in *api.ActiveAPINode, out *ActiveAPINode, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -822,12 +744,7 @@ func Convert_api_ActiveAPINode_To_v1_ActiveAPINode(in *api.ActiveAPINode, out *A
 }
 
 func autoConvert_v1_ActiveAPINodeList_To_api_ActiveAPINodeList(in *ActiveAPINodeList, out *api.ActiveAPINodeList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.ActiveAPINode, len(*in))
@@ -848,12 +765,7 @@ func Convert_v1_ActiveAPINodeList_To_api_ActiveAPINodeList(in *ActiveAPINodeList
 }
 
 func autoConvert_api_ActiveAPINodeList_To_v1_ActiveAPINodeList(in *api.ActiveAPINodeList, out *ActiveAPINodeList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]ActiveAPINode, len(*in))
@@ -895,6 +807,130 @@ func autoConvert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(in *api.ActiveAPI
 
 func Convert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(in *api.ActiveAPINodeSpec, out *ActiveAPINodeSpec, s conversion.Scope) error {
 	return autoConvert_api_ActiveAPINodeSpec_To_v1_ActiveAPINodeSpec(in, out, s)
+}
+
+func autoConvert_v1_BatchShadowss_To_api_BatchShadowss(in *BatchShadowss, out *api.BatchShadowss, s conversion.Scope) error {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
+		return err
+	}
+	if err := Convert_v1_BatchShadowssSpec_To_api_BatchShadowssSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_v1_BatchShadowss_To_api_BatchShadowss(in *BatchShadowss, out *api.BatchShadowss, s conversion.Scope) error {
+	return autoConvert_v1_BatchShadowss_To_api_BatchShadowss(in, out, s)
+}
+
+func autoConvert_api_BatchShadowss_To_v1_BatchShadowss(in *api.BatchShadowss, out *BatchShadowss, s conversion.Scope) error {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
+		return err
+	}
+	if err := Convert_api_BatchShadowssSpec_To_v1_BatchShadowssSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_api_BatchShadowss_To_v1_BatchShadowss(in *api.BatchShadowss, out *BatchShadowss, s conversion.Scope) error {
+	return autoConvert_api_BatchShadowss_To_v1_BatchShadowss(in, out, s)
+}
+
+func autoConvert_v1_BatchShadowssSpec_To_api_BatchShadowssSpec(in *BatchShadowssSpec, out *api.BatchShadowssSpec, s conversion.Scope) error {
+	if in.Target != nil {
+		in, out := &in.Target, &out.Target
+		*out = make([]api.TargetAccServer, len(*in))
+		for i := range *in {
+			if err := Convert_v1_TargetAccServer_To_api_TargetAccServer(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Target = nil
+	}
+	out.SchedulingTime = in.SchedulingTime
+	out.Upgrade = in.Upgrade
+	return nil
+}
+
+func Convert_v1_BatchShadowssSpec_To_api_BatchShadowssSpec(in *BatchShadowssSpec, out *api.BatchShadowssSpec, s conversion.Scope) error {
+	return autoConvert_v1_BatchShadowssSpec_To_api_BatchShadowssSpec(in, out, s)
+}
+
+func autoConvert_api_BatchShadowssSpec_To_v1_BatchShadowssSpec(in *api.BatchShadowssSpec, out *BatchShadowssSpec, s conversion.Scope) error {
+	if in.Target != nil {
+		in, out := &in.Target, &out.Target
+		*out = make([]TargetAccServer, len(*in))
+		for i := range *in {
+			if err := Convert_api_TargetAccServer_To_v1_TargetAccServer(&(*in)[i], &(*out)[i], s); err != nil {
+				return err
+			}
+		}
+	} else {
+		out.Target = nil
+	}
+	out.SchedulingTime = in.SchedulingTime
+	out.Upgrade = in.Upgrade
+	return nil
+}
+
+func Convert_api_BatchShadowssSpec_To_v1_BatchShadowssSpec(in *api.BatchShadowssSpec, out *BatchShadowssSpec, s conversion.Scope) error {
+	return autoConvert_api_BatchShadowssSpec_To_v1_BatchShadowssSpec(in, out, s)
+}
+
+func autoConvert_v1_BatchUsers_To_api_BatchUsers(in *BatchUsers, out *api.BatchUsers, s conversion.Scope) error {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
+		return err
+	}
+	if err := Convert_v1_BatchUsersSpec_To_api_BatchUsersSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_v1_BatchUsers_To_api_BatchUsers(in *BatchUsers, out *api.BatchUsers, s conversion.Scope) error {
+	return autoConvert_v1_BatchUsers_To_api_BatchUsers(in, out, s)
+}
+
+func autoConvert_api_BatchUsers_To_v1_BatchUsers(in *api.BatchUsers, out *BatchUsers, s conversion.Scope) error {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
+		return err
+	}
+	if err := Convert_api_BatchUsersSpec_To_v1_BatchUsersSpec(&in.Spec, &out.Spec, s); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Convert_api_BatchUsers_To_v1_BatchUsers(in *api.BatchUsers, out *BatchUsers, s conversion.Scope) error {
+	return autoConvert_api_BatchUsers_To_v1_BatchUsers(in, out, s)
+}
+
+func autoConvert_v1_BatchUsersSpec_To_api_BatchUsersSpec(in *BatchUsersSpec, out *api.BatchUsersSpec, s conversion.Scope) error {
+	out.TargetUser = in.TargetUser
+	out.SchedulingTime = in.SchedulingTime
+	out.Resume = in.Resume
+	return nil
+}
+
+func Convert_v1_BatchUsersSpec_To_api_BatchUsersSpec(in *BatchUsersSpec, out *api.BatchUsersSpec, s conversion.Scope) error {
+	return autoConvert_v1_BatchUsersSpec_To_api_BatchUsersSpec(in, out, s)
+}
+
+func autoConvert_api_BatchUsersSpec_To_v1_BatchUsersSpec(in *api.BatchUsersSpec, out *BatchUsersSpec, s conversion.Scope) error {
+	out.TargetUser = in.TargetUser
+	out.SchedulingTime = in.SchedulingTime
+	out.Resume = in.Resume
+	return nil
+}
+
+func Convert_api_BatchUsersSpec_To_v1_BatchUsersSpec(in *api.BatchUsersSpec, out *BatchUsersSpec, s conversion.Scope) error {
+	return autoConvert_api_BatchUsersSpec_To_v1_BatchUsersSpec(in, out, s)
 }
 
 func autoConvert_v1_BindingNodes_To_api_BindingNodes(in *BindingNodes, out *api.BindingNodes, s conversion.Scope) error {
@@ -1001,129 +1037,9 @@ func Convert_api_DGServerInfo_To_v1_DGServerInfo(in *api.DGServerInfo, out *DGSe
 	return autoConvert_api_DGServerInfo_To_v1_DGServerInfo(in, out, s)
 }
 
-func autoConvert_v1_DeleteOptions_To_api_DeleteOptions(in *DeleteOptions, out *pkg_api.DeleteOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	out.GracePeriodSeconds = in.GracePeriodSeconds
-	if in.Preconditions != nil {
-		in, out := &in.Preconditions, &out.Preconditions
-		*out = new(pkg_api.Preconditions)
-		if err := Convert_v1_Preconditions_To_api_Preconditions(*in, *out, s); err != nil {
-			return err
-		}
-	} else {
-		out.Preconditions = nil
-	}
-	out.OrphanDependents = in.OrphanDependents
-	return nil
-}
-
-func Convert_v1_DeleteOptions_To_api_DeleteOptions(in *DeleteOptions, out *pkg_api.DeleteOptions, s conversion.Scope) error {
-	return autoConvert_v1_DeleteOptions_To_api_DeleteOptions(in, out, s)
-}
-
-func autoConvert_api_DeleteOptions_To_v1_DeleteOptions(in *pkg_api.DeleteOptions, out *DeleteOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	out.GracePeriodSeconds = in.GracePeriodSeconds
-	if in.Preconditions != nil {
-		in, out := &in.Preconditions, &out.Preconditions
-		*out = new(Preconditions)
-		if err := Convert_api_Preconditions_To_v1_Preconditions(*in, *out, s); err != nil {
-			return err
-		}
-	} else {
-		out.Preconditions = nil
-	}
-	out.OrphanDependents = in.OrphanDependents
-	return nil
-}
-
-func Convert_api_DeleteOptions_To_v1_DeleteOptions(in *pkg_api.DeleteOptions, out *DeleteOptions, s conversion.Scope) error {
-	return autoConvert_api_DeleteOptions_To_v1_DeleteOptions(in, out, s)
-}
-
-func autoConvert_v1_ExportOptions_To_api_ExportOptions(in *ExportOptions, out *pkg_api.ExportOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	out.Export = in.Export
-	out.Exact = in.Exact
-	return nil
-}
-
-func Convert_v1_ExportOptions_To_api_ExportOptions(in *ExportOptions, out *pkg_api.ExportOptions, s conversion.Scope) error {
-	return autoConvert_v1_ExportOptions_To_api_ExportOptions(in, out, s)
-}
-
-func autoConvert_api_ExportOptions_To_v1_ExportOptions(in *pkg_api.ExportOptions, out *ExportOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	out.Export = in.Export
-	out.Exact = in.Exact
-	return nil
-}
-
-func Convert_api_ExportOptions_To_v1_ExportOptions(in *pkg_api.ExportOptions, out *ExportOptions, s conversion.Scope) error {
-	return autoConvert_api_ExportOptions_To_v1_ExportOptions(in, out, s)
-}
-
-func Convert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *pkg_api.ListOptions, s conversion.Scope) error {
-	return autoConvert_v1_ListOptions_To_api_ListOptions(in, out, s)
-}
-
-func autoConvert_v1_ListOptions_To_api_ListOptions(in *ListOptions, out *pkg_api.ListOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_string_To_labels_Selector(&in.LabelSelector, &out.LabelSelector, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_string_To_fields_Selector(&in.FieldSelector, &out.FieldSelector, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_string_To_page_Selector(&in.PageSelector, &out.PageSelector, s); err != nil {
-		return err
-	}
-	out.Watch = in.Watch
-	out.ResourceVersion = in.ResourceVersion
-	out.TimeoutSeconds = in.TimeoutSeconds
-	// WARNING: in.PageSelector requires manual conversion: inconvertible types (string vs gofreezer/pkg/pagination.Pager)
-	return nil
-}
-
-func Convert_api_ListOptions_To_v1_ListOptions(in *pkg_api.ListOptions, out *ListOptions, s conversion.Scope) error {
-	return autoConvert_api_ListOptions_To_v1_ListOptions(in, out, s)
-}
-
-func autoConvert_api_ListOptions_To_v1_ListOptions(in *pkg_api.ListOptions, out *ListOptions, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_labels_Selector_To_string(&in.LabelSelector, &out.LabelSelector, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_fields_Selector_To_string(&in.FieldSelector, &out.FieldSelector, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_page_Selector_To_string(&in.PageSelector, &out.PageSelector, s); err != nil {
-		return err
-	}
-	out.Watch = in.Watch
-	out.ResourceVersion = in.ResourceVersion
-	out.TimeoutSeconds = in.TimeoutSeconds
-	// WARNING: in.PageSelector requires manual conversion: inconvertible types (gofreezer/pkg/pagination.Pager vs string)
-	return nil
-}
-
 func autoConvert_v1_Login_To_api_Login(in *Login, out *api.Login, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_LoginSpec_To_api_LoginSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1137,10 +1053,8 @@ func Convert_v1_Login_To_api_Login(in *Login, out *api.Login, s conversion.Scope
 }
 
 func autoConvert_api_Login_To_v1_Login(in *api.Login, out *Login, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_LoginSpec_To_v1_LoginSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1154,12 +1068,7 @@ func Convert_api_Login_To_v1_Login(in *api.Login, out *Login, s conversion.Scope
 }
 
 func autoConvert_v1_LoginList_To_api_LoginList(in *LoginList, out *api.LoginList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.Login, len(*in))
@@ -1179,12 +1088,7 @@ func Convert_v1_LoginList_To_api_LoginList(in *LoginList, out *api.LoginList, s 
 }
 
 func autoConvert_api_LoginList_To_v1_LoginList(in *api.LoginList, out *LoginList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Login, len(*in))
@@ -1227,153 +1131,9 @@ func Convert_api_LoginSpec_To_v1_LoginSpec(in *api.LoginSpec, out *LoginSpec, s 
 	return autoConvert_api_LoginSpec_To_v1_LoginSpec(in, out, s)
 }
 
-func autoConvert_v1_Namespace_To_api_Namespace(in *Namespace, out *pkg_api.Namespace, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_NamespaceSpec_To_api_NamespaceSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_NamespaceStatus_To_api_NamespaceStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-func Convert_v1_Namespace_To_api_Namespace(in *Namespace, out *pkg_api.Namespace, s conversion.Scope) error {
-	return autoConvert_v1_Namespace_To_api_Namespace(in, out, s)
-}
-
-func autoConvert_api_Namespace_To_v1_Namespace(in *pkg_api.Namespace, out *Namespace, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_NamespaceSpec_To_v1_NamespaceSpec(&in.Spec, &out.Spec, s); err != nil {
-		return err
-	}
-	if err := Convert_api_NamespaceStatus_To_v1_NamespaceStatus(&in.Status, &out.Status, s); err != nil {
-		return err
-	}
-	return nil
-}
-
-func Convert_api_Namespace_To_v1_Namespace(in *pkg_api.Namespace, out *Namespace, s conversion.Scope) error {
-	return autoConvert_api_Namespace_To_v1_Namespace(in, out, s)
-}
-
-func autoConvert_v1_NamespaceList_To_api_NamespaceList(in *NamespaceList, out *pkg_api.NamespaceList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]pkg_api.Namespace, len(*in))
-		for i := range *in {
-			if err := Convert_v1_Namespace_To_api_Namespace(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
-	return nil
-}
-
-func Convert_v1_NamespaceList_To_api_NamespaceList(in *NamespaceList, out *pkg_api.NamespaceList, s conversion.Scope) error {
-	return autoConvert_v1_NamespaceList_To_api_NamespaceList(in, out, s)
-}
-
-func autoConvert_api_NamespaceList_To_v1_NamespaceList(in *pkg_api.NamespaceList, out *NamespaceList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
-	if in.Items != nil {
-		in, out := &in.Items, &out.Items
-		*out = make([]Namespace, len(*in))
-		for i := range *in {
-			if err := Convert_api_Namespace_To_v1_Namespace(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.Items = nil
-	}
-	return nil
-}
-
-func Convert_api_NamespaceList_To_v1_NamespaceList(in *pkg_api.NamespaceList, out *NamespaceList, s conversion.Scope) error {
-	return autoConvert_api_NamespaceList_To_v1_NamespaceList(in, out, s)
-}
-
-func autoConvert_v1_NamespaceSpec_To_api_NamespaceSpec(in *NamespaceSpec, out *pkg_api.NamespaceSpec, s conversion.Scope) error {
-	if in.Finalizers != nil {
-		in, out := &in.Finalizers, &out.Finalizers
-		*out = make([]pkg_api.FinalizerName, len(*in))
-		for i := range *in {
-			(*out)[i] = pkg_api.FinalizerName((*in)[i])
-		}
-	} else {
-		out.Finalizers = nil
-	}
-	return nil
-}
-
-func Convert_v1_NamespaceSpec_To_api_NamespaceSpec(in *NamespaceSpec, out *pkg_api.NamespaceSpec, s conversion.Scope) error {
-	return autoConvert_v1_NamespaceSpec_To_api_NamespaceSpec(in, out, s)
-}
-
-func autoConvert_api_NamespaceSpec_To_v1_NamespaceSpec(in *pkg_api.NamespaceSpec, out *NamespaceSpec, s conversion.Scope) error {
-	if in.Finalizers != nil {
-		in, out := &in.Finalizers, &out.Finalizers
-		*out = make([]FinalizerName, len(*in))
-		for i := range *in {
-			(*out)[i] = FinalizerName((*in)[i])
-		}
-	} else {
-		out.Finalizers = nil
-	}
-	return nil
-}
-
-func Convert_api_NamespaceSpec_To_v1_NamespaceSpec(in *pkg_api.NamespaceSpec, out *NamespaceSpec, s conversion.Scope) error {
-	return autoConvert_api_NamespaceSpec_To_v1_NamespaceSpec(in, out, s)
-}
-
-func autoConvert_v1_NamespaceStatus_To_api_NamespaceStatus(in *NamespaceStatus, out *pkg_api.NamespaceStatus, s conversion.Scope) error {
-	out.Phase = pkg_api.NamespacePhase(in.Phase)
-	return nil
-}
-
-func Convert_v1_NamespaceStatus_To_api_NamespaceStatus(in *NamespaceStatus, out *pkg_api.NamespaceStatus, s conversion.Scope) error {
-	return autoConvert_v1_NamespaceStatus_To_api_NamespaceStatus(in, out, s)
-}
-
-func autoConvert_api_NamespaceStatus_To_v1_NamespaceStatus(in *pkg_api.NamespaceStatus, out *NamespaceStatus, s conversion.Scope) error {
-	out.Phase = NamespacePhase(in.Phase)
-	return nil
-}
-
-func Convert_api_NamespaceStatus_To_v1_NamespaceStatus(in *pkg_api.NamespaceStatus, out *NamespaceStatus, s conversion.Scope) error {
-	return autoConvert_api_NamespaceStatus_To_v1_NamespaceStatus(in, out, s)
-}
-
 func autoConvert_v1_Node_To_api_Node(in *Node, out *api.Node, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_NodeSpec_To_api_NodeSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1387,10 +1147,8 @@ func Convert_v1_Node_To_api_Node(in *Node, out *api.Node, s conversion.Scope) er
 }
 
 func autoConvert_api_Node_To_v1_Node(in *api.Node, out *Node, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_NodeSpec_To_v1_NodeSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1404,12 +1162,7 @@ func Convert_api_Node_To_v1_Node(in *api.Node, out *Node, s conversion.Scope) er
 }
 
 func autoConvert_v1_NodeList_To_api_NodeList(in *NodeList, out *api.NodeList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.Node, len(*in))
@@ -1429,12 +1182,7 @@ func Convert_v1_NodeList_To_api_NodeList(in *NodeList, out *api.NodeList, s conv
 }
 
 func autoConvert_api_NodeList_To_v1_NodeList(in *api.NodeList, out *NodeList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]Node, len(*in))
@@ -1576,10 +1324,8 @@ func Convert_api_NodeSpec_To_v1_NodeSpec(in *api.NodeSpec, out *NodeSpec, s conv
 }
 
 func autoConvert_v1_NodeUser_To_api_NodeUser(in *NodeUser, out *api.NodeUser, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_NodeUserSpec_To_api_NodeUserSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1593,10 +1339,8 @@ func Convert_v1_NodeUser_To_api_NodeUser(in *NodeUser, out *api.NodeUser, s conv
 }
 
 func autoConvert_api_NodeUser_To_v1_NodeUser(in *api.NodeUser, out *NodeUser, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_NodeUserSpec_To_v1_NodeUserSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1610,12 +1354,7 @@ func Convert_api_NodeUser_To_v1_NodeUser(in *api.NodeUser, out *NodeUser, s conv
 }
 
 func autoConvert_v1_NodeUserList_To_api_NodeUserList(in *NodeUserList, out *api.NodeUserList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.NodeUser, len(*in))
@@ -1635,12 +1374,7 @@ func Convert_v1_NodeUserList_To_api_NodeUserList(in *NodeUserList, out *api.Node
 }
 
 func autoConvert_api_NodeUserList_To_v1_NodeUserList(in *api.NodeUserList, out *NodeUserList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]NodeUser, len(*in))
@@ -1685,120 +1419,6 @@ func Convert_api_NodeUserSpec_To_v1_NodeUserSpec(in *api.NodeUserSpec, out *Node
 	return autoConvert_api_NodeUserSpec_To_v1_NodeUserSpec(in, out, s)
 }
 
-func autoConvert_v1_ObjectMeta_To_api_ObjectMeta(in *ObjectMeta, out *pkg_api.ObjectMeta, s conversion.Scope) error {
-	out.Name = in.Name
-	out.GenerateName = in.GenerateName
-	out.Namespace = in.Namespace
-	out.SelfLink = in.SelfLink
-	out.UID = types.UID(in.UID)
-	out.ResourceVersion = in.ResourceVersion
-	out.Generation = in.Generation
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreationTimestamp, &out.CreationTimestamp, s); err != nil {
-		return err
-	}
-	out.DeletionTimestamp = in.DeletionTimestamp
-	out.DeletionGracePeriodSeconds = in.DeletionGracePeriodSeconds
-	out.Labels = in.Labels
-	out.Annotations = in.Annotations
-	if in.OwnerReferences != nil {
-		in, out := &in.OwnerReferences, &out.OwnerReferences
-		*out = make([]pkg_api.OwnerReference, len(*in))
-		for i := range *in {
-			if err := Convert_v1_OwnerReference_To_api_OwnerReference(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.OwnerReferences = nil
-	}
-	out.Finalizers = in.Finalizers
-	out.ClusterName = in.ClusterName
-	return nil
-}
-
-func Convert_v1_ObjectMeta_To_api_ObjectMeta(in *ObjectMeta, out *pkg_api.ObjectMeta, s conversion.Scope) error {
-	return autoConvert_v1_ObjectMeta_To_api_ObjectMeta(in, out, s)
-}
-
-func autoConvert_api_ObjectMeta_To_v1_ObjectMeta(in *pkg_api.ObjectMeta, out *ObjectMeta, s conversion.Scope) error {
-	out.Name = in.Name
-	out.GenerateName = in.GenerateName
-	out.Namespace = in.Namespace
-	out.SelfLink = in.SelfLink
-	out.UID = types.UID(in.UID)
-	out.ResourceVersion = in.ResourceVersion
-	out.Generation = in.Generation
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreationTimestamp, &out.CreationTimestamp, s); err != nil {
-		return err
-	}
-	out.DeletionTimestamp = in.DeletionTimestamp
-	out.DeletionGracePeriodSeconds = in.DeletionGracePeriodSeconds
-	out.Labels = in.Labels
-	out.Annotations = in.Annotations
-	if in.OwnerReferences != nil {
-		in, out := &in.OwnerReferences, &out.OwnerReferences
-		*out = make([]OwnerReference, len(*in))
-		for i := range *in {
-			if err := Convert_api_OwnerReference_To_v1_OwnerReference(&(*in)[i], &(*out)[i], s); err != nil {
-				return err
-			}
-		}
-	} else {
-		out.OwnerReferences = nil
-	}
-	out.Finalizers = in.Finalizers
-	out.ClusterName = in.ClusterName
-	return nil
-}
-
-func Convert_api_ObjectMeta_To_v1_ObjectMeta(in *pkg_api.ObjectMeta, out *ObjectMeta, s conversion.Scope) error {
-	return autoConvert_api_ObjectMeta_To_v1_ObjectMeta(in, out, s)
-}
-
-func autoConvert_v1_OwnerReference_To_api_OwnerReference(in *OwnerReference, out *pkg_api.OwnerReference, s conversion.Scope) error {
-	out.APIVersion = in.APIVersion
-	out.Kind = in.Kind
-	out.Name = in.Name
-	out.UID = types.UID(in.UID)
-	out.Controller = in.Controller
-	return nil
-}
-
-func Convert_v1_OwnerReference_To_api_OwnerReference(in *OwnerReference, out *pkg_api.OwnerReference, s conversion.Scope) error {
-	return autoConvert_v1_OwnerReference_To_api_OwnerReference(in, out, s)
-}
-
-func autoConvert_api_OwnerReference_To_v1_OwnerReference(in *pkg_api.OwnerReference, out *OwnerReference, s conversion.Scope) error {
-	out.APIVersion = in.APIVersion
-	out.Kind = in.Kind
-	out.Name = in.Name
-	out.UID = types.UID(in.UID)
-	out.Controller = in.Controller
-	return nil
-}
-
-func Convert_api_OwnerReference_To_v1_OwnerReference(in *pkg_api.OwnerReference, out *OwnerReference, s conversion.Scope) error {
-	return autoConvert_api_OwnerReference_To_v1_OwnerReference(in, out, s)
-}
-
-func autoConvert_v1_Preconditions_To_api_Preconditions(in *Preconditions, out *pkg_api.Preconditions, s conversion.Scope) error {
-	out.UID = in.UID
-	return nil
-}
-
-func Convert_v1_Preconditions_To_api_Preconditions(in *Preconditions, out *pkg_api.Preconditions, s conversion.Scope) error {
-	return autoConvert_v1_Preconditions_To_api_Preconditions(in, out, s)
-}
-
-func autoConvert_api_Preconditions_To_v1_Preconditions(in *pkg_api.Preconditions, out *Preconditions, s conversion.Scope) error {
-	out.UID = in.UID
-	return nil
-}
-
-func Convert_api_Preconditions_To_v1_Preconditions(in *pkg_api.Preconditions, out *Preconditions, s conversion.Scope) error {
-	return autoConvert_api_Preconditions_To_v1_Preconditions(in, out, s)
-}
-
 func autoConvert_v1_SSHKey_To_api_SSHKey(in *SSHKey, out *api.SSHKey, s conversion.Scope) error {
 	out.KeyID = in.KeyID
 	out.Name = in.Name
@@ -1823,11 +1443,31 @@ func Convert_api_SSHKey_To_v1_SSHKey(in *api.SSHKey, out *SSHKey, s conversion.S
 	return autoConvert_api_SSHKey_To_v1_SSHKey(in, out, s)
 }
 
+func autoConvert_v1_TargetAccServer_To_api_TargetAccServer(in *TargetAccServer, out *api.TargetAccServer, s conversion.Scope) error {
+	out.Name = in.Name
+	out.ID = in.ID
+	out.Host = in.Host
+	return nil
+}
+
+func Convert_v1_TargetAccServer_To_api_TargetAccServer(in *TargetAccServer, out *api.TargetAccServer, s conversion.Scope) error {
+	return autoConvert_v1_TargetAccServer_To_api_TargetAccServer(in, out, s)
+}
+
+func autoConvert_api_TargetAccServer_To_v1_TargetAccServer(in *api.TargetAccServer, out *TargetAccServer, s conversion.Scope) error {
+	out.Name = in.Name
+	out.ID = in.ID
+	out.Host = in.Host
+	return nil
+}
+
+func Convert_api_TargetAccServer_To_v1_TargetAccServer(in *api.TargetAccServer, out *TargetAccServer, s conversion.Scope) error {
+	return autoConvert_api_TargetAccServer_To_v1_TargetAccServer(in, out, s)
+}
+
 func autoConvert_v1_User_To_api_User(in *User, out *api.User, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_UserSpec_To_api_UserSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1841,10 +1481,8 @@ func Convert_v1_User_To_api_User(in *User, out *api.User, s conversion.Scope) er
 }
 
 func autoConvert_api_User_To_v1_User(in *api.User, out *User, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_UserSpec_To_v1_UserSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1867,26 +1505,25 @@ func autoConvert_v1_UserInfo_To_api_UserInfo(in *UserInfo, out *api.UserInfo, s 
 	out.DownloadTraffic = in.DownloadTraffic
 	out.Name = in.Name
 	out.ManagePasswd = in.ManagePasswd
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.ExpireTime = in.ExpireTime
 	out.EmailVerify = in.EmailVerify
 	out.RegIPAddr = in.RegIPAddr
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.RegDBTime, &out.RegDBTime, s); err != nil {
-		return err
-	}
+	out.RegDBTime = in.RegDBTime
 	out.Description = in.Description
 	out.TrafficRate = in.TrafficRate
 	out.IsAdmin = in.IsAdmin
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.LastCheckInTime, &out.LastCheckInTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.LastResetPwdTime, &out.LastResetPwdTime, s); err != nil {
-		return err
-	}
+	out.LastCheckInTime = in.LastCheckInTime
+	out.LastResetPwdTime = in.LastResetPwdTime
 	out.TotalUploadTraffic = in.TotalUploadTraffic
 	out.TotalDownloadTraffic = in.TotalDownloadTraffic
 	out.Status = in.Status
+	out.Delete = in.Delete
+	out.Activation = in.Activation
+	out.UserType = in.UserType
+	out.Bandwidth = in.Bandwidth
+	out.PackageType = in.PackageType
+	out.Note = in.Note
+	out.Extra = in.Extra
 	return nil
 }
 
@@ -1904,26 +1541,25 @@ func autoConvert_api_UserInfo_To_v1_UserInfo(in *api.UserInfo, out *UserInfo, s 
 	out.DownloadTraffic = in.DownloadTraffic
 	out.Name = in.Name
 	out.ManagePasswd = in.ManagePasswd
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.ExpireTime = in.ExpireTime
 	out.EmailVerify = in.EmailVerify
 	out.RegIPAddr = in.RegIPAddr
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.RegDBTime, &out.RegDBTime, s); err != nil {
-		return err
-	}
+	out.RegDBTime = in.RegDBTime
 	out.Description = in.Description
 	out.TrafficRate = in.TrafficRate
 	out.IsAdmin = in.IsAdmin
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.LastCheckInTime, &out.LastCheckInTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.LastResetPwdTime, &out.LastResetPwdTime, s); err != nil {
-		return err
-	}
+	out.LastCheckInTime = in.LastCheckInTime
+	out.LastResetPwdTime = in.LastResetPwdTime
 	out.TotalUploadTraffic = in.TotalUploadTraffic
 	out.TotalDownloadTraffic = in.TotalDownloadTraffic
 	out.Status = in.Status
+	out.Delete = in.Delete
+	out.Activation = in.Activation
+	out.UserType = in.UserType
+	out.Bandwidth = in.Bandwidth
+	out.PackageType = in.PackageType
+	out.Note = in.Note
+	out.Extra = in.Extra
 	return nil
 }
 
@@ -1932,12 +1568,7 @@ func Convert_api_UserInfo_To_v1_UserInfo(in *api.UserInfo, out *UserInfo, s conv
 }
 
 func autoConvert_v1_UserList_To_api_UserList(in *UserList, out *api.UserList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.User, len(*in))
@@ -1957,12 +1588,7 @@ func Convert_v1_UserList_To_api_UserList(in *UserList, out *api.UserList, s conv
 }
 
 func autoConvert_api_UserList_To_v1_UserList(in *api.UserList, out *UserList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]User, len(*in))
@@ -1982,10 +1608,8 @@ func Convert_api_UserList_To_v1_UserList(in *api.UserList, out *UserList, s conv
 }
 
 func autoConvert_v1_UserPublicFile_To_api_UserPublicFile(in *UserPublicFile, out *api.UserPublicFile, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_UserPublicFileSpec_To_api_UserPublicFileSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -1999,10 +1623,8 @@ func Convert_v1_UserPublicFile_To_api_UserPublicFile(in *UserPublicFile, out *ap
 }
 
 func autoConvert_api_UserPublicFile_To_v1_UserPublicFile(in *api.UserPublicFile, out *UserPublicFile, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_UserPublicFileSpec_To_v1_UserPublicFileSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2016,12 +1638,7 @@ func Convert_api_UserPublicFile_To_v1_UserPublicFile(in *api.UserPublicFile, out
 }
 
 func autoConvert_v1_UserPublicFileList_To_api_UserPublicFileList(in *UserPublicFileList, out *api.UserPublicFileList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.UserPublicFile, len(*in))
@@ -2041,12 +1658,7 @@ func Convert_v1_UserPublicFileList_To_api_UserPublicFileList(in *UserPublicFileL
 }
 
 func autoConvert_api_UserPublicFileList_To_v1_UserPublicFileList(in *api.UserPublicFileList, out *UserPublicFileList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]UserPublicFile, len(*in))
@@ -2118,10 +1730,8 @@ func Convert_api_UserReferences_To_v1_UserReferences(in *api.UserReferences, out
 }
 
 func autoConvert_v1_UserService_To_api_UserService(in *UserService, out *api.UserService, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_UserServiceSpec_To_api_UserServiceSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2135,10 +1745,8 @@ func Convert_v1_UserService_To_api_UserService(in *UserService, out *api.UserSer
 }
 
 func autoConvert_api_UserService_To_v1_UserService(in *api.UserService, out *UserService, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_UserServiceSpec_To_v1_UserServiceSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2152,10 +1760,8 @@ func Convert_api_UserService_To_v1_UserService(in *api.UserService, out *UserSer
 }
 
 func autoConvert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes(in *UserServiceBindingNodes, out *api.UserServiceBindingNodes, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_UserServiceBindingNodesSpec_To_api_UserServiceBindingNodesSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2169,10 +1775,8 @@ func Convert_v1_UserServiceBindingNodes_To_api_UserServiceBindingNodes(in *UserS
 }
 
 func autoConvert_api_UserServiceBindingNodes_To_v1_UserServiceBindingNodes(in *api.UserServiceBindingNodes, out *UserServiceBindingNodes, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2232,12 +1836,7 @@ func Convert_api_UserServiceBindingNodesSpec_To_v1_UserServiceBindingNodesSpec(i
 }
 
 func autoConvert_v1_UserServiceList_To_api_UserServiceList(in *UserServiceList, out *api.UserServiceList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.UserService, len(*in))
@@ -2257,12 +1856,7 @@ func Convert_v1_UserServiceList_To_api_UserServiceList(in *UserServiceList, out 
 }
 
 func autoConvert_api_UserServiceList_To_v1_UserServiceList(in *api.UserServiceList, out *UserServiceList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]UserService, len(*in))
@@ -2338,10 +1932,8 @@ func Convert_api_UserSpec_To_v1_UserSpec(in *api.UserSpec, out *UserSpec, s conv
 }
 
 func autoConvert_v1_UserToken_To_api_UserToken(in *UserToken, out *api.UserToken, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_v1_ObjectMeta_To_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_v1_UserTokenSpec_To_api_UserTokenSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2355,10 +1947,8 @@ func Convert_v1_UserToken_To_api_UserToken(in *UserToken, out *api.UserToken, s 
 }
 
 func autoConvert_api_UserToken_To_v1_UserToken(in *api.UserToken, out *UserToken, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := Convert_api_ObjectMeta_To_v1_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, s); err != nil {
+	// TODO: Inefficient conversion - can we improve it?
+	if err := s.Convert(&in.ObjectMeta, &out.ObjectMeta, 0); err != nil {
 		return err
 	}
 	if err := Convert_api_UserTokenSpec_To_v1_UserTokenSpec(&in.Spec, &out.Spec, s); err != nil {
@@ -2372,12 +1962,7 @@ func Convert_api_UserToken_To_v1_UserToken(in *api.UserToken, out *UserToken, s 
 }
 
 func autoConvert_v1_UserTokenList_To_api_UserTokenList(in *UserTokenList, out *api.UserTokenList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]api.UserToken, len(*in))
@@ -2397,12 +1982,7 @@ func Convert_v1_UserTokenList_To_api_UserTokenList(in *UserTokenList, out *api.U
 }
 
 func autoConvert_api_UserTokenList_To_v1_UserTokenList(in *api.UserTokenList, out *UserTokenList, s conversion.Scope) error {
-	if err := pkg_api.Convert_unversioned_TypeMeta_To_unversioned_TypeMeta(&in.TypeMeta, &out.TypeMeta, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_ListMeta_To_unversioned_ListMeta(&in.ListMeta, &out.ListMeta, s); err != nil {
-		return err
-	}
+	out.ListMeta = in.ListMeta
 	if in.Items != nil {
 		in, out := &in.Items, &out.Items
 		*out = make([]UserToken, len(*in))
@@ -2425,12 +2005,8 @@ func autoConvert_v1_UserTokenSpec_To_api_UserTokenSpec(in *UserTokenSpec, out *a
 	out.ID = in.ID
 	out.Token = in.Token
 	out.UserID = in.UserID
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreateTime, &out.CreateTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.CreateTime = in.CreateTime
+	out.ExpireTime = in.ExpireTime
 	out.Name = in.Name
 	return nil
 }
@@ -2443,12 +2019,8 @@ func autoConvert_api_UserTokenSpec_To_v1_UserTokenSpec(in *api.UserTokenSpec, ou
 	out.ID = in.ID
 	out.Token = in.Token
 	out.UserID = in.UserID
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.CreateTime, &out.CreateTime, s); err != nil {
-		return err
-	}
-	if err := pkg_api.Convert_unversioned_Time_To_unversioned_Time(&in.ExpireTime, &out.ExpireTime, s); err != nil {
-		return err
-	}
+	out.CreateTime = in.CreateTime
+	out.ExpireTime = in.ExpireTime
 	out.Name = in.Name
 	return nil
 }

@@ -6,17 +6,18 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/golang/glog"
+
 	"golang.org/x/net/context"
 
 	"gofreezer/pkg/api/meta"
 	"gofreezer/pkg/runtime"
-
-	"github.com/golang/glog"
 )
 
 func ScanRows(rows *sql.Rows, t *Table, obj runtime.Object) ([]*RowResult, error) {
 	columns, _ := rows.Columns()
 	count := len(columns)
+	defaultVals := make([]interface{}, count)
 	valuesPtrs := make([]interface{}, count)
 
 	var listObj []*RowResult
@@ -24,6 +25,8 @@ func ScanRows(rows *sql.Rows, t *Table, obj runtime.Object) ([]*RowResult, error
 	for i, col := range columns {
 		key, ok := t.columnToFreezerTagKey[col]
 		if !ok {
+			//use default value for scan
+			valuesPtrs[i] = &defaultVals[i]
 			continue
 		}
 
@@ -34,13 +37,14 @@ func ScanRows(rows *sql.Rows, t *Table, obj runtime.Object) ([]*RowResult, error
 		err := rows.Scan(valuesPtrs...)
 
 		if err != nil {
+			glog.Errorf("scan table(%v) error %v\r\n", t.name, err)
 			return nil, err
 		}
-		glog.V(9).Infof("scan rows result table obj %+v\r\n", tableObj)
 
 		item := &RowResult{}
 		err = t.CovertRowsToObject(item, obj, tableObj)
 		if err != nil {
+			glog.Errorf("scan table(%v) error %v\r\n", t.name, err)
 			return nil, err
 		}
 		listObj = append(listObj, item)

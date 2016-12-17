@@ -8,8 +8,6 @@ import (
 	"gofreezer/pkg/api/meta"
 	"gofreezer/pkg/conversion"
 	"gofreezer/pkg/runtime"
-
-	"github.com/golang/glog"
 )
 
 func CloneRuntimeObj(objPtr runtime.Object) (runtime.Object, error) {
@@ -52,7 +50,6 @@ func GetListItemObj(listObj runtime.Object) (listPtr interface{}, itemObj runtim
 	}
 
 	itemObj = reflect.New(items.Type().Elem()).Interface().(runtime.Object)
-	glog.V(5).Infof("get list object %+v", itemObj)
 
 	return
 }

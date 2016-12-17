@@ -6,3 +6,9 @@ mongo
 mongo/
 dynamodb
 !dynamodb/
+vendor/
+cmd/
+contrib/
+hack/
+.ftpconfig
+.ftpignore

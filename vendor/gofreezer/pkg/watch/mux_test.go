@@ -31,7 +31,7 @@ type myType struct {
 	Value string
 }
 
-func (obj *myType) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+func (obj *myType) GetObjectKind() schema.ObjectKind { return schema.EmptyObjectKind }
 
 func TestBroadcaster(t *testing.T) {
 	table := []Event{

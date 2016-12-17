@@ -2,6 +2,9 @@ package etcd
 
 import (
 	etcdregistry "apistack/pkg/registry/generic/registry/etcds"
+	"sync"
+
+	"time"
 
 	"github.com/golang/glog"
 
@@ -9,6 +12,7 @@ import (
 	"apistack/pkg/registry/generic/registry"
 
 	"cloud-keeper/pkg/api"
+	"cloud-keeper/pkg/cache"
 	"cloud-keeper/pkg/registry/core/node"
 	"cloud-keeper/pkg/registry/core/nodeuser"
 	"cloud-keeper/pkg/registry/core/user"
@@ -20,13 +24,24 @@ import (
 	"gofreezer/pkg/watch"
 )
 
+type nodeUserSync struct {
+	mutex sync.Mutex
+}
+
 // REST implements the REST endpoint for usertoken
 type REST struct {
 	store *etcdregistry.Store
 
 	nodeRegistry node.Registry
 	user         user.Registry
+
+	nodeUserLock *cache.LRUExpireCache
 }
+
+const (
+	//ttl = 1800
+	ttl = 120
+)
 
 // NewREST returns a RESTStorage object that will work with testtype.
 func NewREST(opts generic.RESTOptions) *REST {
@@ -48,7 +63,10 @@ func NewREST(opts generic.RESTOptions) *REST {
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return obj.(*api.NodeUser).Name, nil
 		},
-		PredicateFunc:           nodeuser.MatchNodeUser,
+		PredicateFunc: nodeuser.MatchNodeUser,
+		TTLFunc: func(runtime.Object, uint64, bool) (uint64, error) {
+			return ttl, nil
+		},
 		QualifiedResource:       api.Resource("nodeusers"),
 		EnableGarbageCollection: opts.EnableGarbageCollection,
 		DeleteCollectionWorkers: opts.DeleteCollectionWorkers,
@@ -66,7 +84,8 @@ func NewREST(opts generic.RESTOptions) *REST {
 	}
 
 	return &REST{
-		store: etcdregistry.NewStore(*store),
+		store:        etcdregistry.NewStore(*store),
+		nodeUserLock: cache.NewLRUExpireCache(256),
 	}
 }
 
@@ -84,6 +103,10 @@ func (*REST) NewList() runtime.Object {
 	return &api.NodeUserList{}
 }
 
+func (r *REST) Get(ctx freezerapi.Context, name string) (runtime.Object, error) {
+	return r.store.Get(ctx, name)
+}
+
 func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
 
 	obj, err := objInfo.UpdatedObject(ctx, nil)
@@ -92,49 +115,71 @@ func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedO
 	}
 
 	nodeuser := obj.(*api.NodeUser)
-	nodename := nodeuser.Spec.NodeName
-	node, err := r.nodeRegistry.GetNode(ctx, nodename)
-	userName := nodeuser.Spec.User.Name
-	glog.V(5).Infof("update node user %+v \r\n", *node)
+
+	//merge exist node user lables
+	nodeuser.Labels = make(map[string]string)
+	oldObj, err := r.Get(ctx, name)
+	if err == nil {
+		oldUser := oldObj.(*api.NodeUser)
+		for k, v := range oldUser.Labels {
+			nodeuser.Labels[k] = v
+		}
+	}
+
 	switch nodeuser.Spec.Phase {
 	case api.NodeUserPhaseAdd:
-		glog.V(5).Infof("add node user %v \r\n", *nodeuser)
-		node.Spec.Users[userName] = nodeuser.Spec
+		//nodeuser.Spec.Phase = api.NodeUserPhaseAdd
+		nodeuser.Labels[nodeuser.Spec.NodeName] = api.NodeUserPhaseAdd
 	case api.NodeUserPhaseDelete:
-		glog.V(5).Infof("delete node user %v \r\n", *nodeuser)
-		delete(node.Spec.Users, userName)
+		//nodeuser.Spec.Phase = api.NodeUserPhaseDelete
+		nodeuser.Labels[nodeuser.Spec.NodeName] = api.NodeUserPhaseDelete
 	case api.NodeUserPhaseUpdate:
+		userSyncObj, ok := r.nodeUserLock.Get(name)
+		var userSync *nodeUserSync
+		if !ok {
+			userSync = &nodeUserSync{}
+			r.nodeUserLock.Add(name, userSync, time.Duration(time.Second*5))
+		} else {
+			userSync = userSyncObj.(*nodeUserSync)
+		}
+
+		userSync.mutex.Lock()
+		defer userSync.mutex.Unlock()
+
 		glog.V(5).Infof("update node user %v \r\n", *nodeuser)
 		err = r.user.UpdateUserByNodeUser(ctx, nodeuser)
 		if err != nil {
 			return nil, false, err
 		}
-		glog.V(5).Infof("update node user done \r\n")
-		node.Spec.Users[userName] = nodeuser.Spec
+		return nodeuser, true, nil
 	}
 
-	_, _, err = r.nodeRegistry.UpdateNode(ctx, nodename, rest.DefaultUpdatedObjectInfo(node, api.Scheme))
-	if err != nil {
-		return nil, false, err
-	}
-
-	return obj, true, nil
+	glog.V(5).Infof("update node user %v \r\n", *nodeuser)
+	return r.store.Update(ctx, name, rest.DefaultUpdatedObjectInfo(nodeuser, api.Scheme))
 }
 
 func (r *REST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
 	if name, ok := options.FieldSelector.RequiresExactMatch("metadata.name"); ok {
-		node, err := r.nodeRegistry.GetNode(ctx, name)
+		options := &freezerapi.ListOptions{}
+		users, err := r.user.ListUserByNodeName(ctx, name, options)
 		if err != nil {
 			return nil, err
 		}
 
 		nodeUserList := &api.NodeUserList{}
-		for _, v := range node.Spec.Users {
+		for _, v := range users.Items {
+
+			userNodeInfo, ok := v.Spec.UserService.Nodes[name]
+			if !ok {
+				glog.Warningf("not found node(%s) in user(%s), but in filter list result?\r\n", name, v.Name)
+				continue
+			}
+
 			nodeUser := api.NodeUser{}
-			nodeUser.Name = v.User.Name
-			nodeUser.Spec.NodeName = v.NodeName
-			nodeUser.Spec.User = v.User
-			nodeUser.Spec.Phase = v.Phase
+			nodeUser.Name = v.Name
+			nodeUser.Spec.NodeName = name
+			nodeUser.Spec.User = userNodeInfo.User
+			//nodeUser.Spec.Phase = userNodeInfo.
 			nodeUserList.Items = append(nodeUserList.Items, nodeUser)
 		}
 
@@ -146,5 +191,7 @@ func (r *REST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (ru
 }
 
 func (r *REST) Watch(ctx freezerapi.Context, options *freezerapi.ListOptions) (watch.Interface, error) {
-	return r.store.Watch(ctx, options)
+	w, err := r.store.Watch(ctx, options)
+	glog.Infof("watch node user result:%v\r\n", err)
+	return w, err
 }

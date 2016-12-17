@@ -23,9 +23,6 @@ import (
 	"strconv"
 	"strings"
 
-	"apistack/pkg/genericapiserver/openapi/common"
-
-	"github.com/go-openapi/spec"
 	"github.com/google/gofuzz"
 )
 
@@ -105,16 +102,16 @@ func (intstr IntOrString) MarshalJSON() ([]byte, error) {
 	}
 }
 
-func (_ IntOrString) OpenAPIDefinition() common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type:   []string{"string"},
-				Format: "int-or-string",
-			},
-		},
-	}
-}
+// func (_ IntOrString) OpenAPIDefinition() common.OpenAPIDefinition {
+// 	return common.OpenAPIDefinition{
+// 		Schema: spec.Schema{
+// 			SchemaProps: spec.SchemaProps{
+// 				Type:   []string{"string"},
+// 				Format: "int-or-string",
+// 			},
+// 		},
+// 	}
+// }
 
 func (intstr *IntOrString) Fuzz(c fuzz.Continue) {
 	if intstr == nil {

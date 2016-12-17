@@ -1,17 +1,20 @@
-hash: ee1412009871bfd582e50112c3e5a718327b8ad73337e6041796be3cc335dc2f
-updated: 2016-11-23T11:51:17.108626917+08:00
+hash: 4cab10299ef7fb8e9dc6c6ef363aca7d5c9c771b51c13305cfe30a4e0c738969
+updated: 2016-12-10T14:19:43.528209065+08:00
 imports:
 - name: apistack
-  version: dbd8d913717c23c49c8bcf5834cb4f76e3c81c94
+  version: 4f81653e76ce81e33883725138bba3d0d5f375c0
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
   subpackages:
   - pkg/admission
   - pkg/apimachinery
   - pkg/apimachinery/announced
   - pkg/apimachinery/registered
+  - pkg/apis/abac
+  - pkg/apis/abac/latest
+  - pkg/apis/abac/v0
+  - pkg/apis/abac/v1beta1
   - pkg/apis/authentication
   - pkg/apis/rbac
-  - pkg/apis/rbac/validation
   - pkg/apis/storage
   - pkg/apiserver
   - pkg/apiserver/authenticator
@@ -19,6 +22,13 @@ imports:
   - pkg/apiserver/metrics
   - pkg/apiserver/openapi
   - pkg/apiserver/request
+  - pkg/auth/authenticator
+  - pkg/auth/authenticator/bearertoken
+  - pkg/auth/authorizer
+  - pkg/auth/authorizer/abac
+  - pkg/auth/authorizer/union
+  - pkg/auth/group
+  - pkg/auth/handlers
   - pkg/client/cache
   - pkg/client/clientset_generated/internalclientset
   - pkg/client/clientset_generated/internalclientset/typed/rbac/internalversion
@@ -40,6 +50,7 @@ imports:
   - pkg/genericapiserver/validation
   - pkg/healthz
   - pkg/httplog
+  - pkg/master
   - pkg/probe
   - pkg/probe/http
   - pkg/registry/generic
@@ -54,6 +65,7 @@ imports:
   - pkg/util/cert
   - pkg/util/config
   - pkg/util/coreosfake/go-systemd/daemon
+  - pkg/util/strings
   - pkg/version
   - plugin/pkg/auth/authenticator/password/keystone
   - plugin/pkg/auth/authenticator/password/passwordfile
@@ -66,7 +78,6 @@ imports:
   - plugin/pkg/auth/authenticator/token/innerhook
   - plugin/pkg/auth/authenticator/token/oidc
   - plugin/pkg/auth/authenticator/token/tokenfile
-  - plugin/pkg/auth/authorizer/rbac
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c2a2088577d12123ddee5f54e0675
 - name: github.com/aws/aws-sdk-go
@@ -120,7 +131,7 @@ imports:
   - pkg/transport
   - pkg/types
 - name: github.com/coreos/go-oidc
-  version: 5a7f09ab5787e846efa7f56f4a08b6d6926d08c4
+  version: d3e23e1446a65c7de3d36ed8b6dda1eb224c9194
   subpackages:
   - http
   - jose
@@ -258,11 +269,11 @@ imports:
 - name: github.com/tent/http-link-go
   version: ac974c61c2f990f4115b119354b5e0b47550e888
 - name: github.com/ugorji/go
-  version: faddd6128c66c4708f45fdc007f575f75e592a3c
+  version: 9c7f9b7a2bc3a520f7c7b30b34b7f85f47fe27b6
   subpackages:
   - codec
 - name: gofreezer
-  version: e7113f3a8d271f5b4f0167cac8dfdba649244fda
+  version: fb17290bca9d35d1986be3856b8c50806b65b3f2
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -274,14 +285,9 @@ imports:
   - pkg/api/rest
   - pkg/api/unversioned
   - pkg/api/unversioned/validation
+  - pkg/api/v1
   - pkg/api/validation
   - pkg/api/validation/path
-  - pkg/auth/authenticator
-  - pkg/auth/authenticator/bearertoken
-  - pkg/auth/authorizer
-  - pkg/auth/authorizer/union
-  - pkg/auth/group
-  - pkg/auth/handlers
   - pkg/auth/user
   - pkg/conversion
   - pkg/conversion/queryparams
@@ -289,8 +295,9 @@ imports:
   - pkg/genericstoragecodec
   - pkg/genericstoragecodec/options
   - pkg/labels
-  - pkg/pagination
+  - pkg/pages
   - pkg/runtime
+  - pkg/runtime/schema
   - pkg/runtime/serializer
   - pkg/runtime/serializer/json
   - pkg/runtime/serializer/protobuf
@@ -387,6 +394,7 @@ imports:
   - pkg/util/flag
   - pkg/util/network
   - pkg/util/timewrap
+  - pkg/util/wait
 - name: google.golang.org/appengine
   version: ca59ef35f409df61fa4a5f8290ff289b37eccfb8
   subpackages:

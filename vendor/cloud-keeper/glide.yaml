@@ -31,7 +31,7 @@ import:
 - package: github.com/prometheus/client_golang/prometheus
   version: e51041b3fa41cece0dca035740ba6411905be473
 - package: github.com/ugorji/go
-  version: faddd6128c66c4708f45fdc007f575f75e592a3c
+  version: 9c7f9b7a2bc3a520f7c7b30b34b7f85f47fe27b6
   subpackages:
   - codec
 - package: google.golang.org/grpc
@@ -46,7 +46,7 @@ import:
   - peer
   - transport
 - package: gofreezer
-  version: e7113f3a8d271f5b4f0167cac8dfdba649244fda
+  version: fb17290bca9d35d1986be3856b8c50806b65b3f2
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -60,7 +60,7 @@ import:
   - pkg/genericstoragecodec
   - pkg/genericstoragecodec/options
 - package: apistack
-  version: dbd8d913717c23c49c8bcf5834cb4f76e3c81c94
+  version: 4f81653e76ce81e33883725138bba3d0d5f375c0
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
 - package: golib
   version: 02c1abb7ca6f030728d028621ba41e8a328d7968

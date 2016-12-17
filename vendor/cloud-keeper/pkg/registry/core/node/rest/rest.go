@@ -8,6 +8,7 @@ import (
 	"cloud-keeper/pkg/registry/core/user"
 	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/watch"
 	"strings"
 
 	"github.com/golang/glog"
@@ -84,6 +85,7 @@ func (r *NodeREST) Get(ctx freezerapi.Context, name string) (runtime.Object, err
 		etcdNode := etcdObj.(*api.Node)
 		r.mergeNoSqlNode(etcdNode, node)
 	} else {
+		node.Spec.Server.Status = 0
 		node.Name = node.Spec.Server.Name
 	}
 
@@ -125,6 +127,8 @@ func (r *NodeREST) List(ctx freezerapi.Context, options *freezerapi.ListOptions)
 			// }
 			// nodeList.Items[k].ResourceVersion = etcdNode.ResourceVersion
 			r.mergeNoSqlNode(etcdNode, &nodeList.Items[k])
+		} else {
+			nodeList.Items[k].Spec.Server.Status = 0
 		}
 	}
 
@@ -160,9 +164,23 @@ func (r *NodeREST) Update(ctx freezerapi.Context, name string, objInfo rest.Upda
 
 	if strings.Compare(node.Annotations[api.NodeAnnotationRefreshCnt], "0") == 0 {
 		glog.Infof("refresh new node(%s) need to sync node user", node.Name)
-		//ListUserServicesByNodeName
 		go r.user.DumpNodeUser(ctx, name)
+		//ListUserServicesByNodeName
+		// nodeUserList, err := r.user.DumpNodeUser(ctx, name)
+		// if err != nil {
+		// 	glog.Errorf("sync node user failure:%v\r\n", err)
+		// }
+		// if node.Spec.Users == nil {
+		// 	node.Spec.Users = make(map[string]api.NodeUserSpec)
+		// }
+		// for _, v := range nodeUserList {
+		// 	node.Spec.Users[v.Spec.User.Name] = v.Spec
+		// }
 	}
 
 	return r.mysql.Update(ctx, name, objInfo)
+}
+
+func (r *NodeREST) Watch(ctx freezerapi.Context, options *freezerapi.ListOptions) (watch.Interface, error) {
+	return r.etcd.Watch(ctx, options)
 }

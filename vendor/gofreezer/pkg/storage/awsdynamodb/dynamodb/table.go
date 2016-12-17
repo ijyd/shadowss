@@ -73,6 +73,10 @@ func convertObject(attr map[string]*awsdb.AttributeValue) (map[string]interface{
 	//not use this key for runtime
 	delete(attr, primaryKey)
 	delete(attr, sortKey)
+	// for k, v := range attr {
+	//
+	// 	return nil
+	// }
 	err := dynamodbattribute.UnmarshalMap(attr, &obj)
 	if err != nil {
 		glog.V(5).Infof("unmarshalMap error %v\r\n", err)

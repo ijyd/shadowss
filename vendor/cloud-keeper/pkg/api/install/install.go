@@ -9,8 +9,8 @@ import (
 	"apistack/pkg/apimachinery/registered"
 
 	"gofreezer/pkg/api/meta"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/util/sets"
 
 	"cloud-keeper/pkg/api"
@@ -24,11 +24,11 @@ const importPrefix = "cloud-keeper/pkg/api"
 var accessor = meta.NewAccessor()
 
 // availableVersions lists all known external versions for this group from most preferred to least preferred
-var availableVersions = []unversioned.GroupVersion{v1.SchemeGroupVersion}
+var availableVersions = []schema.GroupVersion{v1.SchemeGroupVersion}
 
 func init() {
 	registered.RegisterVersions(availableVersions)
-	externalVersions := []unversioned.GroupVersion{}
+	externalVersions := []schema.GroupVersion{}
 	for _, v := range availableVersions {
 		if registered.IsAllowedVersion(v) {
 			externalVersions = append(externalVersions, v)
@@ -53,7 +53,7 @@ func init() {
 // group.
 // We can combine registered.RegisterVersions, registered.EnableVersions and
 // registered.RegisterGroup once we have moved enableVersions there.
-func enableVersions(externalVersions []unversioned.GroupVersion) error {
+func enableVersions(externalVersions []schema.GroupVersion) error {
 	addVersionsToScheme(externalVersions...)
 	preferredExternalVersion := externalVersions[0]
 
@@ -71,7 +71,7 @@ func enableVersions(externalVersions []unversioned.GroupVersion) error {
 	return nil
 }
 
-func newRESTMapper(externalVersions []unversioned.GroupVersion) meta.RESTMapper {
+func newRESTMapper(externalVersions []schema.GroupVersion) meta.RESTMapper {
 	// the list of kinds that are scoped at the root of the api hierarchy
 	// if a kind is not enumerated here, it is assumed to have a namespace scope
 	rootScoped := sets.NewString(
@@ -96,6 +96,8 @@ func newRESTMapper(externalVersions []unversioned.GroupVersion) meta.RESTMapper 
 		"UserTokenList",
 		"UserPublicFile",
 		"UserPublicFileList",
+		"BatchUsers",
+		"BatchShadowss",
 	)
 
 	// these kinds should be excluded from the list of resources
@@ -111,7 +113,7 @@ func newRESTMapper(externalVersions []unversioned.GroupVersion) meta.RESTMapper 
 
 // InterfacesFor returns the default Codec and ResourceVersioner for a given version
 // string, or an error if the version is not known.
-func interfacesFor(version unversioned.GroupVersion) (*meta.VersionInterfaces, error) {
+func interfacesFor(version schema.GroupVersion) (*meta.VersionInterfaces, error) {
 	switch version {
 	case v1.SchemeGroupVersion:
 		return &meta.VersionInterfaces{
@@ -124,7 +126,7 @@ func interfacesFor(version unversioned.GroupVersion) (*meta.VersionInterfaces, e
 	}
 }
 
-func addVersionsToScheme(externalVersions ...unversioned.GroupVersion) {
+func addVersionsToScheme(externalVersions ...schema.GroupVersion) {
 	// add the internal version to Scheme
 	if err := api.AddToScheme(); err != nil {
 		// Programmer error, detect immediately

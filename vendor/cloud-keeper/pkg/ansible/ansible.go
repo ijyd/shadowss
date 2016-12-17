@@ -31,6 +31,12 @@ const (
 	ansibleVulRestartSSPlayBook = ansibleVulDir + "/" + restartSSPlayBook
 	ansibleVulAttrFile          = ansibleVulDir + "/" + attrFile
 	ansibleVulPrivateKey        = ansibleVulDir + "/" + keyFile
+
+	ansibleUpgrade           = "ansible/update"
+	ansibleUpgradeSSPlayBook = ansibleUpgrade + "/deploy_update_shadowss.yml"
+	ansibleUpgradeSSHostFile = ansibleUpgrade + "/host"
+	ansibleUpgradeSSHKeyFile = ansibleUpgrade + "/" + keyFile
+	ansibleUpgradePrivateKey = ansibleUpgrade + "/" + keyFile
 )
 
 var privateKey = `-----BEGIN RSA PRIVATE KEY-----

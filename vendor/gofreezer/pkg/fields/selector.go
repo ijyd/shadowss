@@ -244,6 +244,10 @@ func try(selectorPiece, op string) (lhs, rhs string, ok bool) {
 	if len(pieces) == 2 {
 		return pieces[0], pieces[1], true
 	}
+	//got exist identify
+	if op == "" && len(pieces) == 1 {
+		return pieces[0], "", true
+	}
 	return "", "", false
 }
 
@@ -261,8 +265,14 @@ func parseSelector(selector string, fn TransformFunc) (Selector, error) {
 			items = append(items, &hasTerm{field: lhs, value: rhs})
 		} else if lhs, rhs, ok := try(part, "="); ok {
 			items = append(items, &hasTerm{field: lhs, value: rhs})
+		} else if _, rhs, ok := try(part, "!"); ok {
+			items = append(items, &notExistTerm{field: rhs})
 		} else {
-			return nil, fmt.Errorf("invalid selector: '%s'; can't understand '%s'", selector, part)
+			if len(part) > 0 {
+				items = append(items, &existTerm{field: part})
+			} else {
+				return nil, fmt.Errorf("invalid selector: '%s'; can't understand '%s'", selector, part)
+			}
 		}
 	}
 	if len(items) == 1 {

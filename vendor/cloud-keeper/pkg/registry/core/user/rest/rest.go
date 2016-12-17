@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"gofreezer/pkg/api/errors"
 	"gofreezer/pkg/api/rest"
+	"gofreezer/pkg/fields"
 	"gofreezer/pkg/runtime"
 
 	"github.com/golang/glog"
@@ -78,6 +79,7 @@ func (r *UserREST) Get(ctx freezerapi.Context, name string) (runtime.Object, err
 
 	obj, err := r.mysql.Get(ctx, name)
 	if err != nil {
+		glog.Infof("Get resource failure %v\r\n", err)
 		return nil, err
 	}
 	user := obj.(*api.User)
@@ -97,11 +99,25 @@ func (r *UserREST) Get(ctx freezerapi.Context, name string) (runtime.Object, err
 }
 
 func (r *UserREST) FilterUserWithNodeName(ctx freezerapi.Context, nodename string, options *freezerapi.ListOptions) (*api.UserList, error) {
+	options = &freezerapi.ListOptions{}
+
+	selectorStr := fmt.Sprintf("spec.userService.nodes.%s", nodename)
+	options.FieldSelector = fields.ParseSelectorOrDie(selectorStr)
 	obj, err := r.dynamo.List(ctx, options)
 	if err != nil {
 		return nil, err
 	}
 	userlist := obj.(*api.UserList)
+
+	var newItems []api.User
+	for _, user := range userlist.Items {
+		_, ok := user.Spec.UserService.Nodes[nodename]
+		if ok {
+			newItems = append(newItems, user)
+		}
+	}
+
+	userlist.Items = newItems
 
 	return userlist, nil
 }
@@ -158,13 +174,30 @@ func (r *UserREST) List(ctx freezerapi.Context, options *freezerapi.ListOptions)
 }
 
 func (r *UserREST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
-	_, flag, err := r.dynamo.Update(ctx, name, objInfo)
+
+	newObj, err := objInfo.UpdatedObject(ctx, nil)
+	if err != nil {
+		glog.Errorf("extact user failure:%v\r\n", err)
+		return nil, false, err
+	}
+	newUser := newObj.(*api.User)
+
+	if !r.CheckUser(newUser) {
+		//need to disable user and delete user from node
+		newUser.Spec.DetailInfo.Status = false
+		newUser.Spec.UserService.Status = false
+		if len(newUser.Spec.UserService.Nodes) > 0 {
+			r.DelAllNodeUser(ctx, newUser, false, true)
+		}
+	}
+
+	_, flag, err := r.dynamo.Update(ctx, name, rest.DefaultUpdatedObjectInfo(newUser, api.Scheme))
 	if err != nil {
 		glog.Errorf("update user(%+v) error:%v\r\n", name, err)
 		return nil, false, err
 	}
 
-	user, flag, err := r.mysql.Update(ctx, name, objInfo)
+	user, flag, err := r.mysql.Update(ctx, name, rest.DefaultUpdatedObjectInfo(newUser, api.Scheme))
 	if err != nil {
 		glog.Errorf("update user(%+v) error:%v\r\n", name, err)
 		return nil, false, err
@@ -205,6 +238,29 @@ func (r *UserREST) Create(ctx freezerapi.Context, obj runtime.Object) (runtime.O
 	err := r.InitNodeUser(ctx, user)
 	if err != nil {
 		return nil, err
+	}
+
+	user.Spec.DetailInfo.Activation = true
+	user.Spec.DetailInfo.Delete = false
+	user.Spec.DetailInfo.IsAdmin = false
+	user.Spec.DetailInfo.Status = true
+
+	switch user.Spec.DetailInfo.PackageType {
+	case api.PackageTypeDefault:
+	default:
+		user.Spec.DetailInfo.PackageType = api.PackageTypeDefault
+	}
+
+	switch user.Spec.DetailInfo.UserType {
+	case api.UserTypeDesktopRouter:
+	default:
+		user.Spec.DetailInfo.UserType = api.UserTypeDesktopRouter
+	}
+
+	switch user.Spec.DetailInfo.Bandwidth {
+	case api.UserBandwidthUnlimited:
+	default:
+		user.Spec.DetailInfo.Bandwidth = api.UserBandwidthUnlimited
 	}
 
 	_, err = r.mysql.Create(ctx, user)

@@ -24,6 +24,7 @@ import (
 	"gofreezer/pkg/api"
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/watch"
 )
 
@@ -303,4 +304,4 @@ type ConnectRequest struct {
 	ResourcePath string
 }
 
-func (obj *ConnectRequest) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+func (obj *ConnectRequest) GetObjectKind() schema.ObjectKind { return schema.EmptyObjectKind }

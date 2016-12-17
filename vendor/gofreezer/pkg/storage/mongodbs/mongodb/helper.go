@@ -5,7 +5,7 @@ import (
 	"sort"
 	"strings"
 
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	storage "gofreezer/pkg/storage"
 	"gofreezer/pkg/storage/mongodbs/client"
 
@@ -98,7 +98,7 @@ func fieldsSelectorToCondition(fields string, selector []selectorItem, condition
 	}
 }
 
-func pagerToCondition(meta *client.RequestMeta, pager pagination.Pager, condition *client.QueryMetaData) {
+func pagerToCondition(meta *client.RequestMeta, pager pages.Selector, condition *client.QueryMetaData) {
 	glog.V(5).Infof("mongo driver list with filter:pagerToCondition")
 
 	itemSum, err := client.MongoQueryCount(meta, condition)
@@ -140,8 +140,8 @@ func Condition(meta *client.RequestMeta, condition *client.QueryMetaData, p stor
 		fieldsSelectorToCondition(p.Field.String(), selector, condition)
 	}
 
-	if p.Pager != nil && !p.Pager.Empty() {
-		pagerToCondition(meta, p.Pager, condition)
+	if p.Page != nil && !p.Page.Empty() {
+		pagerToCondition(meta, p.Page, condition)
 	}
 	return nil
 }

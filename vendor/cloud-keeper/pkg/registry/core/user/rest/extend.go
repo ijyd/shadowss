@@ -11,11 +11,12 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/api/errors"
 	"gofreezer/pkg/api/rest"
+	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
 )
 
-func NewExtendREST(user user.Registry) (*BindingNodeREST, *PropertiesREST) {
-	return &BindingNodeREST{user}, &PropertiesREST{user: user}
+func NewExtendREST(user user.Registry) (*BindingNodeREST, *PropertiesREST, *ActivationREST) {
+	return &BindingNodeREST{user}, &PropertiesREST{user: user}, &ActivationREST{user}
 }
 
 type BindingNodeREST struct {
@@ -81,11 +82,10 @@ func (r *BindingNodeREST) Create(ctx freezerapi.Context, obj runtime.Object) (ru
 		return nil, err
 	}
 
-	err = r.user.AddNodeUserByUserService(ctx, user, userservice)
+	err = r.user.AddNodeToUser(ctx, user, userservice, true, true)
 	if err != nil {
 		return nil, err
 	}
-	_, err = r.user.UpdateUser(ctx, user)
 
 	return userservice, err
 }
@@ -105,18 +105,11 @@ func (r *BindingNodeREST) Update(ctx freezerapi.Context, name string, objInfo re
 
 	if newUserService.Spec.Delete {
 		nodeName := newUserService.Spec.NodeName
-		userName := newUserService.Name
-		_, ok := obj.Spec.UserService.Nodes[nodeName]
-		if ok {
-			delete(obj.Spec.UserService.Nodes, nodeName)
-			_, err = r.user.UpdateUser(ctx, obj)
-			if err != nil {
-				return nil, false, err
-			}
-			return newUserService, true, nil
-		} else {
-			return nil, false, errors.NewBadRequest(fmt.Sprintf("not found node(%v) in user(%v)", nodeName, userName))
+		err = r.user.DelNodeFromUser(ctx, obj, nodeName, true, true)
+		if err != nil {
+			return nil, false, err
 		}
+		return newUserService, true, nil
 	} else {
 		return nil, false, errors.NewInternalError(fmt.Errorf("not support update for userservice,only delete"))
 	}
@@ -152,13 +145,60 @@ func (r *PropertiesREST) Update(ctx freezerapi.Context, name string, objInfo res
 	userAnnotationRefreshTime := "refreshTime"
 	obj.Annotations[userAnnotationRefreshTime] = time.Now().String()
 
+	glog.V(5).Infof("refresh user properties, will force delete user %+v from old node \r\n", *obj)
+	err = r.user.DelAllNodeFromUser(ctx, obj, false, true)
+	if err != nil {
+		return nil, false, err
+	}
+
 	glog.V(5).Infof("will force reinitnodeuser with %+v\r\n", *obj)
-	err = r.user.ReInitNodeUser(ctx, obj)
+	err = r.user.ReInitNodeToUser(ctx, obj)
 	if err != nil {
 		return nil, false, err
 	}
 
 	glog.V(5).Infof("got new node for update user %+v\r\n", *obj)
+
+	_, err = r.user.UpdateUser(ctx, obj)
+	if err != nil {
+		return nil, false, err
+	}
+
+	return obj, true, err
+}
+
+type ActivationREST struct {
+	user user.Registry
+}
+
+func (*ActivationREST) New() runtime.Object {
+	return &api.User{}
+}
+
+func (r *ActivationREST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
+	obj, err := r.user.GetUser(ctx, name)
+	if err != nil {
+		return nil, false, err
+	}
+	newobj, err := objInfo.UpdatedObject(ctx, obj)
+	if err != nil {
+		return nil, false, err
+	}
+
+	newUser := newobj.(*api.User)
+
+	switch obj.Spec.DetailInfo.UserType {
+	case api.UserTypeDesktopRouter:
+		//user not activation, allow user to activation
+		if !obj.Spec.DetailInfo.Activation {
+			//modify user expire_time
+			expire := time.Now().Add(time.Duration(time.Hour * 24 * 365))
+			obj.Spec.DetailInfo.ExpireTime = unversioned.NewTime(expire)
+			obj.Spec.DetailInfo.Activation = newUser.Spec.DetailInfo.Activation
+		}
+	default:
+		return nil, false, fmt.Errorf("not support user type %v", obj.Spec.DetailInfo.UserType)
+	}
 
 	_, err = r.user.UpdateUser(ctx, obj)
 	if err != nil {

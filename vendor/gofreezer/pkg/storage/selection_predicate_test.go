@@ -4,10 +4,10 @@ import (
 	"errors"
 	"testing"
 
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 )
 
 type Ignored struct {
@@ -18,8 +18,8 @@ type IgnoredList struct {
 	Items []Ignored
 }
 
-func (obj *Ignored) GetObjectKind() unversioned.ObjectKind     { return unversioned.EmptyObjectKind }
-func (obj *IgnoredList) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+func (obj *Ignored) GetObjectKind() schema.ObjectKind     { return schema.EmptyObjectKind }
+func (obj *IgnoredList) GetObjectKind() schema.ObjectKind { return schema.EmptyObjectKind }
 
 func TestSelectionPredicate(t *testing.T) {
 	table := map[string]struct {

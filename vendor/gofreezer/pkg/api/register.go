@@ -18,8 +18,8 @@ package api
 
 import (
 	"gofreezer/pkg/api/unversioned"
-
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/runtime/serializer"
 )
 
@@ -37,23 +37,22 @@ var Codecs = serializer.NewCodecFactory(Scheme)
 const GroupName = ""
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = unversioned.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: runtime.APIVersionInternal}
 
 // Unversioned is group version for unversioned API objects
 // TODO: this should be v1 probably
-//default version is v1, but you can InitInternalAPI with your version
-var Unversioned = unversioned.GroupVersion{Group: "", Version: ""}
+var Unversioned = schema.GroupVersion{Group: "", Version: "v1"}
 
 // ParameterCodec handles versioning of objects that are converted to query parameters.
 var ParameterCodec = runtime.NewParameterCodec(Scheme)
 
 // Kind takes an unqualified kind and returns a Group qualified GroupKind
-func Kind(kind string) unversioned.GroupKind {
+func Kind(kind string) schema.GroupKind {
 	return SchemeGroupVersion.WithKind(kind).GroupKind()
 }
 
 // Resource takes an unqualified resource and returns a Group qualified GroupResource
-func Resource(resource string) unversioned.GroupResource {
+func Resource(resource string) schema.GroupResource {
 	return SchemeGroupVersion.WithResource(resource).GroupResource()
 }
 
@@ -76,7 +75,7 @@ var (
 // 	}
 // }
 
-func InitInternalAPI(unver unversioned.GroupVersion, scheme *runtime.Scheme) {
+func InitInternalAPI(unver schema.GroupVersion, scheme *runtime.Scheme) {
 	Unversioned = unver
 
 	// TODO(lavalamp): move this call to scheme builder above.  Can't
@@ -104,7 +103,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 
 	// Register Unversioned types under their own special group
 	scheme.AddUnversionedTypes(Unversioned,
-		&unversioned.ExportOptions{},
 		&unversioned.Status{},
 		&unversioned.APIVersions{},
 		&unversioned.APIGroupList{},

@@ -5,9 +5,9 @@ import (
 	"mime"
 
 	"gofreezer/pkg/api"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/genericstoragecodec/options"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/runtime/serializer/recognizer"
 	"gofreezer/pkg/storage/etcds"
 	"gofreezer/pkg/storage/storagebackend"
@@ -24,7 +24,7 @@ type GenericStorageCodec struct {
 	DestroyStorage factory.DestroyFunc
 }
 
-func NewGenericStorageCodec(options *options.StorageOptions, ns runtime.StorageSerializer, storageVersion unversioned.GroupVersion) (*GenericStorageCodec, error) {
+func NewGenericStorageCodec(options *options.StorageOptions, ns runtime.StorageSerializer, storageVersion schema.GroupVersion) (*GenericStorageCodec, error) {
 	storageConfig := options.StorageConfig
 	codec, err := newStorageCodec(options.DefaultStorageMediaType, ns, storageVersion, memoryVersion, storageConfig)
 	if err != nil {
@@ -51,7 +51,7 @@ func NewGenericStorageCodec(options *options.StorageOptions, ns runtime.StorageS
 
 // newStorageCodec assembles a storage codec for the provided storage media type, the provided serializer, and the requested
 // storage and memory versions.
-func newStorageCodec(storageMediaType string, ns runtime.StorageSerializer, storageVersion, memoryVersion unversioned.GroupVersion, config storagebackend.Config) (runtime.Codec, error) {
+func newStorageCodec(storageMediaType string, ns runtime.StorageSerializer, storageVersion, memoryVersion schema.GroupVersion, config storagebackend.Config) (runtime.Codec, error) {
 	mediaType, _, err := mime.ParseMediaType(storageMediaType)
 	if err != nil {
 		return nil, fmt.Errorf("%q is not a valid mime-type", storageMediaType)
@@ -74,8 +74,8 @@ func newStorageCodec(storageMediaType string, ns runtime.StorageSerializer, stor
 		s,
 		runtime.NewMultiGroupVersioner(
 			storageVersion,
-			unversioned.GroupKind{Group: storageVersion.Group},
-			unversioned.GroupKind{Group: memoryVersion.Group},
+			schema.GroupKind{Group: storageVersion.Group},
+			schema.GroupKind{Group: memoryVersion.Group},
 		),
 	)
 
@@ -84,8 +84,8 @@ func newStorageCodec(storageMediaType string, ns runtime.StorageSerializer, stor
 		ds,
 		runtime.NewMultiGroupVersioner(
 			memoryVersion,
-			unversioned.GroupKind{Group: memoryVersion.Group},
-			unversioned.GroupKind{Group: storageVersion.Group},
+			schema.GroupKind{Group: memoryVersion.Group},
+			schema.GroupKind{Group: storageVersion.Group},
 		),
 	)
 

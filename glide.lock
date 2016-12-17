@@ -1,13 +1,8 @@
-hash: caf7a0bb5ab35a7353ff6287125cca45b862483e5d7f9d51aede87db47135db0
-updated: 2016-11-25T12:40:17.878348612+08:00
+hash: 51f6c93cbe5d4d1aea20b49796ba267343167f4eef1974fc0f9a2f483c081812
+updated: 2016-12-17T15:57:54.094791473+08:00
 imports:
-- name: apistack
-  version: dbd8d913717c23c49c8bcf5834cb4f76e3c81c94
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/apistack.git
-  subpackages:
-  - pkg/genericapiserver/openapi/common
 - name: cloud-keeper
-  version: 09951f5d2dffc2943851eeb1d7f9e229e5493321
+  version: 6575f89e9ec7c174994e8401b864216344c9f7fe
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
   subpackages:
   - pkg/api
@@ -19,21 +14,12 @@ imports:
   version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
   subpackages:
   - semver
-- name: github.com/emicklei/go-restful
-  version: 89ef8af493ab468a45a42bb0d89a06fccdd2fb22
+- name: github.com/davecgh/go-spew
+  version: 346938d642f2ec3594ed81d874461961cd0faa76
   subpackages:
-  - log
-  - swagger
+  - spew
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
-- name: github.com/go-openapi/jsonpointer
-  version: 8d96a2dc61536b690bd36b2e9df0b3c0b62825b2
-- name: github.com/go-openapi/jsonreference
-  version: 36d33bfe519efae5632669801b180bf1a245da3b
-- name: github.com/go-openapi/spec
-  version: f7ae86df5bc115a2744343016c789a89f065a4bd
-- name: github.com/go-openapi/swag
-  version: 3b6d86cd965820f968760d5d419cb4add096bdd7
 - name: github.com/godbus/dbus
   version: 5f6efc7ef2759c81b7ba876593971bfce311eab3
 - name: github.com/gogo/protobuf
@@ -50,27 +36,17 @@ imports:
 - name: github.com/google/gofuzz
   version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/gorilla/websocket
-  version: e8f0f8aaa98dfb6586cbdf2978d511e3199a960a
-- name: github.com/mailru/easyjson
-  version: 159cdb893c982e3d1bc6450322fedd514f9c9de3
-  subpackages:
-  - buffer
-  - jlexer
-  - jwriter
+  version: 0868951cdb8e69bc42df4598bdc6164ff2f1a072
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
-- name: github.com/PuerkitoBio/purell
-  version: 0bcb03f4b4d0a9428594752bd2a3b9aa0a9d4bd4
-- name: github.com/PuerkitoBio/urlesc
-  version: 5bd2802263f21d8788851d5305584c82a5c75d7e
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
 - name: github.com/ugorji/go
-  version: faddd6128c66c4708f45fdc007f575f75e592a3c
+  version: 9c7f9b7a2bc3a520f7c7b30b34b7f85f47fe27b6
   subpackages:
   - codec
 - name: gofreezer
-  version: e7113f3a8d271f5b4f0167cac8dfdba649244fda
+  version: fb17290bca9d35d1986be3856b8c50806b65b3f2
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
   subpackages:
   - pkg/api
@@ -85,8 +61,9 @@ imports:
   - pkg/genericstoragecodec
   - pkg/genericstoragecodec/options
   - pkg/labels
-  - pkg/pagination
+  - pkg/pages
   - pkg/runtime
+  - pkg/runtime/schema
   - pkg/runtime/serializer
   - pkg/runtime/serializer/json
   - pkg/runtime/serializer/protobuf
@@ -119,13 +96,6 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
-  - idna
-- name: golang.org/x/text
-  version: b01949dc0793a9af5e4cb3fce4d42999e76e8ca1
-  subpackages:
-  - transform
-  - unicode/norm
-  - width
 - name: golib
   version: 02c1abb7ca6f030728d028621ba41e8a328d7968
   repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git

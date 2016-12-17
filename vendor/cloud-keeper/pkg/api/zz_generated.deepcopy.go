@@ -45,6 +45,10 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINode, InType: reflect.TypeOf(&ActiveAPINode{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINodeList, InType: reflect.TypeOf(&ActiveAPINodeList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_ActiveAPINodeSpec, InType: reflect.TypeOf(&ActiveAPINodeSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BatchShadowss, InType: reflect.TypeOf(&BatchShadowss{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BatchShadowssSpec, InType: reflect.TypeOf(&BatchShadowssSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BatchUsers, InType: reflect.TypeOf(&BatchUsers{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BatchUsersSpec, InType: reflect.TypeOf(&BatchUsersSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_BindingNodes, InType: reflect.TypeOf(&BindingNodes{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_DGAccountInfo, InType: reflect.TypeOf(&DGAccountInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_DGServerInfo, InType: reflect.TypeOf(&DGServerInfo{})},
@@ -60,6 +64,7 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_NodeUserList, InType: reflect.TypeOf(&NodeUserList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_NodeUserSpec, InType: reflect.TypeOf(&NodeUserSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_SSHKey, InType: reflect.TypeOf(&SSHKey{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_TargetAccServer, InType: reflect.TypeOf(&TargetAccServer{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_User, InType: reflect.TypeOf(&User{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserInfo, InType: reflect.TypeOf(&UserInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_api_UserList, InType: reflect.TypeOf(&UserList{})},
@@ -448,6 +453,76 @@ func DeepCopy_api_ActiveAPINodeSpec(in interface{}, out interface{}, c *conversi
 	}
 }
 
+func DeepCopy_api_BatchShadowss(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchShadowss)
+		out := out.(*BatchShadowss)
+		out.TypeMeta = in.TypeMeta
+		if err := pkg_api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
+			return err
+		}
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*BatchShadowssSpec)
+		}
+		return nil
+	}
+}
+
+func DeepCopy_api_BatchShadowssSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchShadowssSpec)
+		out := out.(*BatchShadowssSpec)
+		if in.Target != nil {
+			in, out := &in.Target, &out.Target
+			*out = make([]TargetAccServer, len(*in))
+			for i := range *in {
+				(*out)[i] = (*in)[i]
+			}
+		} else {
+			out.Target = nil
+		}
+		out.SchedulingTime = in.SchedulingTime.DeepCopy()
+		out.Upgrade = in.Upgrade
+		return nil
+	}
+}
+
+func DeepCopy_api_BatchUsers(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchUsers)
+		out := out.(*BatchUsers)
+		out.TypeMeta = in.TypeMeta
+		if err := pkg_api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
+			return err
+		}
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*BatchUsersSpec)
+		}
+		return nil
+	}
+}
+
+func DeepCopy_api_BatchUsersSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchUsersSpec)
+		out := out.(*BatchUsersSpec)
+		if in.TargetUser != nil {
+			in, out := &in.TargetUser, &out.TargetUser
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		} else {
+			out.TargetUser = nil
+		}
+		out.SchedulingTime = in.SchedulingTime.DeepCopy()
+		out.Resume = in.Resume
+		return nil
+	}
+}
+
 func DeepCopy_api_BindingNodes(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*BindingNodes)
@@ -696,6 +771,17 @@ func DeepCopy_api_SSHKey(in interface{}, out interface{}, c *conversion.Cloner) 
 	}
 }
 
+func DeepCopy_api_TargetAccServer(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*TargetAccServer)
+		out := out.(*TargetAccServer)
+		out.Name = in.Name
+		out.ID = in.ID
+		out.Host = in.Host
+		return nil
+	}
+}
+
 func DeepCopy_api_User(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*User)
@@ -738,6 +824,19 @@ func DeepCopy_api_UserInfo(in interface{}, out interface{}, c *conversion.Cloner
 		out.TotalUploadTraffic = in.TotalUploadTraffic
 		out.TotalDownloadTraffic = in.TotalDownloadTraffic
 		out.Status = in.Status
+		out.Delete = in.Delete
+		out.Activation = in.Activation
+		out.UserType = in.UserType
+		out.Bandwidth = in.Bandwidth
+		out.PackageType = in.PackageType
+		out.Note = in.Note
+		if in.Extra != nil {
+			in, out := &in.Extra, &out.Extra
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Extra = nil
+		}
 		return nil
 	}
 }

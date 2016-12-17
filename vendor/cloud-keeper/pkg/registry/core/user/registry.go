@@ -12,8 +12,10 @@ import (
 
 type NodeUserHandler interface {
 	InitNodeUser(ctx freezerapi.Context, user *api.User) error
-	AddNodeUser(ctx freezerapi.Context, updateUser *api.User, userservice *api.UserService) error
-	DumpNodeUserToNode(ctx freezerapi.Context, nodename string) error
+	AddNodeUser(ctx freezerapi.Context, updateUser *api.User, userservice *api.UserService, update bool, syncToNode bool) error
+	DelNodeUser(ctx freezerapi.Context, user *api.User, nodeName string, update bool, syncToNode bool) error
+	DelAllNodeUser(ctx freezerapi.Context, user *api.User, update bool, syncToNode bool) error
+	DumpNodeUserToNode(ctx freezerapi.Context, nodename string) ([]*api.NodeUser, error)
 	NewNodeUser(user *api.UserReferences, nodeName string) *api.NodeUser
 	MigrateUserToDynamodb() error
 }
@@ -29,13 +31,19 @@ type Registry interface {
 	GetUser(ctx freezerapi.Context, name string) (*api.User, error)
 	ListUsers(ctx freezerapi.Context, options *freezerapi.ListOptions) (*api.UserList, error)
 	DeleteUser(ctx freezerapi.Context, name string) (runtime.Object, error)
+
 	ListUserByNodeName(ctx freezerapi.Context, nodename string, options *freezerapi.ListOptions) (*api.UserList, error)
 	UpdateUserByNodeUser(ctx freezerapi.Context, svc *api.NodeUser) error
-	ReInitNodeUser(ctx freezerapi.Context, user *api.User) error
-	AddNodeUserByUserService(ctx freezerapi.Context, updateUser *api.User, userservice *api.UserService) error
-	DumpNodeUser(ctx freezerapi.Context, nodename string) error
+	ReInitNodeToUser(ctx freezerapi.Context, user *api.User) error
+	AddNodeToUser(ctx freezerapi.Context, updateUser *api.User, userservice *api.UserService, update bool, syncToNode bool) error
+	DelNodeFromUser(ctx freezerapi.Context, user *api.User, nodeName string, update bool, syncToNode bool) error
+	DelAllNodeFromUser(ctx freezerapi.Context, user *api.User, update bool, syncToNode bool) error
+	DumpNodeUser(ctx freezerapi.Context, nodename string) ([]*api.NodeUser, error)
 	CreateNodeUser(user *api.UserReferences, nodeName string) *api.NodeUser
 	MigrateUser() error
+
+	//resume user,clear traffic and enable user
+	ResumeUsers(ctx freezerapi.Context, name []string) error
 }
 
 // storage puts strong typing around storage calls
@@ -90,8 +98,6 @@ func (s *storage) UpdateUser(ctx freezerapi.Context, user *api.User) (*api.User,
 }
 
 func (s *storage) UpdateUserByNodeUser(ctx freezerapi.Context, nodeuser *api.NodeUser) error {
-
-	glog.V(5).Infof("UpdateUserByNodeUser *********begin \r\n")
 	nodename := nodeuser.Spec.NodeName
 	username := nodeuser.Spec.User.Name
 	objuser, err := s.GetUser(ctx, nodeuser.Spec.User.Name)
@@ -105,11 +111,20 @@ func (s *storage) UpdateUserByNodeUser(ctx freezerapi.Context, nodeuser *api.Nod
 	if !ok {
 		return fmt.Errorf("not found user(%v) in node(%v), may be need to disable user", username, nodename)
 	}
+
 	noderefer.User.Port = nodeuser.Spec.User.Port
 	noderefer.User.DownloadTraffic = nodeuser.Spec.User.DownloadTraffic
 	noderefer.User.UploadTraffic = nodeuser.Spec.User.UploadTraffic
 	objuser.Spec.UserService.Nodes[nodename] = noderefer
-	glog.V(5).Infof("user %+v update by node user %+v\r\n", objuser, nodeuser)
+
+	if lastActive, ok := nodeuser.Annotations[api.UserFakeAnnotationLastActiveTime]; ok {
+		if objuser.Annotations == nil {
+			objuser.Annotations = make(map[string]string)
+		}
+		objuser.Annotations[api.UserFakeAnnotationLastActiveTime] = lastActive
+	}
+
+	glog.V(5).Infof("UpdateUserByNodeUser user %+v \r\nupdate by node user %+v\r\n", *objuser, *nodeuser)
 	_, err = s.UpdateUser(ctx, objuser)
 	return err
 }
@@ -130,28 +145,26 @@ func (s *storage) ListUserByNodeName(ctx freezerapi.Context, nodename string, op
 		return nil, err
 	}
 
-	var newItems []api.User
-	for _, user := range userlist.Items {
-		_, ok := user.Spec.UserService.Nodes[nodename]
-		if ok {
-			newItems = append(newItems, user)
-		}
-	}
-
-	userlist.Items = newItems
-
 	return userlist, nil
 }
 
-func (s *storage) ReInitNodeUser(ctx freezerapi.Context, user *api.User) error {
+func (s *storage) ReInitNodeToUser(ctx freezerapi.Context, user *api.User) error {
 	return s.InitNodeUser(ctx, user)
 }
 
-func (s *storage) AddNodeUserByUserService(ctx freezerapi.Context, updateUser *api.User, usersrv *api.UserService) error {
-	return s.AddNodeUser(ctx, updateUser, usersrv)
+func (s *storage) AddNodeToUser(ctx freezerapi.Context, updateUser *api.User, usersrv *api.UserService, update bool, syncToNode bool) error {
+	return s.AddNodeUser(ctx, updateUser, usersrv, update, syncToNode)
 }
 
-func (s *storage) DumpNodeUser(ctx freezerapi.Context, nodename string) error {
+func (s *storage) DelNodeFromUser(ctx freezerapi.Context, user *api.User, nodeName string, update bool, syncToNode bool) error {
+	return s.DelNodeUser(ctx, user, nodeName, update, syncToNode)
+}
+
+func (s *storage) DelAllNodeFromUser(ctx freezerapi.Context, user *api.User, update bool, syncToNode bool) error {
+	return s.DelAllNodeUser(ctx, user, update, syncToNode)
+}
+
+func (s *storage) DumpNodeUser(ctx freezerapi.Context, nodename string) ([]*api.NodeUser, error) {
 	return s.DumpNodeUserToNode(ctx, nodename)
 }
 
@@ -161,4 +174,41 @@ func (s *storage) CreateNodeUser(user *api.UserReferences, nodeName string) *api
 
 func (s *storage) MigrateUser() error {
 	return s.MigrateUserToDynamodb()
+}
+
+type updateTrans func(name string) (*api.User, error)
+
+//resume user,clear traffic and enable user,add user to node
+func (s *storage) getAndUpdate(ctx freezerapi.Context, name string, trans updateTrans) (*api.User, error) {
+	return trans(name)
+}
+
+//resume user,clear traffic and enable user,add user to node
+func (s *storage) ResumeUsers(ctx freezerapi.Context, names []string) error {
+
+	trans := func(name string) (*api.User, error) {
+		user, err := s.GetUser(ctx, name)
+		if err != nil {
+			return nil, err
+		}
+		user.Spec.DetailInfo.DownloadTraffic = 0
+		user.Spec.DetailInfo.UploadTraffic = 0
+		user.Spec.DetailInfo.Status = true
+		newUser, err := s.UpdateUser(ctx, user)
+		return newUser, err
+	}
+
+	for _, v := range names {
+		user, err := s.getAndUpdate(ctx, v, trans)
+		if err != nil {
+			glog.Warningf("resume user(%s) failure : %v\r\n", v, err)
+		} else {
+			err = s.ReInitNodeToUser(ctx, user)
+			if err != nil {
+				glog.Warningf("reinit resume user(%v) failure:%v\r\n", v, err)
+			}
+		}
+	}
+
+	return nil
 }

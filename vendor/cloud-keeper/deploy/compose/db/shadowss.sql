@@ -64,6 +64,13 @@ CREATE TABLE `user` (
   `reg_ip` varchar(128) NOT NULL DEFAULT '127.0.0.1',
   `description` varchar(256) NOT NULL,
   `status` TINYINT(1) NOT NULL DEFAULT '1',
+  `delete` TINYINT(1) NOT NULL DEFAULT '0',
+  `activation` TINYINT(1) NOT NULL DEFAULT '0',
+  `type` varchar(64) NOT NULL DEFAULT 'desktopRouter',
+  `bandwidth` varchar(64) NOT NULL DEFAULT '0',
+  `packagetype` varchar(64) NOT NULL DEFAULT 'default',
+  `note` varchar(256) NOT NULL DEFAULT '0',
+  `extra` text(4096),
   PRIMARY KEY (`id`),
   UNIQUE KEY `user` (`user_name`),
   UNIQUE KEY `email` (`email`)

@@ -23,7 +23,7 @@ import (
 	"gofreezer/examples/common/apiext/v1"
 	"gofreezer/pkg/api"
 	"gofreezer/pkg/api/meta"
-	"gofreezer/pkg/api/unversioned"
+	"gofreezer/pkg/runtime/schema"
 
 	"github.com/golang/glog"
 )
@@ -33,11 +33,11 @@ import (
 var accessor = meta.NewAccessor()
 
 // availableVersions lists all known external versions for this group from most preferred to least preferred
-var availableVersions = []unversioned.GroupVersion{v1.SchemeGroupVersion}
+var availableVersions = []schema.GroupVersion{v1.SchemeGroupVersion}
 
 func init() {
 	//registered.RegisterVersions(availableVersions)
-	externalVersions := []unversioned.GroupVersion{}
+	externalVersions := []schema.GroupVersion{}
 	for _, v := range availableVersions {
 		//if registered.IsAllowedVersion(v) {
 		externalVersions = append(externalVersions, v)
@@ -58,12 +58,12 @@ func init() {
 // group.
 // We can combine registered.RegisterVersions, registered.EnableVersions and
 // registered.RegisterGroup once we have moved enableVersions there.
-func enableVersions(externalVersions []unversioned.GroupVersion) error {
+func enableVersions(externalVersions []schema.GroupVersion) error {
 	addVersionsToScheme(externalVersions...)
 	return nil
 }
 
-func addVersionsToScheme(externalVersions ...unversioned.GroupVersion) {
+func addVersionsToScheme(externalVersions ...schema.GroupVersion) {
 	// add the internal version to Scheme
 	if err := apiext.AddToScheme(); err != nil {
 		// Programmer error, detect immediately

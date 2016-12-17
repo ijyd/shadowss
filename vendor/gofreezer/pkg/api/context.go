@@ -119,13 +119,12 @@ func WithNamespaceDefaultIfNone(parent Context) Context {
 	return parent
 }
 
-// // WithUser returns a copy of parent in which the user value is set
+// WithUser returns a copy of parent in which the user value is set
 func WithUser(parent Context, user user.Info) Context {
 	return WithValue(parent, userKey, user)
 }
 
-//
-// // UserFrom returns the value of the user key on the ctx
+// UserFrom returns the value of the user key on the ctx
 func UserFrom(ctx Context) (user.Info, bool) {
 	user, ok := ctx.Value(userKey).(user.Info)
 	return user, ok

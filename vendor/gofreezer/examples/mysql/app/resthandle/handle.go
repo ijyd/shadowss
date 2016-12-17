@@ -80,11 +80,8 @@ func GetLoginUser(request *restful.Request, response *restful.Response) {
 
 	ctx := apiComm.NewContext()
 	outLogin := new(apiext.Login)
-	p := selection.SelectionPredicate{}
-	p.Query = "name = ?"
-	p.QueryArgs = name
 
-	err := StorageCodec.Get(ctx, name, p, outLogin, true)
+	err := StorageCodec.Get(ctx, name, outLogin, true)
 
 	glog.V(5).Infof("Get result %v\r\n", err)
 	output, err = runtime.Encode(GenericStorage.Codecs, outLogin)
@@ -141,12 +138,8 @@ func DeleteLoginUser(request *restful.Request, response *restful.Response) {
 
 	ctx := apiComm.NewContext()
 	outLogin := new(apiext.Login)
-	p := selection.SelectionPredicate{}
 
-	p.Query = "name = ?"
-	p.QueryArgs = name
-
-	err := StorageCodec.Delete(ctx, name, p, outLogin)
+	err := StorageCodec.Delete(ctx, name, outLogin, nil)
 	glog.Infof("result %v\r\n", err)
 	if err != nil {
 		newErr := apierr.NewNotFound("invalid request name", name)
@@ -185,11 +178,8 @@ func PutLoginUser(request *restful.Request, response *restful.Response) {
 	}
 
 	ctx := apiComm.NewContext()
-	p := selection.SelectionPredicate{}
-	p.Query = "name = ?"
-	p.QueryArgs = name
 
-	err = StorageCodec.GuaranteedUpdate(ctx, name, p, login, true, func(input runtime.Object) (output runtime.Object, fields []string, err error) {
+	err = StorageCodec.GuaranteedUpdate(ctx, name, login, true, nil, func(input runtime.Object) (output runtime.Object, fields []string, err error) {
 		login.Spec.User.Count = 5
 		return login, []string{"Count"}, nil
 	})

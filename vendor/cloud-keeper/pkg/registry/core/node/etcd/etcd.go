@@ -18,6 +18,11 @@ type REST struct {
 	*etcdregistry.Store
 }
 
+const (
+	//ttl = 1800
+	ttl = 1800
+)
+
 // NewREST returns a RESTStorage object that will work with testtype.
 func NewREST(opts generic.RESTOptions) *REST {
 	prefix := "/" + opts.ResourcePrefix
@@ -38,7 +43,10 @@ func NewREST(opts generic.RESTOptions) *REST {
 		ObjectNameFunc: func(obj runtime.Object) (string, error) {
 			return obj.(*api.Node).Name, nil
 		},
-		PredicateFunc:           node.MatchNode,
+		PredicateFunc: node.MatchNode,
+		TTLFunc: func(runtime.Object, uint64, bool) (uint64, error) {
+			return ttl, nil
+		},
 		QualifiedResource:       api.Resource("nodes"),
 		EnableGarbageCollection: opts.EnableGarbageCollection,
 		DeleteCollectionWorkers: opts.DeleteCollectionWorkers,

@@ -26,6 +26,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 	return scheme.AddGeneratedDeepCopyFuncs(
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_batch_BatchAccServer, InType: reflect.TypeOf(&BatchAccServer{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_batch_BatchAccServerSpec, InType: reflect.TypeOf(&BatchAccServerSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_batch_BatchResumeUsers, InType: reflect.TypeOf(&BatchResumeUsers{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_batch_BatchResumeUsersSpec, InType: reflect.TypeOf(&BatchResumeUsersSpec{})},
 	)
 }
 
@@ -61,6 +63,32 @@ func DeepCopy_batch_BatchAccServerSpec(in interface{}, out interface{}, c *conve
 		} else {
 			out.ServerList = nil
 		}
+		return nil
+	}
+}
+
+func DeepCopy_batch_BatchResumeUsers(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchResumeUsers)
+		out := out.(*BatchResumeUsers)
+		out.TypeMeta = in.TypeMeta
+		if err := api.DeepCopy_api_ObjectMeta(&in.ObjectMeta, &out.ObjectMeta, c); err != nil {
+			return err
+		}
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*BatchResumeUsersSpec)
+		}
+		return nil
+	}
+}
+
+func DeepCopy_batch_BatchResumeUsersSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchResumeUsersSpec)
+		out := out.(*BatchResumeUsersSpec)
+		out.SchedulingTime = in.SchedulingTime.DeepCopy()
 		return nil
 	}
 }

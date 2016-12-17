@@ -2,7 +2,9 @@ package v1
 
 import (
 	"gofreezer/pkg/api/unversioned"
+	. "gofreezer/pkg/api/v1"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	versionedwatch "gofreezer/pkg/watch/versioned"
 )
 
@@ -10,7 +12,7 @@ import (
 const GroupName = ""
 
 // SchemeGroupVersion is group version used to register these objects
-var SchemeGroupVersion = unversioned.GroupVersion{Group: GroupName, Version: "v1"}
+var SchemeGroupVersion = schema.GroupVersion{Group: GroupName, Version: "v1"}
 
 var (
 	SchemeBuilder = runtime.NewSchemeBuilder(addKnownTypes, addConversionFuncs)
@@ -47,6 +49,9 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&UserTokenList{},
 		&UserPublicFile{},
 		&UserPublicFileList{},
+
+		&BatchUsers{},
+		&BatchShadowss{},
 
 		&DeleteOptions{},
 		&ExportOptions{},

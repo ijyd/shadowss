@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	api "gofreezer/pkg/api"
-	"gofreezer/pkg/api/unversioned"
 	unversionedvalidation "gofreezer/pkg/api/unversioned/validation"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/util/sets"
 	"gofreezer/pkg/util/validation"
 	"gofreezer/pkg/util/validation/field"
@@ -141,7 +141,7 @@ func ValidateObjectMetaUpdate(newMeta, oldMeta *api.ObjectMeta, fldPath *field.P
 
 func validateOwnerReference(ownerReference api.OwnerReference, fldPath *field.Path) field.ErrorList {
 	allErrs := field.ErrorList{}
-	gvk := unversioned.FromAPIVersionAndKind(ownerReference.APIVersion, ownerReference.Kind)
+	gvk := schema.FromAPIVersionAndKind(ownerReference.APIVersion, ownerReference.Kind)
 	// gvk.Group is empty for the legacy group.
 	if len(gvk.Version) == 0 {
 		allErrs = append(allErrs, field.Invalid(fldPath.Child("apiVersion"), ownerReference.APIVersion, "version must not be empty"))

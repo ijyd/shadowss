@@ -23,8 +23,8 @@ import (
 	"github.com/ghodss/yaml"
 	"github.com/ugorji/go/codec"
 
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 	"gofreezer/pkg/runtime/serializer/recognizer"
 	"gofreezer/pkg/util/framer"
 	utilyaml "gofreezer/pkg/util/yaml"
@@ -71,7 +71,7 @@ var _ recognizer.RecognizingDecoder = &Serializer{}
 // extracted and no decoding will be performed. If into is not registered with the typer, then the object will be straight decoded using
 // normal JSON/YAML unmarshalling. If into is provided and the original data is not fully qualified with kind/version/group, the type of
 // the into will be used to alter the returned gvk. On success or most errors, the method will return the calculated schema kind.
-func (s *Serializer) Decode(originalData []byte, gvk *unversioned.GroupVersionKind, into runtime.Object) (runtime.Object, *unversioned.GroupVersionKind, error) {
+func (s *Serializer) Decode(originalData []byte, gvk *schema.GroupVersionKind, into runtime.Object) (runtime.Object, *schema.GroupVersionKind, error) {
 	if versioned, ok := into.(*runtime.VersionedObjects); ok {
 		into = versioned.Last()
 		obj, actual, err := s.Decode(originalData, gvk, into)

@@ -2,7 +2,6 @@ package mysql
 
 import (
 	mysqlregistry "apistack/pkg/registry/generic/registry/mysqls"
-	"gofreezer/pkg/api/rest"
 	"gofreezer/pkg/storage/storagebackend"
 
 	"apistack/pkg/registry/generic"
@@ -17,7 +16,7 @@ import (
 
 // REST implements the REST endpoint for usertoken
 type REST struct {
-	store *mysqlregistry.Store
+	*mysqlregistry.Store
 }
 
 // NewREST returns a RESTStorage object that will work with testtype.
@@ -58,35 +57,5 @@ func NewREST(opts generic.RESTOptions) *REST {
 		DestroyFunc: dFunc,
 	}
 
-	return &REST{
-		store: mysqlregistry.NewStore(*store),
-	}
-}
-
-func (r *REST) New() runtime.Object {
-	return &api.Account{}
-}
-
-func (r *REST) NewList() runtime.Object {
-	return &api.AccountList{}
-}
-
-func (r *REST) Get(ctx freezerapi.Context, name string) (runtime.Object, error) {
-	return r.store.Get(ctx, name)
-}
-
-func (r *REST) Create(ctx freezerapi.Context, obj runtime.Object) (runtime.Object, error) {
-	return r.store.Create(ctx, obj)
-}
-
-func (r *REST) Update(ctx freezerapi.Context, name string, objInfo rest.UpdatedObjectInfo) (runtime.Object, bool, error) {
-	return r.store.Update(ctx, name, objInfo)
-}
-
-func (r *REST) Delete(ctx freezerapi.Context, name string) (runtime.Object, error) {
-	return r.store.Delete(ctx, name, nil)
-}
-
-func (r *REST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
-	return r.store.List(ctx, options)
+	return &REST{mysqlregistry.NewStore(*store)}
 }

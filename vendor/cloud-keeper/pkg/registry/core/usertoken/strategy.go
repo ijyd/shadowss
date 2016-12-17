@@ -6,7 +6,7 @@ import (
 	freezerapi "gofreezer/pkg/api"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/runtime"
 	apistorage "gofreezer/pkg/storage"
 	"gofreezer/pkg/util/validation/field"
@@ -65,11 +65,11 @@ func (tokenStrategy) AllowUnconditionalUpdate() bool {
 }
 
 // MatchLogin returns a generic matcher for a given label and field selector.
-func MatchUserToken(label labels.Selector, field fields.Selector, page pagination.Pager) apistorage.SelectionPredicate {
+func MatchUserToken(label labels.Selector, field fields.Selector, page pages.Selector) apistorage.SelectionPredicate {
 	return apistorage.SelectionPredicate{
 		Label: label,
 		Field: field,
-		Pager: page,
+		Page:  page,
 		GetAttrs: func(obj runtime.Object) (labels.Set, fields.Set, error) {
 			cls, ok := obj.(*api.UserToken)
 			if !ok {
@@ -83,7 +83,9 @@ func MatchUserToken(label labels.Selector, field fields.Selector, page paginatio
 
 // StorageClassToSelectableFields returns a label set that represents the object
 func StorageClassToSelectableFields(data *api.UserToken) fields.Set {
-	return generic.ObjectMetaFieldsSet(&data.ObjectMeta, false)
+	fields := generic.ObjectMetaFieldsSet(&data.ObjectMeta, false)
+	fields["spec.token"] = data.Spec.Token
+	return fields
 }
 
 func PadObj(obj runtime.Object) error {

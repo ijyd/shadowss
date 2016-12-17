@@ -18,3 +18,14 @@ type BatchAccServer struct {
 
 	Spec BatchAccServerSpec `json:"spec,omitempty"`
 }
+
+type BatchResumeUsersSpec struct {
+	SchedulingTime unversioned.Time `json:"schedulingTime,omitempty"`
+}
+
+type BatchResumeUsers struct {
+	unversioned.TypeMeta `json:",inline"`
+	api.ObjectMeta       `json:"metadata,omitempty"`
+
+	Spec BatchResumeUsersSpec `json:"spec,omitempty"`
+}

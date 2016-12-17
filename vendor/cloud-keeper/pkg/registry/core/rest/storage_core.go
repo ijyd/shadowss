@@ -4,14 +4,18 @@ import (
 	"apistack/pkg/apimachinery/registered"
 	"apistack/pkg/genericapiserver"
 	"gofreezer/pkg/api/rest"
-	"gofreezer/pkg/api/unversioned"
+	"gofreezer/pkg/runtime/schema"
 
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/registry/core/account"
+	"cloud-keeper/pkg/registry/core/account/accserver"
 	accserverrest "cloud-keeper/pkg/registry/core/account/accserver/rest"
 	accmysql "cloud-keeper/pkg/registry/core/account/mysql"
+	accrest "cloud-keeper/pkg/registry/core/account/rest"
 	"cloud-keeper/pkg/registry/core/apiserver"
 	apiserveretcd "cloud-keeper/pkg/registry/core/apiserver/etcd"
+	batchshadowssrest "cloud-keeper/pkg/registry/core/batchshadowss"
+	batchusers "cloud-keeper/pkg/registry/core/batchusers"
 	"cloud-keeper/pkg/registry/core/login"
 	"cloud-keeper/pkg/registry/core/node"
 	nodeetcd "cloud-keeper/pkg/registry/core/node/etcd"
@@ -26,7 +30,8 @@ import (
 	userrest "cloud-keeper/pkg/registry/core/user/rest"
 	"cloud-keeper/pkg/registry/core/userfile"
 	"cloud-keeper/pkg/registry/core/usertoken"
-	usertokenmysql "cloud-keeper/pkg/registry/core/usertoken/mysql"
+	usertokenetcd "cloud-keeper/pkg/registry/core/usertoken/etcd"
+	//usertokenmysql "cloud-keeper/pkg/registry/core/usertoken/mysql"
 )
 
 // LegacyRESTStorageProvider provides information needed to build RESTStorage for core, but
@@ -42,6 +47,7 @@ type LegacyRESTStorage struct {
 	UserRegistry      user.Registry
 	TokenRegistry     usertoken.Registry
 	APIServerRegistry apiserver.Registry
+	NodeRegistry      node.Registry
 }
 
 func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter genericapiserver.RESTOptionsGetter) (LegacyRESTStorage, genericapiserver.APIGroupInfo, error) {
@@ -51,7 +57,7 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 		Scheme:                      api.Scheme,
 		ParameterCodec:              api.ParameterCodec,
 		NegotiatedSerializer:        api.Codecs,
-		SubresourceGroupVersionKind: map[string]unversioned.GroupVersionKind{},
+		SubresourceGroupVersionKind: map[string]schema.GroupVersionKind{},
 	}
 
 	restStorage := LegacyRESTStorage{}
@@ -62,7 +68,7 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 	nodeEtcdStorage := nodeetcd.NewREST(restOptionsGetter(api.Resource("nodes")))
 	nodeMysqlStorage := nodemysql.NewREST(restOptionsGetter(api.Resource("nodes")))
 	nodeStorage := noderest.NewREST(nodeEtcdStorage, nodeMysqlStorage)
-	nodeRegistry := node.NewRegistry(nodeStorage, nodeStorage, nodeStorage)
+	nodeRegistry := node.NewRegistry(nodeStorage, nodeStorage, nodeStorage, nodeStorage)
 
 	userMysqlStorage := usermysql.NewREST(restOptionsGetter(api.Resource("users")))
 	userEtcdStorage := useretcd.NewREST(restOptionsGetter(api.Resource("users")))
@@ -70,39 +76,48 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 	userStorage := userrest.NewREST(userEtcdStorage, userMysqlStorage, userDynamoStorage, nodeRegistry, nodeuserRegistry)
 	userRegistry := user.NewRegistry(userStorage, userStorage, userStorage, userStorage, userStorage, userStorage, userStorage)
 
-	userBindingNodeStorage, userPropertiesStorage := userrest.NewExtendREST(userRegistry)
+	userBindingNodeStorage, userPropertiesStorage, userActivation := userrest.NewExtendREST(userRegistry)
 
 	//todo: it is not place here,  disordered resource design
 	nodeuserStorage.SetRequireRegistry(nodeRegistry, userRegistry)
 	nodeStorage.SetRequireRegistry(userRegistry, nodeuserRegistry)
 
-	nodeAPINodeStorage, nodeRefreshStorage := noderest.NewExtendREST(nodeRegistry)
+	nodeAPINodeStorage, nodeRefreshStorage, nodeUserStorage := noderest.NewExtendREST(nodeRegistry, userRegistry)
 
-	tokenStorage := usertokenmysql.NewREST(restOptionsGetter(api.Resource("usertokens")))
+	//tokenStorage := usertokenmysql.NewREST(restOptionsGetter(api.Resource("usertokens")))
+	tokenStorage := usertokenetcd.NewREST(restOptionsGetter(api.Resource("usertokens")))
 	tokenRegistry := usertoken.NewRegistry(tokenStorage, tokenStorage, tokenStorage)
 
 	loginStorage := login.NewREST(userRegistry, tokenRegistry)
 
-	accStorage := accmysql.NewREST(restOptionsGetter(api.Resource("accounts")))
+	accMysqlStorage := accmysql.NewREST(restOptionsGetter(api.Resource("accounts")))
+	accStorage := accrest.NewREST(accMysqlStorage)
 	accRegistry := account.NewRegistry(accStorage, accStorage, accStorage, accStorage, accStorage)
 
-	accExtendStorage := account.NewREST(accRegistry)
+	accExtendStorage := accrest.NewExtendREST(accRegistry)
 
 	cloudServerStorage := accserverrest.NewREST(accRegistry)
+	cloudServerRegistry := accserver.NewRegistry(cloudServerStorage)
 
 	userFileStorage := userfile.NewREST()
 
 	apiserverStorage := apiserveretcd.NewREST(restOptionsGetter(api.Resource("apiservers")))
 	apiServerRegistry := apiserver.NewRegistry(apiserverStorage, apiserverStorage, apiserverStorage.Store, apiserverStorage.Store)
 
+	batchUsersStorage := batchusers.NewREST(userRegistry)
+
+	batchShadowssStorage := batchshadowssrest.NewREST(accRegistry, cloudServerRegistry)
+
 	restStorage.UserRegistry = userRegistry
 	restStorage.TokenRegistry = tokenRegistry
 	restStorage.APIServerRegistry = apiServerRegistry
+	restStorage.NodeRegistry = nodeRegistry
 
 	restStorageMap := map[string]rest.Storage{
 		"users":              userStorage,
 		"users/bindingnodes": userBindingNodeStorage,
 		"users/properties":   userPropertiesStorage,
+		"users/activation":   userActivation,
 
 		"logins": loginStorage,
 
@@ -114,18 +129,23 @@ func (c LegacyRESTStorageProvider) NewLegacyRESTStorage(restOptionsGetter generi
 
 		// "acc": cloudServerStorage,
 
-		"nodes":         nodeStorage,
-		"nodes/refresh": nodeRefreshStorage,
+		"nodes":           nodeStorage,
+		"nodes/refresh":   nodeRefreshStorage,
+		"nodes/nodeusers": nodeUserStorage,
 
 		"activeapinode": nodeAPINodeStorage,
 
-		"nodes/nodeusers": nodeuserStorage,
+		"nodeusers": nodeuserStorage,
 
 		"userfile":        userFileStorage.File,
 		"userfile/stream": userFileStorage.FileStream,
 		"userfile/desc":   userFileStorage.FileDesc,
 
 		"apiservers": apiserverStorage,
+
+		"batchusers": batchUsersStorage,
+
+		"batchshadowss": batchShadowssStorage,
 	}
 
 	apiGroupInfo.VersionedResourcesStorageMap["v1"] = restStorageMap

@@ -34,5 +34,33 @@ func addConversionFuncs(scheme *runtime.Scheme) error {
 		return err
 	}
 
+	err = scheme.AddFieldLabelConversionFunc("v1", "NodeUser",
+		func(label, value string) (string, string, error) {
+			switch label {
+			case "spec.nodeName":
+				return label, value, nil
+			default:
+				return "", "", fmt.Errorf("field label not supported: %s", label)
+			}
+		},
+	)
+	if err != nil {
+		return err
+	}
+
+	err = scheme.AddFieldLabelConversionFunc("v1", "User",
+		func(label, value string) (string, string, error) {
+			switch label {
+			case "spec.detailInfo.status":
+				return label, value, nil
+			default:
+				return "", "", fmt.Errorf("field label not supported: %s", label)
+			}
+		},
+	)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

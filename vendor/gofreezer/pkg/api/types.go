@@ -4,7 +4,7 @@ import (
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/types"
 )
 
@@ -286,7 +286,7 @@ type ListOptions struct {
 	TimeoutSeconds *int64
 
 	//A selector based on pagination
-	PageSelector pagination.Pager
+	PageSelector pages.Selector
 }
 
 // ObjectReference contains enough information to let you inspect or modify the referred object.

@@ -2,11 +2,11 @@ package apiext
 
 import (
 	"gofreezer/pkg/api"
-	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
+	"gofreezer/pkg/runtime/schema"
 )
 
-var Unversioned = unversioned.GroupVersion{Group: "", Version: "v1"}
+var Unversioned = schema.GroupVersion{Group: "", Version: "v1"}
 
 var Scheme = api.Scheme
 
@@ -22,7 +22,7 @@ var (
 )
 
 func init() {
-	api.InitInternalAPI(Unversioned)
+	api.InitInternalAPI(Unversioned, Scheme)
 }
 
 // AddToScheme applies all the stored functions to the scheme.

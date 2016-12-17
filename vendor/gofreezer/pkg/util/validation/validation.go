@@ -225,7 +225,7 @@ func IsValidPortName(port string) []string {
 		errs = append(errs, "must contain only alpha-numeric characters (a-z, 0-9), and hyphens (-)")
 	}
 	if !portNameOneLetterRegexp.MatchString(port) {
-		errs = append(errs, "must contain at least one letter (a-z)")
+		errs = append(errs, "must contain at least one letter or number (a-z, 0-9)")
 	}
 	if strings.Contains(port, "--") {
 		errs = append(errs, "must not contain consecutive hyphens")
@@ -283,8 +283,7 @@ func IsConfigMapKey(value string) []string {
 	}
 	if value == "." {
 		errs = append(errs, `must not be '.'`)
-	}
-	if value == ".." {
+	} else if value == ".." {
 		errs = append(errs, `must not be '..'`)
 	} else if strings.HasPrefix(value, "..") {
 		errs = append(errs, `must not start with '..'`)

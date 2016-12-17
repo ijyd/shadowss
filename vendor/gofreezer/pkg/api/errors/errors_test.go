@@ -170,7 +170,7 @@ func Test_reasonForError(t *testing.T) {
 
 type TestType struct{}
 
-func (obj *TestType) GetObjectKind() unversioned.ObjectKind { return unversioned.EmptyObjectKind }
+func (obj *TestType) GetObjectKind() schema.ObjectKind { return schema.EmptyObjectKind }
 
 func TestFromObject(t *testing.T) {
 	table := []struct {

@@ -10,20 +10,18 @@ import (
 	"apistack/pkg/apiserver/authenticator"
 	"apistack/pkg/genericapiserver"
 	"apistack/pkg/genericapiserver/authorizer"
-	genericvalidation "apistack/pkg/genericapiserver/validation"
+	genericoptions "apistack/pkg/genericapiserver/options"
+	"apistack/pkg/master"
 	"apistack/pkg/version"
-	authenticatorunion "apistack/plugin/pkg/auth/authenticator/request/union"
-
 	"gofreezer/pkg/api"
-	"gofreezer/pkg/auth/user"
+	utilerrors "gofreezer/pkg/util/errors"
 	"gofreezer/pkg/util/exec"
 	"gofreezer/pkg/util/wait"
 
 	"cloud-keeper/cmd/vpskeeper/app/options"
-	"cloud-keeper/pkg/master"
+	"cloud-keeper/pkg/masterhook"
 
 	"github.com/golang/glog"
-	"github.com/pborman/uuid"
 )
 
 const (
@@ -62,12 +60,19 @@ func Run(s *options.ServerOption) error {
 		return fmt.Errorf("not allow on this server, please contact administrator")
 	}
 
-	genericvalidation.VerifyEtcdServersList(s.GenericServerRunOptions)
-	genericvalidation.VerifyMysqlServersList(s.GenericServerRunOptions)
+	if errs := s.Storage.Validate(); len(errs) > 0 {
+		return utilerrors.NewAggregate(errs)
+	}
+	if err := s.GenericServerRunOptions.DefaultExternalAddress(s.SecureServing, s.InsecureServing); err != nil {
+		return err
+	}
+
 	genericapiserver.DefaultAndValidateRunOptions(s.GenericServerRunOptions)
 	genericConfig := genericapiserver.NewConfig(). // create the new config
 							ApplyOptions(s.GenericServerRunOptions). // apply the options selected
-							Complete()                               // set default values based on the known values
+							ApplySecureServingOptions(s.SecureServing).
+							ApplyInsecureServingOptions(s.InsecureServing).
+							ApplyAuthenticationOptions(s.Authentication)
 
 	if err := genericConfig.MaybeGenerateServingCerts(); err != nil {
 		glog.Fatalf("Failed to generate service certificate: %v", err)
@@ -80,70 +85,55 @@ func Run(s *options.ServerOption) error {
 		glog.Fatalf("error generating storage version map: %s", err)
 	}
 	storageFactory, err := genericapiserver.BuildDefaultStorageFactory(
-		s.GenericServerRunOptions.StorageConfig, s.GenericServerRunOptions.DefaultStorageMediaType, api.Codecs,
+		s.Storage.StorageConfig, s.GenericServerRunOptions.DefaultStorageMediaType, api.Codecs,
 		genericapiserver.NewDefaultResourceEncodingConfig(), storageGroupsToEncodingVersion,
 		// FIXME: this GroupVersionResource override should be configurable
 		nil,
-		master.DefaultAPIResourceConfigSource(), s.GenericServerRunOptions.RuntimeConfig)
+		masterhook.DefaultAPIResourceConfigSource(), s.GenericServerRunOptions.RuntimeConfig)
 
-	apiAuthenticator, securityDefinitions, err := authenticator.New(authenticator.AuthenticatorConfig{
-		Anonymous:           s.GenericServerRunOptions.AnonymousAuth,
-		AnyToken:            s.GenericServerRunOptions.EnableAnyToken,
-		BasicAuthFile:       s.GenericServerRunOptions.BasicAuthFile,
-		ClientCAFile:        s.GenericServerRunOptions.ClientCAFile,
-		TokenAuthFile:       s.GenericServerRunOptions.TokenAuthFile,
-		OIDCIssuerURL:       s.GenericServerRunOptions.OIDCIssuerURL,
-		OIDCClientID:        s.GenericServerRunOptions.OIDCClientID,
-		OIDCCAFile:          s.GenericServerRunOptions.OIDCCAFile,
-		OIDCUsernameClaim:   s.GenericServerRunOptions.OIDCUsernameClaim,
-		OIDCGroupsClaim:     s.GenericServerRunOptions.OIDCGroupsClaim,
-		KeystoneURL:         s.GenericServerRunOptions.KeystoneURL,
-		RequestHeaderConfig: s.GenericServerRunOptions.AuthenticationRequestHeaderConfig(),
-		InnerHookFunc:       master.InnerHookHandler.AuthenticateTokenInnerHook,
-	})
+	authenticatorConfig := s.Authentication.ToAuthenticationConfig(s.SecureServing.ClientCA)
+	//if allow innerhook append our innerhook
+	if s.Authentication.InnerHook.Allow {
+		authenticatorConfig.InnerHookFunc = masterhook.InnerHookHandler.AuthenticateTokenInnerHook
+	}
+	apiAuthenticator, securityDefinitions, err := authenticator.New(authenticatorConfig)
+	if err != nil {
+		glog.Fatalf("Invalid Authentication config: %v", err)
+	}
 
-	apiAuthorizer := authorizer.NewAlwaysAllowAuthorizer()
+	authorizationConfig := s.Authorization.ToAuthorizationConfig(nil)
+	apiAuthorizer, err := authorizer.NewAuthorizerFromAuthorizationConfig(authorizationConfig)
+	if err != nil {
+		glog.Fatalf("Invalid Authorization Config: %v", err)
+	}
 
 	// TODO(dims): We probably need to add an option "EnableLoopbackToken"
 	privilegedLoopbackToken := "49acafe7e63682e1e6b6983580c4ee56" //uuid.NewRandom().String()
-	if apiAuthenticator != nil {
-		var uid = uuid.NewRandom().String()
-		tokens := make(map[string]*user.DefaultInfo)
-		tokens[privilegedLoopbackToken] = &user.DefaultInfo{
-			Name:   user.APIServerUser,
-			UID:    uid,
-			Groups: []string{user.SystemPrivilegedGroup},
-		}
-
-		//append system default user in token authenticator
-		tokenAuthenticator := authenticator.NewAuthenticatorFromTokens(tokens)
-		apiAuthenticator = authenticatorunion.New(tokenAuthenticator, apiAuthenticator)
-		// tokenAuthorizer := authorizer.NewPrivilegedGroups(user.SystemPrivilegedGroup)
-		// apiAuthorizer = authorizerunion.New(tokenAuthorizer, apiAuthorizer)
+	selfClientConfig, err := genericoptions.NewSelfClientConfig(s.SecureServing, s.InsecureServing, privilegedLoopbackToken)
+	if err != nil {
+		glog.Fatalf("Failed to create clientset: %v", err)
 	}
 
 	genericConfig.Version = &keeperVersion
 	genericConfig.Authenticator = apiAuthenticator
 	genericConfig.Authorizer = apiAuthorizer
+	genericConfig.LoopbackClientConfig = selfClientConfig
 	genericConfig.APIResourceConfigSource = storageFactory.APIResourceConfigSource
-	//genericConfig.OpenAPIConfig.Info.Title = "Keeper"
-	//genericConfig.OpenAPIConfig.Definitions = generatedopenapi.OpenAPIDefinitions
-	genericConfig.EnableOpenAPISupport = false
 	//genericConfig.EnableMetrics = false
+	genericConfig.EnableOpenAPISupport = false
 	genericConfig.OpenAPIConfig.SecurityDefinitions = securityDefinitions
 
 	config := &master.Config{
-		GenericConfig: genericConfig.Config,
+		GenericConfig: genericConfig,
 
 		StorageFactory:          storageFactory,
 		EnableWatchCache:        s.GenericServerRunOptions.EnableWatchCache,
-		EnableCoreControllers:   true,
 		DeleteCollectionWorkers: s.GenericServerRunOptions.DeleteCollectionWorkers,
 		EnableUISupport:         false,
 		EnableLogsSupport:       true,
 	}
 
-	m, err := config.Complete().New()
+	m, err := config.ExtraComplete(masterhook.InstallLegacyAPI, masterhook.InstallAPIs).New()
 	if err != nil {
 		return err
 	}

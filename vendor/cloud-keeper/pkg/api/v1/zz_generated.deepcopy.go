@@ -9,10 +9,9 @@ Copyright 2016 The cloud-keeper Authors.
 package v1
 
 import (
-	unversioned "gofreezer/pkg/api/unversioned"
+	api_v1 "gofreezer/pkg/api/v1"
 	conversion "gofreezer/pkg/conversion"
 	runtime "gofreezer/pkg/runtime"
-	types "gofreezer/pkg/types"
 	reflect "reflect"
 	time "time"
 )
@@ -46,19 +45,16 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINode, InType: reflect.TypeOf(&ActiveAPINode{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINodeList, InType: reflect.TypeOf(&ActiveAPINodeList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ActiveAPINodeSpec, InType: reflect.TypeOf(&ActiveAPINodeSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BatchShadowss, InType: reflect.TypeOf(&BatchShadowss{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BatchShadowssSpec, InType: reflect.TypeOf(&BatchShadowssSpec{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BatchUsers, InType: reflect.TypeOf(&BatchUsers{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BatchUsersSpec, InType: reflect.TypeOf(&BatchUsersSpec{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_BindingNodes, InType: reflect.TypeOf(&BindingNodes{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DGAccountInfo, InType: reflect.TypeOf(&DGAccountInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DGServerInfo, InType: reflect.TypeOf(&DGServerInfo{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_DeleteOptions, InType: reflect.TypeOf(&DeleteOptions{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ExportOptions, InType: reflect.TypeOf(&ExportOptions{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ListOptions, InType: reflect.TypeOf(&ListOptions{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Login, InType: reflect.TypeOf(&Login{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_LoginList, InType: reflect.TypeOf(&LoginList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_LoginSpec, InType: reflect.TypeOf(&LoginSpec{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Namespace, InType: reflect.TypeOf(&Namespace{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NamespaceList, InType: reflect.TypeOf(&NamespaceList{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NamespaceSpec, InType: reflect.TypeOf(&NamespaceSpec{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NamespaceStatus, InType: reflect.TypeOf(&NamespaceStatus{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Node, InType: reflect.TypeOf(&Node{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeList, InType: reflect.TypeOf(&NodeList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeReferences, InType: reflect.TypeOf(&NodeReferences{})},
@@ -67,10 +63,8 @@ func RegisterDeepCopies(scheme *runtime.Scheme) error {
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeUser, InType: reflect.TypeOf(&NodeUser{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeUserList, InType: reflect.TypeOf(&NodeUserList{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_NodeUserSpec, InType: reflect.TypeOf(&NodeUserSpec{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_ObjectMeta, InType: reflect.TypeOf(&ObjectMeta{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_OwnerReference, InType: reflect.TypeOf(&OwnerReference{})},
-		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_Preconditions, InType: reflect.TypeOf(&Preconditions{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_SSHKey, InType: reflect.TypeOf(&SSHKey{})},
+		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_TargetAccServer, InType: reflect.TypeOf(&TargetAccServer{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_User, InType: reflect.TypeOf(&User{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserInfo, InType: reflect.TypeOf(&UserInfo{})},
 		conversion.GeneratedDeepCopyFunc{Fn: DeepCopy_v1_UserList, InType: reflect.TypeOf(&UserList{})},
@@ -100,7 +94,7 @@ func DeepCopy_v1_APIServer(in interface{}, out interface{}, c *conversion.Cloner
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -180,7 +174,7 @@ func DeepCopy_v1_AccExec(in interface{}, out interface{}, c *conversion.Cloner) 
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -216,7 +210,7 @@ func DeepCopy_v1_AccSSHKey(in interface{}, out interface{}, c *conversion.Cloner
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -253,7 +247,7 @@ func DeepCopy_v1_AccServer(in interface{}, out interface{}, c *conversion.Cloner
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -332,7 +326,7 @@ func DeepCopy_v1_Account(in interface{}, out interface{}, c *conversion.Cloner) 
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -368,7 +362,7 @@ func DeepCopy_v1_AccountInfo(in interface{}, out interface{}, c *conversion.Clon
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -430,7 +424,7 @@ func DeepCopy_v1_ActiveAPINode(in interface{}, out interface{}, c *conversion.Cl
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -469,6 +463,80 @@ func DeepCopy_v1_ActiveAPINodeSpec(in interface{}, out interface{}, c *conversio
 		out.Port = in.Port
 		out.Password = in.Password
 		out.Method = in.Method
+		return nil
+	}
+}
+
+func DeepCopy_v1_BatchShadowss(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchShadowss)
+		out := out.(*BatchShadowss)
+		out.TypeMeta = in.TypeMeta
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
+			return err
+		} else {
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
+		}
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*BatchShadowssSpec)
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1_BatchShadowssSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchShadowssSpec)
+		out := out.(*BatchShadowssSpec)
+		if in.Target != nil {
+			in, out := &in.Target, &out.Target
+			*out = make([]TargetAccServer, len(*in))
+			for i := range *in {
+				(*out)[i] = (*in)[i]
+			}
+		} else {
+			out.Target = nil
+		}
+		out.SchedulingTime = in.SchedulingTime.DeepCopy()
+		out.Upgrade = in.Upgrade
+		return nil
+	}
+}
+
+func DeepCopy_v1_BatchUsers(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchUsers)
+		out := out.(*BatchUsers)
+		out.TypeMeta = in.TypeMeta
+		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
+			return err
+		} else {
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
+		}
+		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
+			return err
+		} else {
+			out.Spec = *newVal.(*BatchUsersSpec)
+		}
+		return nil
+	}
+}
+
+func DeepCopy_v1_BatchUsersSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*BatchUsersSpec)
+		out := out.(*BatchUsersSpec)
+		if in.TargetUser != nil {
+			in, out := &in.TargetUser, &out.TargetUser
+			*out = make([]string, len(*in))
+			copy(*out, *in)
+		} else {
+			out.TargetUser = nil
+		}
+		out.SchedulingTime = in.SchedulingTime.DeepCopy()
+		out.Resume = in.Resume
 		return nil
 	}
 }
@@ -521,71 +589,6 @@ func DeepCopy_v1_DGServerInfo(in interface{}, out interface{}, c *conversion.Clo
 	}
 }
 
-func DeepCopy_v1_DeleteOptions(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*DeleteOptions)
-		out := out.(*DeleteOptions)
-		out.TypeMeta = in.TypeMeta
-		if in.GracePeriodSeconds != nil {
-			in, out := &in.GracePeriodSeconds, &out.GracePeriodSeconds
-			*out = new(int64)
-			**out = **in
-		} else {
-			out.GracePeriodSeconds = nil
-		}
-		if in.Preconditions != nil {
-			in, out := &in.Preconditions, &out.Preconditions
-			if newVal, err := c.DeepCopy(*in); err != nil {
-				return err
-			} else {
-				*out = newVal.(*Preconditions)
-			}
-		} else {
-			out.Preconditions = nil
-		}
-		if in.OrphanDependents != nil {
-			in, out := &in.OrphanDependents, &out.OrphanDependents
-			*out = new(bool)
-			**out = **in
-		} else {
-			out.OrphanDependents = nil
-		}
-		return nil
-	}
-}
-
-func DeepCopy_v1_ExportOptions(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*ExportOptions)
-		out := out.(*ExportOptions)
-		out.TypeMeta = in.TypeMeta
-		out.Export = in.Export
-		out.Exact = in.Exact
-		return nil
-	}
-}
-
-func DeepCopy_v1_ListOptions(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*ListOptions)
-		out := out.(*ListOptions)
-		out.TypeMeta = in.TypeMeta
-		out.LabelSelector = in.LabelSelector
-		out.FieldSelector = in.FieldSelector
-		out.Watch = in.Watch
-		out.ResourceVersion = in.ResourceVersion
-		if in.TimeoutSeconds != nil {
-			in, out := &in.TimeoutSeconds, &out.TimeoutSeconds
-			*out = new(int64)
-			**out = **in
-		} else {
-			out.TimeoutSeconds = nil
-		}
-		out.PageSelector = in.PageSelector
-		return nil
-	}
-}
-
 func DeepCopy_v1_Login(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*Login)
@@ -594,7 +597,7 @@ func DeepCopy_v1_Login(in interface{}, out interface{}, c *conversion.Cloner) er
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -636,75 +639,6 @@ func DeepCopy_v1_LoginSpec(in interface{}, out interface{}, c *conversion.Cloner
 	}
 }
 
-func DeepCopy_v1_Namespace(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*Namespace)
-		out := out.(*Namespace)
-		out.TypeMeta = in.TypeMeta
-		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
-			return err
-		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
-		}
-		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
-			return err
-		} else {
-			out.Spec = *newVal.(*NamespaceSpec)
-		}
-		out.Status = in.Status
-		return nil
-	}
-}
-
-func DeepCopy_v1_NamespaceList(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*NamespaceList)
-		out := out.(*NamespaceList)
-		out.TypeMeta = in.TypeMeta
-		out.ListMeta = in.ListMeta
-		if in.Items != nil {
-			in, out := &in.Items, &out.Items
-			*out = make([]Namespace, len(*in))
-			for i := range *in {
-				if newVal, err := c.DeepCopy(&(*in)[i]); err != nil {
-					return err
-				} else {
-					(*out)[i] = *newVal.(*Namespace)
-				}
-			}
-		} else {
-			out.Items = nil
-		}
-		return nil
-	}
-}
-
-func DeepCopy_v1_NamespaceSpec(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*NamespaceSpec)
-		out := out.(*NamespaceSpec)
-		if in.Finalizers != nil {
-			in, out := &in.Finalizers, &out.Finalizers
-			*out = make([]FinalizerName, len(*in))
-			for i := range *in {
-				(*out)[i] = (*in)[i]
-			}
-		} else {
-			out.Finalizers = nil
-		}
-		return nil
-	}
-}
-
-func DeepCopy_v1_NamespaceStatus(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*NamespaceStatus)
-		out := out.(*NamespaceStatus)
-		out.Phase = in.Phase
-		return nil
-	}
-}
-
 func DeepCopy_v1_Node(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*Node)
@@ -713,7 +647,7 @@ func DeepCopy_v1_Node(in interface{}, out interface{}, c *conversion.Cloner) err
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -808,7 +742,7 @@ func DeepCopy_v1_NodeUser(in interface{}, out interface{}, c *conversion.Cloner)
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -849,109 +783,6 @@ func DeepCopy_v1_NodeUserSpec(in interface{}, out interface{}, c *conversion.Clo
 	}
 }
 
-func DeepCopy_v1_ObjectMeta(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*ObjectMeta)
-		out := out.(*ObjectMeta)
-		out.Name = in.Name
-		out.GenerateName = in.GenerateName
-		out.Namespace = in.Namespace
-		out.SelfLink = in.SelfLink
-		out.UID = in.UID
-		out.ResourceVersion = in.ResourceVersion
-		out.Generation = in.Generation
-		out.CreationTimestamp = in.CreationTimestamp.DeepCopy()
-		if in.DeletionTimestamp != nil {
-			in, out := &in.DeletionTimestamp, &out.DeletionTimestamp
-			*out = new(unversioned.Time)
-			**out = (*in).DeepCopy()
-		} else {
-			out.DeletionTimestamp = nil
-		}
-		if in.DeletionGracePeriodSeconds != nil {
-			in, out := &in.DeletionGracePeriodSeconds, &out.DeletionGracePeriodSeconds
-			*out = new(int64)
-			**out = **in
-		} else {
-			out.DeletionGracePeriodSeconds = nil
-		}
-		if in.Labels != nil {
-			in, out := &in.Labels, &out.Labels
-			*out = make(map[string]string)
-			for key, val := range *in {
-				(*out)[key] = val
-			}
-		} else {
-			out.Labels = nil
-		}
-		if in.Annotations != nil {
-			in, out := &in.Annotations, &out.Annotations
-			*out = make(map[string]string)
-			for key, val := range *in {
-				(*out)[key] = val
-			}
-		} else {
-			out.Annotations = nil
-		}
-		if in.OwnerReferences != nil {
-			in, out := &in.OwnerReferences, &out.OwnerReferences
-			*out = make([]OwnerReference, len(*in))
-			for i := range *in {
-				if newVal, err := c.DeepCopy(&(*in)[i]); err != nil {
-					return err
-				} else {
-					(*out)[i] = *newVal.(*OwnerReference)
-				}
-			}
-		} else {
-			out.OwnerReferences = nil
-		}
-		if in.Finalizers != nil {
-			in, out := &in.Finalizers, &out.Finalizers
-			*out = make([]string, len(*in))
-			copy(*out, *in)
-		} else {
-			out.Finalizers = nil
-		}
-		out.ClusterName = in.ClusterName
-		return nil
-	}
-}
-
-func DeepCopy_v1_OwnerReference(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*OwnerReference)
-		out := out.(*OwnerReference)
-		out.APIVersion = in.APIVersion
-		out.Kind = in.Kind
-		out.Name = in.Name
-		out.UID = in.UID
-		if in.Controller != nil {
-			in, out := &in.Controller, &out.Controller
-			*out = new(bool)
-			**out = **in
-		} else {
-			out.Controller = nil
-		}
-		return nil
-	}
-}
-
-func DeepCopy_v1_Preconditions(in interface{}, out interface{}, c *conversion.Cloner) error {
-	{
-		in := in.(*Preconditions)
-		out := out.(*Preconditions)
-		if in.UID != nil {
-			in, out := &in.UID, &out.UID
-			*out = new(types.UID)
-			**out = **in
-		} else {
-			out.UID = nil
-		}
-		return nil
-	}
-}
-
 func DeepCopy_v1_SSHKey(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*SSHKey)
@@ -964,6 +795,17 @@ func DeepCopy_v1_SSHKey(in interface{}, out interface{}, c *conversion.Cloner) e
 	}
 }
 
+func DeepCopy_v1_TargetAccServer(in interface{}, out interface{}, c *conversion.Cloner) error {
+	{
+		in := in.(*TargetAccServer)
+		out := out.(*TargetAccServer)
+		out.Name = in.Name
+		out.ID = in.ID
+		out.Host = in.Host
+		return nil
+	}
+}
+
 func DeepCopy_v1_User(in interface{}, out interface{}, c *conversion.Cloner) error {
 	{
 		in := in.(*User)
@@ -972,7 +814,7 @@ func DeepCopy_v1_User(in interface{}, out interface{}, c *conversion.Cloner) err
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -1008,6 +850,19 @@ func DeepCopy_v1_UserInfo(in interface{}, out interface{}, c *conversion.Cloner)
 		out.TotalUploadTraffic = in.TotalUploadTraffic
 		out.TotalDownloadTraffic = in.TotalDownloadTraffic
 		out.Status = in.Status
+		out.Delete = in.Delete
+		out.Activation = in.Activation
+		out.UserType = in.UserType
+		out.Bandwidth = in.Bandwidth
+		out.PackageType = in.PackageType
+		out.Note = in.Note
+		if in.Extra != nil {
+			in, out := &in.Extra, &out.Extra
+			*out = new(string)
+			**out = **in
+		} else {
+			out.Extra = nil
+		}
 		return nil
 	}
 }
@@ -1043,7 +898,7 @@ func DeepCopy_v1_UserPublicFile(in interface{}, out interface{}, c *conversion.C
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -1107,7 +962,7 @@ func DeepCopy_v1_UserService(in interface{}, out interface{}, c *conversion.Clon
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		out.Spec = in.Spec
 		return nil
@@ -1122,7 +977,7 @@ func DeepCopy_v1_UserServiceBindingNodes(in interface{}, out interface{}, c *con
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err
@@ -1213,7 +1068,7 @@ func DeepCopy_v1_UserToken(in interface{}, out interface{}, c *conversion.Cloner
 		if newVal, err := c.DeepCopy(&in.ObjectMeta); err != nil {
 			return err
 		} else {
-			out.ObjectMeta = *newVal.(*ObjectMeta)
+			out.ObjectMeta = *newVal.(*api_v1.ObjectMeta)
 		}
 		if newVal, err := c.DeepCopy(&in.Spec); err != nil {
 			return err

@@ -17,11 +17,9 @@ limitations under the License.
 package unversioned
 
 import (
-	"apistack/pkg/genericapiserver/openapi/common"
 	"encoding/json"
 	"time"
 
-	"github.com/go-openapi/spec"
 	"github.com/google/gofuzz"
 )
 
@@ -144,16 +142,16 @@ func (t Time) MarshalJSON() ([]byte, error) {
 	return json.Marshal(t.UTC().Format(time.RFC3339))
 }
 
-func (_ Time) OpenAPIDefinition() common.OpenAPIDefinition {
-	return common.OpenAPIDefinition{
-		Schema: spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type:   []string{"string"},
-				Format: "date-time",
-			},
-		},
-	}
-}
+// func (_ Time) OpenAPIDefinition() common.OpenAPIDefinition {
+// 	return common.OpenAPIDefinition{
+// 		Schema: spec.Schema{
+// 			SchemaProps: spec.SchemaProps{
+// 				Type:   []string{"string"},
+// 				Format: "date-time",
+// 			},
+// 		},
+// 	}
+// }
 
 // MarshalQueryParameter converts to a URL query parameter value
 func (t Time) MarshalQueryParameter() (string, error) {

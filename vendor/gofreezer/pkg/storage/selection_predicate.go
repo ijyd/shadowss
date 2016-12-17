@@ -3,7 +3,7 @@ package storage
 import (
 	"gofreezer/pkg/fields"
 	"gofreezer/pkg/labels"
-	"gofreezer/pkg/pagination"
+	"gofreezer/pkg/pages"
 	"gofreezer/pkg/runtime"
 )
 
@@ -19,20 +19,7 @@ type SelectionPredicate struct {
 	IndexFields []string
 
 	//extension selection predicate with pager if needed
-	Pager pagination.Pager
-
-	//strange define mysqls selection at here.
-	//may be abstracts backend selection
-	MysqlsSelectionPredicate
-}
-
-// SelectionPredicate is used to represent the way to select objects from mysql storage.
-type MysqlsSelectionPredicate struct {
-	Query     interface{}
-	QueryArgs interface{}
-	SortField string
-	LimitCon  uint64
-	SkipCon   uint64
+	Page pages.Selector
 }
 
 // Matches returns true if the given object's labels and fields (as
@@ -80,7 +67,7 @@ func (s *SelectionPredicate) MatcherIndex() []MatchValue {
 //BuildPagerCondition use total count parse condition for list
 //return value:have pager, perPagecount,skipitem
 func (s *SelectionPredicate) BuildPagerCondition(count uint64) (bool, uint64, uint64) {
-	page := s.Pager
+	page := s.Page
 	var needPager, hasPage bool
 	if page == nil {
 		needPager = false
@@ -93,30 +80,4 @@ func (s *SelectionPredicate) BuildPagerCondition(count uint64) (bool, uint64, ui
 		hasPage, perPage, skip = page.Condition(count)
 	}
 	return hasPage, perPage, skip
-}
-
-// Filter returns skip condition
-func (s *MysqlsSelectionPredicate) Skip() uint64 {
-	return s.SkipCon
-}
-
-// Filter returns limit condition
-func (s *MysqlsSelectionPredicate) Limit() uint64 {
-	return s.LimitCon
-}
-
-// Filter returns sort condition
-func (s *MysqlsSelectionPredicate) Sort() string {
-	return s.SortField
-}
-
-// Filter returns select condition
-func (s *MysqlsSelectionPredicate) SelectField() []string {
-	//return s.IndexFields
-	return []string{}
-}
-
-// Filter returns where condition
-func (s *MysqlsSelectionPredicate) Where() (interface{}, interface{}) {
-	return s.Query, s.QueryArgs
 }

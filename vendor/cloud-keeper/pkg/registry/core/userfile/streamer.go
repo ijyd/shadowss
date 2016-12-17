@@ -44,7 +44,8 @@ func (h *FileStreamer) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	filename := fields[0]
+	filename := fields[4]
+	glog.V(5).Infof("file streamer start(%v) method(%v) filename(%v)", fields, req.Method, filename)
 
 	switch req.Method {
 	case "GET":

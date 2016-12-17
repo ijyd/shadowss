@@ -3,6 +3,7 @@ package rest
 import (
 	"cloud-keeper/pkg/api"
 	"cloud-keeper/pkg/registry/core/node"
+	"cloud-keeper/pkg/registry/core/user"
 	"encoding/base64"
 	"encoding/json"
 	freezerapi "gofreezer/pkg/api"
@@ -11,10 +12,13 @@ import (
 	"gofreezer/pkg/api/unversioned"
 	"gofreezer/pkg/runtime"
 	"golib/pkg/util/crypto"
+	"time"
+
+	"github.com/golang/glog"
 )
 
-func NewExtendREST(node node.Registry) (*APINodeREST, *NodeRefreshREST) {
-	return &APINodeREST{node}, &NodeRefreshREST{node}
+func NewExtendREST(node node.Registry, user user.Registry) (*APINodeREST, *NodeRefreshREST, *NodeUserREST) {
+	return &APINodeREST{node}, &NodeRefreshREST{node}, &NodeUserREST{user}
 }
 
 type NodeRefreshREST struct {
@@ -48,12 +52,31 @@ func (r *NodeRefreshREST) Update(ctx freezerapi.Context, name string, objInfo re
 	for k, v := range newNode.Annotations {
 		node.Annotations[k] = v
 	}
+	time.LoadLocation("Asia/Shanghai")
+	node.Annotations[api.NodeAnnotationRefreshTime] = time.Now().String()
 
 	node.Labels = make(map[string]string)
 	for k, v := range newNode.Labels {
 		node.Labels[k] = v
 	}
-	node.Spec.Server = newNode.Spec.Server
+	//plus node traffic
+	node.Spec.Server.Download += newNode.Spec.Server.Download
+	node.Spec.Server.Upload += newNode.Spec.Server.Upload
+	node.Spec.Server.TotalDownloadTraffic += newNode.Spec.Server.Download
+	node.Spec.Server.TotalUploadTraffic += newNode.Spec.Server.Upload
+
+	node.Spec.Server.AccServerID = newNode.Spec.Server.AccServerID
+	node.Spec.Server.AccServerName = newNode.Spec.Server.AccServerName
+	node.Spec.Server.CustomMethod = newNode.Spec.Server.CustomMethod
+	node.Spec.Server.Method = newNode.Spec.Server.Method
+	node.Spec.Server.Description = newNode.Spec.Server.Description
+	node.Spec.Server.EnableOTA = newNode.Spec.Server.EnableOTA
+	node.Spec.Server.Host = newNode.Spec.Server.Host
+	node.Spec.Server.Location = newNode.Spec.Server.Location
+	node.Spec.Server.Name = newNode.Spec.Server.Name
+	node.Spec.Server.Status = newNode.Spec.Server.Status
+	node.Spec.Server.TrafficLimit = newNode.Spec.Server.TrafficLimit
+	node.Spec.Server.TrafficRate = newNode.Spec.Server.TrafficRate
 
 	return r.node.UpdateNode(ctx, name, rest.DefaultUpdatedObjectInfo(node, api.Scheme))
 }
@@ -209,3 +232,41 @@ kic9aLeZpnirwRSPYE30Z83wbdKdAa9Qq4gLlT6e+amW3pm4LbhbPlOcO99ax15y
 V/C1TTnEnZZAYv4UqcX9SEBK6N8+7G8pSTJuuB12dVl0BTLq3fGmJOtGs69fd1oW
 PbmnvB+0obn9amKJm63MmiU=
 -----END CERTIFICATE-----`
+
+type NodeUserREST struct {
+	user user.Registry
+}
+
+func (*NodeUserREST) New() runtime.Object {
+	return &api.NodeUser{}
+}
+
+func (*NodeUserREST) NewList() runtime.Object {
+	return &api.NodeUser{}
+}
+
+//give a lables selector in request param like as label.selector
+func (r *NodeUserREST) List(ctx freezerapi.Context, options *freezerapi.ListOptions) (runtime.Object, error) {
+	if name, ok := options.FieldSelector.RequiresExactMatch("metadata.name"); ok {
+		options := &freezerapi.ListOptions{}
+		userlist, err := r.user.ListUserByNodeName(ctx, name, options)
+		if err != nil {
+			return nil, err
+		}
+
+		nodeUserList := &api.NodeUserList{}
+		for _, v := range userlist.Items {
+			nodeRefer, ok := v.Spec.UserService.Nodes[name]
+			if !ok {
+				glog.Warningf("not found node(%v) in user(%v)\r\n", name, v.Name)
+				continue
+			}
+			nodeUser := r.user.CreateNodeUser(&nodeRefer.User, name)
+
+			nodeUserList.Items = append(nodeUserList.Items, *nodeUser)
+		}
+		return nodeUserList, nil
+	}
+
+	return nil, errors.NewBadRequest("need a 'metadata.name' filed selector")
+}
