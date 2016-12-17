@@ -25,6 +25,7 @@ type TCPServer struct {
 	quit            chan struct{}
 	uploadTraffic   int64 //request upload traffic
 	downloadTraffic int64 //request download traffic
+	lastActiveTime  time.Time
 
 	//mutex Mutex used to serialize access to the dictionary
 	mapMutex  *sync.Mutex
@@ -39,10 +40,11 @@ type connector struct {
 //NewTCPServer create a TCPServer
 func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
 	return &TCPServer{
-		Config:    cfg,
-		quit:      make(chan struct{}),
-		mapMutex:  new(sync.Mutex),
-		dataMutex: new(sync.Mutex),
+		Config:         cfg,
+		lastActiveTime: time.Now(),
+		quit:           make(chan struct{}),
+		mapMutex:       new(sync.Mutex),
+		dataMutex:      new(sync.Mutex),
 	}
 }
 
@@ -206,6 +208,7 @@ func (tcpSrv *TCPServer) Run() {
 			glog.V(5).Infof("accept remote client: %v\n", reqAddr)
 			wg.Add(1)
 			go func() {
+				tcpSrv.lastActiveTime = time.Now()
 				tcpSrv.handleRequest(ctx, accept.conn)
 				wg.Done()
 			}()
@@ -223,6 +226,10 @@ func (tcpSrv *TCPServer) GetListenPort() int {
 
 func (tcpSrv *TCPServer) GetConfig() config.ConnectionInfo {
 	return *tcpSrv.Config
+}
+
+func (tcpSrv *TCPServer) GetLastActiveTime() time.Time {
+	return tcpSrv.lastActiveTime
 }
 
 func lock(mutex *sync.Mutex) {

@@ -17,6 +17,11 @@ type Servers struct {
 	enableUDP bool
 }
 
+type UserInfo struct {
+	ConnectInfo    *config.ConnectionInfo
+	LastActiveTime time.Time
+}
+
 //NewServers create a servers
 func NewServers(udp bool) *Servers {
 	return &Servers{
@@ -157,6 +162,22 @@ func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
 	for _, handler := range srv.tcpSrvMap {
 		config := handler.GetConfig()
 		users = append(users, config)
+	}
+
+	return users
+}
+
+func (srv *Servers) GetUsersInfor() []UserInfo {
+	var users []UserInfo
+	for _, handler := range srv.tcpSrvMap {
+		config := handler.GetConfig()
+		lastTime := handler.GetLastActiveTime()
+
+		item := UserInfo{}
+		item.ConnectInfo = &config
+		item.LastActiveTime = lastTime
+
+		users = append(users, item)
 	}
 
 	return users

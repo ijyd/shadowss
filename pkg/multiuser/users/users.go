@@ -29,6 +29,10 @@ func (u *Users) GetUsers() []config.ConnectionInfo {
 	return u.proxyHandle.GetUsersConfig()
 }
 
+func (u *Users) GetUsersInfo() []proxyserver.UserInfo {
+	return u.proxyHandle.GetUsersInfor()
+}
+
 func (u *Users) StartAPIProxy() error {
 	generateRandID := int64(100000000)
 	id := rand.Int63n(generateRandID)

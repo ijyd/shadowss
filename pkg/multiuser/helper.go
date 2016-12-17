@@ -80,13 +80,15 @@ func (mu *MultiUser) refreshNode(loopcnt int64) {
 
 func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error) {
 
-	userList := mu.userHandle.GetUsers()
+	//userList := mu.userHandle.GetUsers()
+	userList := mu.userHandle.GetUsersInfo()
 
 	var upload, download, usercnt int64
 
 	usercnt = int64(len(userList))
 
-	for _, userConfig := range userList {
+	for _, userInfo := range userList {
+		userConfig := userInfo.ConnectInfo
 		if userConfig.Name == string("") {
 			continue
 		}
@@ -111,7 +113,10 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error
 		nodeUser.APIVersion = "v1"
 		nodeUser.Name = userConfig.Name
 
-		mu.userHandle.UpdateTraffic(&userConfig, nodeUser)
+		mu.userHandle.UpdateTraffic(userConfig, nodeUser)
+		nodeUser.Annotations = make(map[string]string)
+		nodeUser.Annotations[api.UserFakeAnnotationLastActiveTime] = userInfo.LastActiveTime.String()
+
 		err := UpdateNodeUserFromNode(nodeUser.Spec)
 		if err != nil {
 			glog.Errorf("update node user %+v err %v \r\n", nodeUser, err)

@@ -72,3 +72,7 @@ func (udpSrv *UDPServer) GetListenPort() int {
 func (udpSrv *UDPServer) GetConfig() config.ConnectionInfo {
 	return *udpSrv.Config
 }
+
+func (udpSrv *UDPServer) GetLastActiveTime() time.Time {
+	return time.Now()
+}

@@ -2,6 +2,7 @@ package proxyserver
 
 import (
 	"shadowss/pkg/config"
+	"time"
 )
 
 //ProxyServer implement a proxy server interface
@@ -12,4 +13,5 @@ type ProxyServer interface {
 	Traffic() (int64, int64)
 	GetListenPort() int
 	GetConfig() config.ConnectionInfo
+	GetLastActiveTime() time.Time
 }
