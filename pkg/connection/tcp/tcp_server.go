@@ -30,6 +30,9 @@ type TCPServer struct {
 	//mutex Mutex used to serialize access to the dictionary
 	mapMutex  *sync.Mutex
 	dataMutex *sync.Mutex
+
+	//store connection count for server port
+	portConnectionCount map[int]uint
 }
 
 type connector struct {
@@ -40,11 +43,12 @@ type connector struct {
 //NewTCPServer create a TCPServer
 func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
 	return &TCPServer{
-		Config:         cfg,
-		lastActiveTime: time.Now(),
-		quit:           make(chan struct{}),
-		mapMutex:       new(sync.Mutex),
-		dataMutex:      new(sync.Mutex),
+		Config:              cfg,
+		lastActiveTime:      time.Now(),
+		quit:                make(chan struct{}),
+		mapMutex:            new(sync.Mutex),
+		dataMutex:           new(sync.Mutex),
+		portConnectionCount: make(map[int]uint),
 	}
 }
 
@@ -70,11 +74,25 @@ func (tcpSrv *TCPServer) Traffic() (int64, int64) {
 
 func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn) {
 
+	srvPort := acceptConn.LocalAddr().(*net.TCPAddr).Port
+	limitConn, ok := tcpSrv.portConnectionCount[srvPort]
+	if ok {
+		if limitConn > 32 {
+			glog.Errorf("limit connection, refuse this connection(%v)", acceptConn)
+			acceptConn.Close()
+		}
+	}
+	limitConn++
+	tcpSrv.portConnectionCount[srvPort] = limitConn
+
 	reqAddr := acceptConn.RemoteAddr().String()
 	timeout := time.Duration(tcpSrv.Config.Timeout*2) * time.Second
 	crypto, err := crypto.NewCrypto(tcpSrv.Config.EncryptMethod, tcpSrv.Config.Password)
 	if err != nil {
 		glog.Errorf("create crypto error :%v", err)
+		limitConn--
+		tcpSrv.portConnectionCount[srvPort] = limitConn
+		acceptConn.Close()
 		return
 	}
 	client := ssclient.NewClient(acceptConn, crypto)
@@ -82,7 +100,11 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		client:     client,
 		serverConn: make(map[string]net.Conn),
 	}
-	defer connHelper.client.Close()
+	defer func() {
+		connHelper.client.Close()
+		limitConn--
+		tcpSrv.portConnectionCount[srvPort] = limitConn
+	}()
 
 	ssProtocol, err := connHelper.client.ParseTcpReq()
 	if err != nil {
@@ -93,6 +115,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		glog.Errorf("not match one time auth with config(%v:%v)\r\n", ssProtocol.OneTimeAuth, tcpSrv.Config.EnableOTA)
 		return
 	}
+
 	remoteAddr := &net.TCPAddr{
 		IP:   ssProtocol.DstAddr.IP,
 		Port: ssProtocol.DstAddr.Port,

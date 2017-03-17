@@ -45,13 +45,13 @@ func (udpSrv *UDPServer) Run() {
 
 	crypto, err := crypto.NewCrypto(method, password)
 	if err != nil {
-		glog.Fatalf("Error generating cipher for udp port: %d %v\n", port, err)
+		glog.Errorf("Error generating cipher for udp port: %d %v\n", port, err)
 		return
 	}
 
 	proxy := NewProxy(port, crypto, auth, timeout)
 	if proxy == nil {
-		glog.Fatalf("listening upd port: %v error:%v\r\n", port, err)
+		glog.Errorf("listening upd port: %v error:%v\r\n", port, err)
 		return
 	}
 	udpSrv.udpProxy = proxy

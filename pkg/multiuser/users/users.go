@@ -85,8 +85,8 @@ func (u *Users) UpdateTraffic(config *config.ConnectionInfo, user *api.NodeUser)
 		return err
 	}
 
-	totalUpload := int64(user.Spec.User.UploadTraffic) + upload
-	totalDownlaod := int64(user.Spec.User.DownloadTraffic) + download
+	totalUpload := upload
+	totalDownlaod := download
 
 	user.Spec.User.DownloadTraffic = totalDownlaod
 	user.Spec.User.UploadTraffic = totalUpload
