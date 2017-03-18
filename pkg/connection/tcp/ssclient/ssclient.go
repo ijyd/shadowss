@@ -158,7 +158,8 @@ func (c *Client) ParseTcpReq() (*protocol.SSProtocol, error) {
 	return ssProtocol, nil
 }
 
-func (c *Client) ParseReqData(buf []byte) ([]byte, error) {
+//ParseReqData parse request data
+func (c *Client) ParseReqData(buf []byte) (out []byte, err error) {
 	const (
 		dataLenLen  = 2
 		hmacSha1Len = 10
@@ -172,7 +173,7 @@ func (c *Client) ParseReqData(buf []byte) ([]byte, error) {
 		buf = make([]byte, headerLen)
 	}
 
-	if _, err := io.ReadFull(c, buf[:headerLen]); err != nil {
+	if _, err = io.ReadFull(c, buf[:headerLen]); err != nil {
 		return nil, err
 	}
 	dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])
@@ -182,6 +183,14 @@ func (c *Client) ParseReqData(buf []byte) ([]byte, error) {
 	if bufLen < dataEndIdx {
 		buf = make([]byte, dataLen)
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			glog.Infof("bufferlen (%v) datalen(%v) headerlen(%v) dataend(%v)\r\n", len(buf), dataLen, headerLen, dataEndIdx)
+			glog.Errorf("panic information %v\r\n", r)
+			err = fmt.Errorf("panic in parse data")
+		}
+	}()
 
 	if _, err := io.ReadFull(c, buf[headerLen:dataEndIdx]); err != nil {
 		return nil, err

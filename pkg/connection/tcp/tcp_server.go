@@ -85,6 +85,7 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 		if limitConn > uint(tcpSrv.Config.MaxConnection) {
 			glog.Errorf("limit connection, refuse this connection(%v)", acceptConn)
 			acceptConn.Close()
+			return
 		}
 	}
 	limitConn++
