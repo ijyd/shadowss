@@ -10,6 +10,9 @@ type ConnectionInfo struct {
 	EnableOTA     bool   `json:"enableOTA"`
 	Timeout       int    `json:"timeout"`
 	Name          string `json:"name,omitempty"`
+
+	//max connection for user
+	MaxConnection int
 }
 
 // Config as a interface for configure file implement

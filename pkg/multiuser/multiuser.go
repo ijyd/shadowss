@@ -35,6 +35,7 @@ type MultiUser struct {
 
 var schedule *MultiUser
 
+//InitSchedule init schedule
 func InitSchedule(proxySrv *proxyserver.Servers, url string) {
 	schedule = NewMultiUser(proxySrv, url)
 	if schedule == nil {
@@ -148,7 +149,7 @@ func (mu *MultiUser) StartUp() error {
 	mu.userHandle = userMgr
 
 	if mu.apiProxy {
-		mu.userHandle.StartAPIProxy()
+		mu.userHandle.StartAPIProxy(mu.nodeName)
 	}
 
 	go mu.userHandle.ListUserLoop(mu.nodeName)

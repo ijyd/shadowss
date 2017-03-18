@@ -33,7 +33,7 @@ func NewAES(aesType string) (*AES, error) {
 
 //NewStream create a new stream by key and iv
 func (a *AES) NewStream(key, iv []byte, encrypt bool) (cipher.Stream, error) {
-	glog.V(5).Infoln("New Aes Stream")
+	glog.V(7).Infoln("New Aes Stream")
 	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err

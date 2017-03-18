@@ -8,10 +8,11 @@ import (
 )
 
 type ServerOption struct {
-	ConfigFile     string
-	CpuCoreNum     int
-	EnableUDPRelay bool
-	URL            string
+	ConfigFile        string
+	CpuCoreNum        int
+	EnableUDPRelay    bool
+	URL               string
+	MaxTCPConnPerPort int
 }
 
 func NewServerOption() *ServerOption {
@@ -47,4 +48,6 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.StringVar(&s.URL, "apiserver-url", s.URL, ""+
 		"specify a api server url. ")
 
+	fs.IntVar(&s.MaxTCPConnPerPort, "max-tcp-conn-per-port", 50, ""+
+		"specify how many tcp connection per port")
 }

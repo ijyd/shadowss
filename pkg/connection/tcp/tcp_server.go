@@ -42,6 +42,9 @@ type connector struct {
 
 //NewTCPServer create a TCPServer
 func NewTCPServer(cfg *config.ConnectionInfo) *TCPServer {
+	if cfg.MaxConnection <= 0 {
+		cfg.MaxConnection = 50
+	}
 	return &TCPServer{
 		Config:              cfg,
 		lastActiveTime:      time.Now(),
@@ -75,15 +78,20 @@ func (tcpSrv *TCPServer) Traffic() (int64, int64) {
 func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn) {
 
 	srvPort := acceptConn.LocalAddr().(*net.TCPAddr).Port
+	lock(tcpSrv.mapMutex)
 	limitConn, ok := tcpSrv.portConnectionCount[srvPort]
+	unlock(tcpSrv.mapMutex)
 	if ok {
-		if limitConn > 32 {
+		if limitConn > uint(tcpSrv.Config.MaxConnection) {
 			glog.Errorf("limit connection, refuse this connection(%v)", acceptConn)
 			acceptConn.Close()
 		}
 	}
 	limitConn++
+
+	lock(tcpSrv.mapMutex)
 	tcpSrv.portConnectionCount[srvPort] = limitConn
+	unlock(tcpSrv.mapMutex)
 
 	reqAddr := acceptConn.RemoteAddr().String()
 	timeout := time.Duration(tcpSrv.Config.Timeout*2) * time.Second
@@ -91,8 +99,12 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 	if err != nil {
 		glog.Errorf("create crypto error :%v", err)
 		limitConn--
+		lock(tcpSrv.mapMutex)
 		tcpSrv.portConnectionCount[srvPort] = limitConn
+		unlock(tcpSrv.mapMutex)
+
 		acceptConn.Close()
+
 		return
 	}
 	client := ssclient.NewClient(acceptConn, crypto)
@@ -102,8 +114,11 @@ func (tcpSrv *TCPServer) handleRequest(ctx context.Context, acceptConn net.Conn)
 	}
 	defer func() {
 		connHelper.client.Close()
+
 		limitConn--
+		lock(tcpSrv.mapMutex)
 		tcpSrv.portConnectionCount[srvPort] = limitConn
+		unlock(tcpSrv.mapMutex)
 	}()
 
 	ssProtocol, err := connHelper.client.ParseTcpReq()

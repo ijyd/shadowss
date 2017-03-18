@@ -21,7 +21,6 @@ type Client struct {
 	chunkId       uint32
 	IV            []byte
 	RequestBuffer *bytesPool.BytePool
-	enableOTA     bool
 }
 
 func NewClient(c net.Conn, cipher *crypto.Crypto) *Client {
@@ -30,7 +29,6 @@ func NewClient(c net.Conn, cipher *crypto.Crypto) *Client {
 		cryp:          cipher,
 		chunkId:       0,
 		RequestBuffer: bytesPool.NewBytePool(1024*5, 1024*5),
-		enableOTA:     false,
 	}
 	return client
 }
@@ -99,7 +97,7 @@ func (c *Client) parseTCPBuffer(ssProtocol *protocol.SSProtocol, stage, expected
 		return err
 	}
 
-	glog.V(5).Infof("read data\r\n%s\r\n",
+	glog.V(7).Infof("read data\r\n%s\r\n",
 		util.DumpHex(readBuf[0:readLen]))
 
 	var err error
@@ -127,7 +125,7 @@ func (c *Client) ParseTcpReq() (*protocol.SSProtocol, error) {
 		glog.Errorf("parse request addr type error %v\r\n", err)
 		return nil, err
 	}
-	glog.V(5).Infof("read addr type %v\r\n",
+	glog.V(7).Infof("read addr type %v\r\n",
 		ssProtocol.AddrType)
 
 	if ssProtocol.AddrType == protocol.AddrTypeDomain {
@@ -136,7 +134,7 @@ func (c *Client) ParseTcpReq() (*protocol.SSProtocol, error) {
 			glog.Errorf("parse request domain len  error %v\r\n", err)
 			return nil, err
 		}
-		glog.V(5).Infof("read domain len\r\n%v\r\n",
+		glog.V(7).Infof("read domain len\r\n%v\r\n",
 			ssProtocol.HostLen)
 	}
 
@@ -145,17 +143,16 @@ func (c *Client) ParseTcpReq() (*protocol.SSProtocol, error) {
 		glog.Errorf("parse request addr and port error %v\r\n", err)
 		return nil, err
 	}
-	glog.V(5).Infof("read domain and port %v:%v\r\n",
+	glog.V(7).Infof("read domain and port %v:%v\r\n",
 		ssProtocol.DstAddr.IP.String(), ssProtocol.DstAddr.Port)
 
 	if ssProtocol.OneTimeAuth {
-		c.enableOTA = true
 		err = c.parseTCPBuffer(ssProtocol, protocol.ParseStageHMAC, protocol.ProtocolHMACLen)
 		if err != nil {
 			glog.Errorf("parse request hmac error %v\r\n", err)
 			return nil, err
 		}
-		glog.V(5).Infof("read hmac %v\r\n", util.DumpHex(ssProtocol.HMAC[:]))
+		glog.V(7).Infof("read hmac %v\r\n", util.DumpHex(ssProtocol.HMAC[:]))
 	}
 
 	return ssProtocol, nil
@@ -165,50 +162,37 @@ func (c *Client) ParseReqData(buf []byte) ([]byte, error) {
 	const (
 		dataLenLen  = 2
 		hmacSha1Len = 10
+		idxData0    = dataLenLen + hmacSha1Len
 	)
 
 	bufLen := len(buf)
-	headerLen := 0
-	dataEndIdx := 0
+	headerLen := dataLenLen + hmacSha1Len
 
-	if c.enableOTA {
-		idxData0 := dataLenLen + hmacSha1Len
-		headerLen = dataLenLen + hmacSha1Len
-
-		if bufLen < headerLen {
-			buf = make([]byte, headerLen)
-		}
-
-		if _, err := io.ReadFull(c, buf[:headerLen]); err != nil {
-			return nil, err
-		}
-		dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])
-		expectedHmacSha1 := buf[dataLenLen:idxData0]
-
-		dataEndIdx = int(dataLen) + headerLen
-		if bufLen < dataEndIdx {
-			buf = make([]byte, int(dataLen)+headerLen)
-		}
-
-
-		if _, err := io.ReadFull(c, buf[headerLen:dataEndIdx]); err != nil {
-			return nil, err
-		}
-		chunkIdBytes := make([]byte, 4)
-		chunkId := c.getAndIncrChunkId()
-		binary.BigEndian.PutUint32(chunkIdBytes, chunkId)
-		actualHmacSha1 := util.HmacSha1(append(c.IV, chunkIdBytes...), buf[headerLen:dataEndIdx])
-		if !bytes.Equal(expectedHmacSha1, actualHmacSha1) {
-			return nil, fmt.Errorf("Not auth data")
-		}
-	} else {
-		n, err := c.Read(buf[:])
-		if err != nil {
-			return nil, err
-		}
-		headerLen = 0
-		dataEndIdx = n
+	if bufLen < headerLen {
+		buf = make([]byte, headerLen)
 	}
 
+	if _, err := io.ReadFull(c, buf[:headerLen]); err != nil {
+		return nil, err
+	}
+	dataLen := binary.BigEndian.Uint16(buf[:dataLenLen])
+	expectedHmacSha1 := buf[dataLenLen:idxData0]
+
+	dataEndIdx := int(dataLen) + headerLen
+	if bufLen < dataEndIdx {
+		buf = make([]byte, dataLen)
+	}
+
+	if _, err := io.ReadFull(c, buf[headerLen:dataEndIdx]); err != nil {
+		return nil, err
+	}
+
+	chunkIDBytes := make([]byte, 4)
+	chunkID := c.getAndIncrChunkId()
+	binary.BigEndian.PutUint32(chunkIDBytes, chunkID)
+	actualHmacSha1 := util.HmacSha1(append(c.IV, chunkIDBytes...), buf[headerLen:dataEndIdx])
+	if !bytes.Equal(expectedHmacSha1, actualHmacSha1) {
+		return nil, fmt.Errorf("Not auth data")
+	}
 	return buf[headerLen:dataEndIdx], nil
 }

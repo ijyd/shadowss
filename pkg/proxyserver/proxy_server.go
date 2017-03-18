@@ -12,11 +12,12 @@ import (
 
 //Servers hold on a list of proxyserver
 type Servers struct {
-	tcpSrvMap map[int64]ProxyServer //id to srv interface map
-	udpSrvMap map[int64]ProxyServer //id to srv interface map
+	tcpSrvMap map[string]ProxyServer //config line name to srv interface map
+	udpSrvMap map[string]ProxyServer //config line name to srv interface map
 	enableUDP bool
 }
 
+//UserInfo contains user connection information
 type UserInfo struct {
 	ConnectInfo    *config.ConnectionInfo
 	LastActiveTime time.Time
@@ -25,19 +26,19 @@ type UserInfo struct {
 //NewServers create a servers
 func NewServers(udp bool) *Servers {
 	return &Servers{
-		tcpSrvMap: make(map[int64]ProxyServer),
-		udpSrvMap: make(map[int64]ProxyServer),
+		tcpSrvMap: make(map[string]ProxyServer),
+		udpSrvMap: make(map[string]ProxyServer),
 		enableUDP: udp,
 	}
 }
 
 func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.ConnectionInfo) {
-	srv.tcpSrvMap[cfg.ID] = tcp
+	srv.tcpSrvMap[cfg.Name] = tcp
 
 	glog.Infof("store id %d  tcp :%p\r\n", cfg.ID, tcp)
 
 	if srv.enableUDP {
-		srv.udpSrvMap[cfg.ID] = udp
+		srv.udpSrvMap[cfg.Name] = udp
 	}
 }
 
@@ -45,7 +46,7 @@ func (srv *Servers) storeSrv(tcp ProxyServer, udp ProxyServer, cfg *config.Conne
 func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 
 	var equal bool
-	tcpSrv, exist := srv.tcpSrvMap[client.ID]
+	tcpSrv, exist := srv.tcpSrvMap[client.Name]
 	if exist {
 		equal = tcpSrv.Compare(client)
 	}
@@ -53,8 +54,9 @@ func (srv *Servers) CheckServer(client *config.ConnectionInfo) (bool, bool) {
 	return exist, equal
 }
 
+//GetListenPort get listen port by config user
 func (srv *Servers) GetListenPort(client *config.ConnectionInfo) (int, error) {
-	tcpSrv, exist := srv.tcpSrvMap[client.ID]
+	tcpSrv, exist := srv.tcpSrvMap[client.Name]
 	if exist {
 		return tcpSrv.GetListenPort(), nil
 	}
@@ -65,14 +67,14 @@ func (srv *Servers) GetListenPort(client *config.ConnectionInfo) (int, error) {
 //GetTraffic collection traffic for user,return upload traffic and download traffic
 func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, error) {
 	var tcpUpload, tcpDownload, udpUpload, udpDownload int64
-	tcpSrv, exist := srv.tcpSrvMap[client.ID]
+	tcpSrv, exist := srv.tcpSrvMap[client.Name]
 	if exist {
 		tcpUpload, tcpDownload = tcpSrv.Traffic()
 		glog.V(5).Infof("Got %d Tcp traffic upload %d download:%d\r\n", client.Port, tcpUpload, tcpDownload)
 	}
 
 	if srv.enableUDP {
-		udpSrv, exist := srv.udpSrvMap[client.ID]
+		udpSrv, exist := srv.udpSrvMap[client.Name]
 		if exist {
 			udpUpload, udpDownload = udpSrv.Traffic()
 			glog.V(5).Infof("Got %d udp traffic upload %d download:%d\r\n", client.Port, udpUpload, udpDownload)
@@ -86,7 +88,7 @@ func (srv *Servers) GetTraffic(client *config.ConnectionInfo) (int64, int64, err
 
 //StopServer stop server only
 func (srv *Servers) StopServer(client *config.ConnectionInfo) {
-	tcpSrv, ok := srv.tcpSrvMap[client.ID]
+	tcpSrv, ok := srv.tcpSrvMap[client.Name]
 	if !ok {
 		glog.Warningf("not found tcp server %s\r\n", client.Port)
 	} else {
@@ -95,7 +97,7 @@ func (srv *Servers) StopServer(client *config.ConnectionInfo) {
 	}
 
 	if srv.enableUDP {
-		udpSrv, ok := srv.udpSrvMap[client.ID]
+		udpSrv, ok := srv.udpSrvMap[client.Name]
 		if !ok {
 			glog.Warningf("not found tcp server %s\r\n", client.Port)
 		} else {
@@ -108,19 +110,19 @@ func (srv *Servers) StopServer(client *config.ConnectionInfo) {
 //CleanUpServer delete server from proxy manage. not use
 func (srv *Servers) CleanUpServer(client *config.ConnectionInfo) {
 
-	_, ok := srv.tcpSrvMap[client.ID]
+	_, ok := srv.tcpSrvMap[client.Name]
 	if !ok {
 		glog.Warningf("not found tcp server %s\r\n", client.Port)
 	} else {
-		delete(srv.tcpSrvMap, client.ID)
+		delete(srv.tcpSrvMap, client.Name)
 	}
 
 	if srv.enableUDP {
-		_, ok := srv.udpSrvMap[client.ID]
+		_, ok := srv.udpSrvMap[client.Name]
 		if !ok {
 			glog.Warningf("not found tcp server %s\r\n", client.Port)
 		} else {
-			delete(srv.udpSrvMap, client.ID)
+			delete(srv.udpSrvMap, client.Name)
 		}
 	}
 
@@ -157,6 +159,7 @@ func (srv *Servers) Start() {
 	}
 }
 
+//GetUsersConfig get current all proxy config user
 func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
 	var users []config.ConnectionInfo
 	for _, handler := range srv.tcpSrvMap {
@@ -167,6 +170,7 @@ func (srv *Servers) GetUsersConfig() []config.ConnectionInfo {
 	return users
 }
 
+//GetUsersInfor get current all proxy config user info
 func (srv *Servers) GetUsersInfor() []UserInfo {
 	var users []UserInfo
 	for _, handler := range srv.tcpSrvMap {

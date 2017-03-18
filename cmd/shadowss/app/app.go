@@ -5,6 +5,7 @@ import (
 
 	"shadowss/cmd/shadowss/app/options"
 	"shadowss/pkg/multiuser"
+	muconfig "shadowss/pkg/multiuser/config"
 	"shadowss/pkg/proxyserver"
 
 	"github.com/golang/glog"
@@ -24,6 +25,8 @@ func Run(options *options.ServerOption) error {
 	} else {
 		pxy.Start()
 	}
+
+	muconfig.SetMaxTCPConnectionPerPort(options.MaxTCPConnPerPort)
 
 	//multiuser config
 	multiuser.InitSchedule(pxy, options.URL)

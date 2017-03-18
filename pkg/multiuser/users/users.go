@@ -2,8 +2,10 @@ package users
 
 import (
 	"cloud-keeper/pkg/api"
+	"fmt"
 	"math/rand"
 	"shadowss/pkg/config"
+	muconfig "shadowss/pkg/multiuser/config"
 	"shadowss/pkg/proxyserver"
 	"time"
 
@@ -33,10 +35,11 @@ func (u *Users) GetUsersInfo() []proxyserver.UserInfo {
 	return u.proxyHandle.GetUsersInfor()
 }
 
-func (u *Users) StartAPIProxy() error {
+func (u *Users) StartAPIProxy(nodename string) error {
 	generateRandID := int64(100000000)
 	id := rand.Int63n(generateRandID)
 	port := 48888
+	name := fmt.Sprintf("%s_apiproxy", nodename)
 	config := &config.ConnectionInfo{
 		ID:            (id + generateRandID) * 100,
 		Host:          string("0.0.0.0"),
@@ -45,6 +48,8 @@ func (u *Users) StartAPIProxy() error {
 		Password:      string("48c8591290877f737202ad20c06780e9"),
 		EnableOTA:     true,
 		Timeout:       60,
+		Name:          name,
+		MaxConnection: 100,
 	}
 
 	u.proxyHandle.StartWithConfig(config)
@@ -62,6 +67,7 @@ func (u *Users) CoverUserToConfig(user *api.NodeUser) *config.ConnectionInfo {
 		EnableOTA:     user.Spec.User.EnableOTA,
 		Timeout:       60,
 		Name:          user.Name,
+		MaxConnection: muconfig.GetMaxTCPConnectionPerPort(),
 	}
 }
 
@@ -97,11 +103,11 @@ func (u *Users) UpdateTraffic(config *config.ConnectionInfo, user *api.NodeUser)
 func (u *Users) AddUsers(nodeUser *api.NodeUser) {
 
 	config := u.CoverUserToConfig(nodeUser)
-	glog.V(5).Infof("add user %v \r\n", config)
 
 	exist, equal := u.proxyHandle.CheckServer(config)
 	if exist {
 		if !equal {
+			glog.Infof("add user exist(%+v). restart  config(%+v) \r\n", *nodeUser, config)
 			u.proxyHandle.StopServer(config)
 			u.UpdateTraffic(config, nodeUser)
 			u.proxyHandle.CleanUpServer(config)
@@ -109,12 +115,14 @@ func (u *Users) AddUsers(nodeUser *api.NodeUser) {
 		}
 
 	} else {
+		glog.Infof("add user(%+v) config(%+v) \r\n", *nodeUser, config)
 		u.StartUserSrv(config, nodeUser)
 	}
 }
 
 func (u *Users) DelUsers(nodeUser *api.NodeUser) {
 	config := u.CoverUserToConfig(nodeUser)
+	glog.Infof("del user(%+v) config(%+v)\r\n", *nodeUser, config)
 	u.proxyHandle.StopServer(config)
 
 	u.UpdateTraffic(config, nodeUser)
