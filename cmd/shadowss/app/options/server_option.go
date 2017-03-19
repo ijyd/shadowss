@@ -8,11 +8,12 @@ import (
 )
 
 type ServerOption struct {
-	ConfigFile        string
-	CpuCoreNum        int
-	EnableUDPRelay    bool
-	URL               string
-	MaxTCPConnPerPort int
+	ConfigFile         string
+	CpuCoreNum         int
+	EnableUDPRelay     bool
+	URL                string
+	MaxTCPConnPerPort  int
+	APIProxyListenPort int
 }
 
 func NewServerOption() *ServerOption {
@@ -50,4 +51,8 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 
 	fs.IntVar(&s.MaxTCPConnPerPort, "max-tcp-conn-per-port", 300, ""+
 		"specify how many tcp connection per port")
+
+	fs.IntVar(&s.APIProxyListenPort, "max-tcp-conn-per-port", 48888, ""+
+		"specify a port for api proxy")
+
 }

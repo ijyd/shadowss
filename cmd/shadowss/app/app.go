@@ -27,6 +27,7 @@ func Run(options *options.ServerOption) error {
 	}
 
 	muconfig.SetMaxTCPConnectionPerPort(options.MaxTCPConnPerPort)
+	muconfig.SetDefaultAPIProxyListenPort(options.APIProxyListenPort)
 
 	//multiuser config
 	multiuser.InitSchedule(pxy, options.URL)

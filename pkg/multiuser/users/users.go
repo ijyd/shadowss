@@ -38,7 +38,7 @@ func (u *Users) GetUsersInfo() []proxyserver.UserInfo {
 func (u *Users) StartAPIProxy(nodename string) error {
 	generateRandID := int64(100000000)
 	id := rand.Int63n(generateRandID)
-	port := 48888
+	port := muconfig.GetDefaultAPIProxyListenPort()
 	name := fmt.Sprintf("%s_apiproxy", nodename)
 	config := &config.ConnectionInfo{
 		ID:            (id + generateRandID) * 100,
