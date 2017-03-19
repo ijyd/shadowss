@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"shadowss/pkg/util"
 	"strconv"
+	"strings"
 
 	"cloud-keeper/pkg/api"
 
@@ -89,7 +90,7 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error
 
 	for _, userInfo := range userList {
 		userConfig := userInfo.ConnectInfo
-		if userConfig.Name == string("") {
+		if userConfig.Name == string("") || strings.Contains(userConfig.Name, "apiproxy") {
 			continue
 		}
 
