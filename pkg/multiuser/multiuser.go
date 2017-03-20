@@ -19,7 +19,7 @@ import (
 const (
 	//NodeDefaultTTL = 200
 
-	NodeDefaultTTL = 1800
+	NodeDefaultTTL = 900
 )
 
 type MultiUser struct {
