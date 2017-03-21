@@ -97,7 +97,7 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 		if err != nil {
 			return err
 		}
-		if resp.StatusCode != 200 {
+		if resp.StatusCode >= 300 {
 			return fmt.Errorf("update node %v  error:%v", node, string(body))
 		}
 
