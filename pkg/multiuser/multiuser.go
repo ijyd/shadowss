@@ -19,9 +19,11 @@ import (
 const (
 	//NodeDefaultTTL = 200
 
-	NodeDefaultTTL = 900
+	//NodeDefaultTTL refresh node ttl
+	NodeDefaultTTL = 300
 )
 
+//MultiUser manager multi user and node
 type MultiUser struct {
 	//etcdHandle  *etcdhelper.EtcdHelper
 	proxyHandle *proxyserver.Servers
@@ -50,6 +52,7 @@ func InitSchedule(proxySrv *proxyserver.Servers, url string) {
 
 }
 
+//NewMultiUser create MultiUser
 func NewMultiUser(proxySrv *proxyserver.Servers, url string) *MultiUser {
 
 	nodeName, err := network.ExternalMAC()
@@ -124,6 +127,7 @@ func NewMultiUser(proxySrv *proxyserver.Servers, url string) *MultiUser {
 	}
 }
 
+//StartUp start node refersh and user monitor
 func (mu *MultiUser) StartUp() error {
 
 	apiSrv, err := GetAPIServers(mu.url)
@@ -157,6 +161,7 @@ func (mu *MultiUser) StartUp() error {
 	return nil
 }
 
+//KeepHealth refresh node ,keep node active
 func (mu *MultiUser) KeepHealth() {
 	loopcnt := int64(0)
 	mu.refreshNode(loopcnt)
