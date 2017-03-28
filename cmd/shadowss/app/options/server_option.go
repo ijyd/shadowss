@@ -14,6 +14,7 @@ type ServerOption struct {
 	URL                string
 	MaxTCPConnPerPort  int
 	APIProxyListenPort int
+	APIProxyPassword   string
 	APIServerToken     string
 }
 
@@ -56,6 +57,10 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&s.APIProxyListenPort, "api-proxy-port", 48888, ""+
 		"specify a port for api proxy")
 
+	fs.StringVar(&s.APIProxyPassword, "api-proxy-password", s.APIProxyPassword, ""+
+		"specify password for api proxy. ")
+
 	fs.StringVar(&s.APIServerToken, "apiserver-token", s.APIServerToken, ""+
 		"specify a api server token. ")
+
 }

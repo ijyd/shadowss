@@ -46,7 +46,7 @@ func (u *Users) StartAPIProxy(nodename string) error {
 		Host:          string("0.0.0.0"),
 		Port:          port,
 		EncryptMethod: string("aes-256-cfb"),
-		Password:      string("48c8591290877f737202ad20c06780e9"),
+		Password:      muconfig.GetDefaultAPIProxyPassword(),
 		EnableOTA:     true,
 		Timeout:       60,
 		Name:          name,
