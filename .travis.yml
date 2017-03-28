@@ -18,6 +18,9 @@ before_install:
  - go get -v -u honnef.co/go/tools/cmd/gosimple
  - go get -v -u honnef.co/go/tools/cmd/unused
  - go get -v -u honnef.co/go/tools/cmd/staticcheck
+ - go get -v -u google.golang.org/grpc@b7aa4e95cbb5ec9d07c52a7541ce178ef9626316
+
+
 
 script:
   - cd cmd/shadowss/ && go build -a  -o shadowss
