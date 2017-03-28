@@ -22,3 +22,5 @@ import:
   - context
 - package: github.com/coreos/etcd
   version: c349e089b168e28629d0db6ac2819000abbaf6a7
+- package: google.golang.org/grpc
+  version: b7aa4e95cbb5ec9d07c52a7541ce178ef9626316

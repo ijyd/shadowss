@@ -1,5 +1,5 @@
-hash: 2eb1f5edf5340b9358f8e8b5743d40212e3d342c7578a9f57dad628776ba11fc
-updated: 2017-03-28T17:39:06.657588928+08:00
+hash: a18b8c542ea62bb86eaf7029c8fc7825d333ef28f5eaef75c55e98a6cc797b34
+updated: 2017-03-28T19:12:42.336892009+08:00
 imports:
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
@@ -37,4 +37,6 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
+- name: google.golang.org/grpc
+  version: b7aa4e95cbb5ec9d07c52a7541ce178ef9626316
 testImports: []
