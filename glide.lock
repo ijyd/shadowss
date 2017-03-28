@@ -1,11 +1,6 @@
-hash: 51f6c93cbe5d4d1aea20b49796ba267343167f4eef1974fc0f9a2f483c081812
-updated: 2016-12-17T15:57:54.094791473+08:00
+hash: 2eb1f5edf5340b9358f8e8b5743d40212e3d342c7578a9f57dad628776ba11fc
+updated: 2017-03-28T17:39:06.657588928+08:00
 imports:
-- name: cloud-keeper
-  version: 6575f89e9ec7c174994e8401b864216344c9f7fe
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  subpackages:
-  - pkg/api
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
 - name: github.com/coreos/etcd
@@ -14,78 +9,24 @@ imports:
   version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
   subpackages:
   - semver
-- name: github.com/davecgh/go-spew
-  version: 346938d642f2ec3594ed81d874461961cd0faa76
-  subpackages:
-  - spew
-- name: github.com/ghodss/yaml
-  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/godbus/dbus
   version: 5f6efc7ef2759c81b7ba876593971bfce311eab3
-- name: github.com/gogo/protobuf
-  version: 8d70fb3182befc465c4a1eac8ad4d38ff49778e2
-  subpackages:
-  - proto
-  - sortkeys
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/groupcache
   version: a6b377e3400b08991b80d6805d627f347f983866
   subpackages:
   - lru
-- name: github.com/google/gofuzz
-  version: 44d81051d367757e1c7c6a5a86423ece9afcf63c
 - name: github.com/gorilla/websocket
-  version: 0868951cdb8e69bc42df4598bdc6164ff2f1a072
+  version: a91eba7f97777409bc2c443f5534d41dd20c5720
 - name: github.com/pborman/uuid
   version: a97ce2ca70fa5a848076093f05e639a89ca34d06
+- name: github.com/seanchann/goutil
+  version: 38e5fdfa5f16f8180fdffce2998f32b45ceef933
+  subpackages:
+  - uuid
 - name: github.com/spf13/pflag
   version: 5ccb023bc27df288a957c5e994cd44fd19619465
-- name: github.com/ugorji/go
-  version: 9c7f9b7a2bc3a520f7c7b30b34b7f85f47fe27b6
-  subpackages:
-  - codec
-- name: gofreezer
-  version: fb17290bca9d35d1986be3856b8c50806b65b3f2
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/gofreezer.git
-  subpackages:
-  - pkg/api
-  - pkg/api/meta
-  - pkg/api/meta/metatypes
-  - pkg/api/resource
-  - pkg/api/unversioned
-  - pkg/auth/user
-  - pkg/conversion
-  - pkg/conversion/queryparams
-  - pkg/fields
-  - pkg/genericstoragecodec
-  - pkg/genericstoragecodec/options
-  - pkg/labels
-  - pkg/pages
-  - pkg/runtime
-  - pkg/runtime/schema
-  - pkg/runtime/serializer
-  - pkg/runtime/serializer/json
-  - pkg/runtime/serializer/protobuf
-  - pkg/runtime/serializer/recognizer
-  - pkg/runtime/serializer/versioning
-  - pkg/selection
-  - pkg/storage
-  - pkg/types
-  - pkg/util/errors
-  - pkg/util/framer
-  - pkg/util/intstr
-  - pkg/util/json
-  - pkg/util/labels
-  - pkg/util/rand
-  - pkg/util/runtime
-  - pkg/util/sets
-  - pkg/util/uuid
-  - pkg/util/validation
-  - pkg/util/validation/field
-  - pkg/util/yaml
-  - pkg/watch/versioned
-  - third_party/forked/golang/reflect
 - name: golang.org/x/crypto
   version: 1351f936d976c60a0a48d728281922cf63eafb8d
   subpackages:
@@ -96,14 +37,4 @@ imports:
   version: e90d6d0afc4c315a0d87a568ae68577cc15149a0
   subpackages:
   - context
-- name: golib
-  version: 02c1abb7ca6f030728d028621ba41e8a328d7968
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
-  subpackages:
-  - pkg/util/flag
-  - pkg/util/network
-- name: gopkg.in/inf.v0
-  version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
-- name: gopkg.in/yaml.v2
-  version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
 testImports: []

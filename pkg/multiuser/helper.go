@@ -2,11 +2,11 @@ package multiuser
 
 import (
 	"fmt"
-	"shadowss/pkg/util"
 	"strconv"
 	"strings"
 
-	"cloud-keeper/pkg/api"
+	"shadowss/pkg/api"
+	"shadowss/pkg/util"
 
 	"github.com/golang/glog"
 )

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"golib/pkg/util/flag"
 	"log"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	"shadowss/cmd/shadowss/app"
 	"shadowss/cmd/shadowss/app/options"
+	"shadowss/pkg/util/flag"
 
 	"github.com/spf13/pflag"
 )

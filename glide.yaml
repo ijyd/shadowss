@@ -1,18 +1,5 @@
 package: shadowss
 import:
-- package: cloud-keeper
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/cloud-keeper.git
-  version: 6575f89e9ec7c174994e8401b864216344c9f7fe
-  subpackages:
-  - pkg/api
-
-- package: golib
-  repo: ssh://git@dev.bj-jyd.cn:10022/cloud/golib.git
-  version: 02c1abb7ca6f030728d028621ba41e8a328d7968
-  subpackages:
-  - pkg/util/flag
-  - pkg/util/network
-
 - package: github.com/codahale/chacha20
 - package: github.com/coreos/go-semver
   version: ^0.2.0

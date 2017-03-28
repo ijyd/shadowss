@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"cloud-keeper/pkg/api"
+	"shadowss/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
 	"shadowss/pkg/multiuser/common"
 
@@ -65,6 +65,7 @@ func (u *Users) syncUsers(nodeev *nodeEvent, nodeName string) error {
 	return nil
 }
 
+//WatchUserLoop watch user loop
 func (u *Users) WatchUserLoop(nodeName string) error {
 	url := url.URL{
 		Scheme: "wss",
