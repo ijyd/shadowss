@@ -1,9 +1,16 @@
 package config
 
+import (
+	"fmt"
+	"net/http"
+)
+
 var (
 	maxTCPConnectionPerPort = 300
 
-	defautAPIProxyListenPort = 48888
+	defautAPIProxyListenPort = 12345
+
+	token = "Bearer 455151fsfjkkdakllds1111a"
 )
 
 //SetMaxTCPConnectionPerPort set max tcp connection for per port
@@ -24,4 +31,19 @@ func SetDefaultAPIProxyListenPort(port int) {
 //GetDefaultAPIProxyListenPort get default api proxy listen port
 func GetDefaultAPIProxyListenPort() int {
 	return defautAPIProxyListenPort
+}
+
+//AddAuthHTTPHeader add Authorization header into http request
+func AddAuthHTTPHeader(req *http.Request) {
+	req.Header.Add("Authorization", token)
+}
+
+//SetToken get common token
+func SetToken(tk string) {
+	token = fmt.Sprintf("Bearer %s", tk)
+}
+
+//GetToken get common token
+func GetToken() string {
+	return token
 }

@@ -11,7 +11,7 @@ import (
 
 	"shadowss/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
-	"shadowss/pkg/multiuser/common"
+	muconfig "shadowss/pkg/multiuser/config"
 )
 
 type DoReq func(client *http.Client, url string) error
@@ -47,7 +47,7 @@ func GetAPIServers(urladdr string) (*api.APIServerList, error) {
 			return err
 		}
 
-		common.AddAuthHttpHeader(req)
+		muconfig.AddAuthHTTPHeader(req)
 
 		resp, err := client.Do(req)
 		if err != nil {
@@ -84,7 +84,7 @@ func UpdateNode(node *api.Node, ttl uint64) error {
 			return err
 		}
 
-		common.AddAuthHttpHeader(req)
+		muconfig.AddAuthHTTPHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)
@@ -123,7 +123,7 @@ func UpdateNodeUser(user *api.NodeUser) error {
 			return err
 		}
 
-		common.AddAuthHttpHeader(req)
+		muconfig.AddAuthHTTPHeader(req)
 		req.Header.Set("Content-Type", "application/json")
 
 		resp, err := client.Do(req)

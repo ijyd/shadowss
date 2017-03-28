@@ -35,9 +35,9 @@ type ObjectMeta struct {
 
 //ListMeta import from k8s
 type ListMeta struct {
-	SelfLink string `json:"selfLink,omitempty" protobuf:"bytes,1,opt,name=selfLink"`
+	SelfLink string `json:"selfLink,omitempty"`
 
-	ResourceVersion string `json:"resourceVersion,omitempty" protobuf:"bytes,2,opt,name=resourceVersion"`
+	ResourceVersion string `json:"resourceVersion,omitempty"`
 }
 
 const (
@@ -151,7 +151,7 @@ type NodeServer struct {
 
 //NodeSpec shadowss node server information
 type NodeSpec struct {
-	Server NodeServer              `json:"server,omitempty" freezer:"table:vps_new_node"`
+	Server NodeServer              `json:"server,omitempty"`
 	Users  map[string]NodeUserSpec `json:"users,omitempty"`
 }
 
@@ -165,12 +165,12 @@ type Node struct {
 
 //APIServerInfor api server information. if status is false, this server disable
 type APIServerInfor struct {
-	ID         int64     `json:"id, omitempty" column:"id"`
-	Name       string    `json:"name, omitempty" column:"name"`
-	Host       string    `json:"host, omitempty" column:"host"`
-	Port       int64     `json:"port, omitempty" column:"port"`
-	Status     bool      `json:"status, omitempty" column:"status"`
-	CreateTime time.Time `json:"creationTime,omitempty" column:"created_time" gorm:"column:created_time"`
+	ID         int64     `json:"id, omitempty"`
+	Name       string    `json:"name, omitempty"`
+	Host       string    `json:"host, omitempty"`
+	Port       int64     `json:"port, omitempty"`
+	Status     bool      `json:"status, omitempty"`
+	CreateTime time.Time `json:"creationTime,omitempty"`
 }
 
 //APIServerSpec api server spec

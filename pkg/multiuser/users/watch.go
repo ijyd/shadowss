@@ -9,7 +9,7 @@ import (
 
 	"shadowss/pkg/api"
 	"shadowss/pkg/multiuser/apiserverproxy"
-	"shadowss/pkg/multiuser/common"
+	muconfig "shadowss/pkg/multiuser/config"
 
 	"github.com/golang/glog"
 	"github.com/gorilla/websocket"
@@ -34,12 +34,6 @@ func (u *Users) syncUsers(nodeev *nodeEvent, nodeName string) error {
 	nodeUser := &nodeev.Object
 	glog.V(5).Infof("event(%v) node user %v\r\n", nodeev.Type, *nodeUser)
 	phase := nodeUser.Spec.Phase
-	//userRefer := &nodeev.Object.Spec.User
-
-	// nodeUser.Name = userRefer.User.Name
-	// nodeUser.Spec.NodeName = userRefer.NodeName
-	// nodeUser.Spec.Phase = userRefer.Phase
-	// nodeUser.Spec.User = userRefer.User
 
 	lables, ok := nodeUser.Labels[nodeName]
 	if !ok {
@@ -82,7 +76,7 @@ func (u *Users) WatchUserLoop(nodeName string) error {
 
 	wsHeaders := http.Header{
 		"Origin":        {"http://localhost"},
-		"Authorization": {common.Token},
+		"Authorization": {muconfig.GetToken()},
 	}
 	wsc, _, err := websocket.DefaultDialer.Dial(url.String(), wsHeaders)
 	if err != nil {
