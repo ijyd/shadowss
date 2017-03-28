@@ -11,8 +11,8 @@ The protocol is compatible with the origin shadowsocks (if both have been upgrad
 You can also install from source (assume you have go installed):
 
 ```
-git clone  https://github.com/bjjyd/shadowss
-cd shadowss/cmd/shadowss/server/
+git clone  https://github.com/ijyd/shadowss
+cd shadowss/cmd/shadowss/
 go build -a  -o shadowss
 ./shadowss --alsologtostderr=true --config-file="/etc/server-multi-port.json" &
 ```
