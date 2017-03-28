@@ -1,0 +1,10 @@
+language: go
+go:
+  - 1.6.2
+  - tip
+
+go_import_path: shadowss
+
+
+script:
+  - cd cmd/shadowss/ && go build -a  -o shadowss
