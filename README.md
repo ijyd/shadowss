@@ -1,6 +1,6 @@
 # shadowss
 
-[![Build Status](https://travis-ci.org/bjjyd/shadowss.svg?branch=master)](https://travis-ci.org/bjjyd/shadowss/)
+[![Build Status](https://travis-ci.org/ijyd/shadowss.svg?branch=master)](https://travis-ci.org/ijyd/shadowss)
 
 shadowss is a lightweight tunnel proxy which can help you get through firewalls. It is a port of [shadowsocks](https://github.com/clowwindy/shadowsocks).
 

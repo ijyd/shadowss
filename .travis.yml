@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.6.2
+  - 1.7.2
   - tip
 
 go_import_path: shadowss
