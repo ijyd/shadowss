@@ -1,6 +1,0 @@
----
-  - name: docker pull {{ repo }}:{{ tag }}
-    command: docker pull {{ repo }}:{{ tag }}
-
-  - name: docker tag {{ name }}:{{ tag }}
-    command: docker tag {{ repo }}:{{ tag }} {{ name }}:{{ tag }}

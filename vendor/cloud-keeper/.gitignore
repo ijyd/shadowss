@@ -1,8 +1,0 @@
-vpskeeper
-!vpskeeper/
-vpslicense
-.license
-webhook
-!webhook/
-.ftpconfig
-.ftpignore
