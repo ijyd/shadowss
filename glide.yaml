@@ -20,5 +20,3 @@ import:
 - package: golang.org/x/net
   subpackages:
   - context
-- package: github.com/coreos/etcd
-  version: c349e089b168e28629d0db6ac2819000abbaf6a7

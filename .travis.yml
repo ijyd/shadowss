@@ -6,20 +6,6 @@ go:
 go_import_path: shadowss
 
 
-addons:
-  apt:
-    packages:
-    - libpcap-dev
-    - libaspell-dev
-    - libhunspell-dev
-
-before_install:
- - go get -v -u github.com/chzchzchz/goword
- - go get -v -u honnef.co/go/tools/cmd/gosimple
- - go get -v -u honnef.co/go/tools/cmd/unused
- - go get -v -u honnef.co/go/tools/cmd/staticcheck
- - go get -v -u google.golang.org/grpc@b7aa4e95cbb5ec9d07c52a7541ce178ef9626316
-
 
 
 script:

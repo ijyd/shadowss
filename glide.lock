@@ -1,10 +1,8 @@
-hash: 2eb1f5edf5340b9358f8e8b5743d40212e3d342c7578a9f57dad628776ba11fc
-updated: 2017-03-28T19:27:15.732162797+08:00
+hash: e54299b08298d860538c5c36a3fa30085e777a90d6f45a85d09b69969d89f08a
+updated: 2017-03-28T19:35:36.098501898+08:00
 imports:
 - name: github.com/codahale/chacha20
   version: ec07b4f69a3f70b1dd2a8ad77230deb1ba5d6953
-- name: github.com/coreos/etcd
-  version: c349e089b168e28629d0db6ac2819000abbaf6a7
 - name: github.com/coreos/go-semver
   version: 8ab6407b697782a06568d4b7f1db25550ec2e4c6
   subpackages:
