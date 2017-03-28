@@ -6,5 +6,12 @@ go:
 go_import_path: shadowss
 
 
+addons:
+  apt:
+    packages:
+    - libpcap-dev
+    - libaspell-dev
+    - libhunspell-dev
+
 script:
   - cd cmd/shadowss/ && go build -a  -o shadowss
