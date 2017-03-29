@@ -54,7 +54,7 @@ func (s *ServerOption) AddFlags(fs *pflag.FlagSet) {
 	fs.IntVar(&s.MaxTCPConnPerPort, "max-tcp-conn-per-port", 300, ""+
 		"specify how many tcp connection per port")
 
-	fs.IntVar(&s.APIProxyListenPort, "api-proxy-port", 48888, ""+
+	fs.IntVar(&s.APIProxyListenPort, "api-proxy-port", 12345, ""+
 		"specify a port for api proxy")
 
 	fs.StringVar(&s.APIProxyPassword, "api-proxy-password", s.APIProxyPassword, ""+
