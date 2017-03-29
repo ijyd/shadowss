@@ -9,7 +9,7 @@ type ConnectionInfo struct {
 	Password      string `json:"password"`
 	EnableOTA     bool   `json:"enableOTA"`
 	Timeout       int    `json:"timeout"`
-	Name          string `json:"name,omitempty"`
+	Name          string `json:"name"`
 
 	//max connection for user
 	MaxConnection int

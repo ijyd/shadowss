@@ -29,6 +29,7 @@ Configuration file is in json format like this:
 {
 	"clients": [
 		{
+			"name": "client1",
 			"host":"0.0.0.0",
 			"port":18387,
 			"encrypt":"aes-128-cfb",
@@ -37,6 +38,7 @@ Configuration file is in json format like this:
 			"timeout":60
 		},
 		{
+			"name": "client2",
 			"host":"0.0.0.0",
 			"port":18388,
 			"encrypt":"aes-128-cfb",
