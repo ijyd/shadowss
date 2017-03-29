@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-MAINTAINER seanchann <seanchann@foxmail.com>
+MAINTAINER seanchann <zhouxiaoqiang.mstech@foxmail.com>
 
 RUN set -ex \
 	&& apk add --no-cache --virtual bash
