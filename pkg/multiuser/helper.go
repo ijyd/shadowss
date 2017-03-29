@@ -59,7 +59,14 @@ func (mu *MultiUser) refreshNode(loopcnt int64) {
 		return
 	}
 
-	upload, download, usercnt, err := mu.CollectorAndUpdateUserTraffic()
+	syncUserTraffic := false
+
+	if loopcnt%10 == 0 {
+		glog.V(5).Infof("need sync user traffic to manager \r\n")
+		syncUserTraffic = true
+	}
+
+	upload, download, usercnt, err := mu.CollectorAndUpdateUserTraffic(syncUserTraffic)
 	if err == nil {
 		node.Spec.Server.Upload = upload
 		node.Spec.Server.Download = download
@@ -79,7 +86,7 @@ func (mu *MultiUser) refreshNode(loopcnt int64) {
 	}
 }
 
-func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error) {
+func (mu *MultiUser) CollectorAndUpdateUserTraffic(sync bool) (int64, int64, int64, error) {
 
 	//userList := mu.userHandle.GetUsers()
 	userList := mu.userHandle.GetUsersInfo()
@@ -118,10 +125,15 @@ func (mu *MultiUser) CollectorAndUpdateUserTraffic() (int64, int64, int64, error
 		nodeUser.Annotations = make(map[string]string)
 		nodeUser.Annotations[api.UserFakeAnnotationLastActiveTime] = userInfo.LastActiveTime.String()
 
-		err := UpdateNodeUserFromNode(nodeUser.Spec)
-		if err != nil {
-			glog.Errorf("update node user %+v err %v \r\n", nodeUser, err)
-		} else {
+		var err error
+		if sync {
+			err = UpdateNodeUserFromNode(nodeUser.Spec)
+			if err != nil {
+				glog.Errorf("update node user %+v err %v \r\n", nodeUser, err)
+			}
+		}
+
+		if err == nil {
 			upload += nodeUser.Spec.User.UploadTraffic
 			download += nodeUser.Spec.User.DownloadTraffic
 		}
